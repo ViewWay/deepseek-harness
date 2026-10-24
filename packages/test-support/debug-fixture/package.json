@@ -26,10 +26,17 @@
     "lib/types/**/*.d.ts"
   ],
   "license": "MIT",
+  "dependencies": {
+    "vitest": "^4.1.11"
+  },
   "peerDependencies": {
-    "@deepseek-ai/dsh-debug": "workspace:*"
+    "@deepseek-ai/dsh-brand": "workspace:*",
+    "@deepseek-ai/dsh-debug": "workspace:*",
+    "@deepseek-ai/dsh-session": "workspace:*"
   },
   "devDependencies": {
-    "@deepseek-ai/dsh-debug": "workspace:*"
+    "@deepseek-ai/dsh-brand": "workspace:*",
+    "@deepseek-ai/dsh-debug": "workspace:*",
+    "@deepseek-ai/dsh-session": "workspace:*"
   }
 }

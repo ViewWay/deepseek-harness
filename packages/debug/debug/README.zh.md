@@ -1,5 +1,5 @@
 ---
-description: "调试能力缝（ctx.debug）：冻结的调试词汇与品牌化 id、类型化 DebugError 失败、会话状态机与语言 provider 注册表，供组合 IDE 级调试的用户与维护者阅读。"
+description: "调试能力缝（ctx.debug）：冻结的调试词汇与品牌化 id、类型化 DebugError 失败、会话状态机、provider 注册表、带 live 事件的工作区作用域会话注册表与复合配置，供组合 IDE 级调试的用户与维护者阅读。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-使用 `dsh-debug` 为 harness 提供唯一的调试能力缝。本包拥有所有调试界面共享的冻结契约：品牌化 id（`DebugSessionId`、`DebugProviderId` 等）、请求/provider/计划词汇、带稳定错误码的类型化 `DebugError` 分类、五状态会话状态机，以及原子保留 provider id 与文件扩展名的语言 provider 注册表。会话生命周期（注册表支撑的 list/get、launch/attach、复合配置、live 事件、耐久 `debug/*` Session 事件与 `debugSessions` 投影）在本分支后续 IDE 调试任务中挂载到本服务；在那之前本包只暴露词汇、状态机与注册表。
+使用 `dsh-debug` 为 harness 提供唯一的调试能力缝。本包拥有所有调试界面共享的冻结契约：品牌化 id（`DebugSessionId`、`DebugProviderId` 等）、请求/provider/计划词汇、带稳定错误码的类型化 `DebugError` 分类、五状态会话状态机、原子保留 provider id 与文件扩展名的语言 provider 注册表、带 live 事件与幂等拆除的工作区作用域会话注册表，以及带 stop-all 策略的复合配置。launch 与 attach 在 DAP 后端落地前以 `DEBUG_UNAVAILABLE` 拒绝；耐久 `debug/*` Session 事件与 `debugSessions` 投影随后落地。
 
 ## 目录
 
@@ -26,6 +26,8 @@ kind: "package-reference"
 挂载本服务即拥有 `ctx.debug`。语言 provider 以品牌化 id、显示名、文件扩展名、适配器描述符、配置 schema 与两个显式 resolve 步骤（`resolveLaunch`/`resolveAttach`）注册，把请求解析为完整计划。注册在改动前完成全部校验：空 id、空或非法的扩展名列表、重复扩展名以 `DEBUG_INVALID_PROVIDER` 失败；已保留的 id 或扩展名以 `DEBUG_CONFLICT` 失败；返回的 disposer 一并释放全部保留，HMR 重载不留下过期路由。
 
 会话状态机是所有会话遵循的唯一转移表：`starting → running ⇄ stopped`，`terminated`/`failed` 为吸收态，重复 `terminate`/`disconnect` 幂等。非法组合抛出带 `DEBUG_INVALID_STATE` 的 `DebugError`；调用方按 `code` 分支，需要时读取 `providerId`/`sessionId`/`workspaceId`/`detail`，绝不解析 `message`。
+
+注册的会话存放在 `ctx.debug.sessions` 背后的工作区作用域注册表：`list`/`get` 读取它；`events` 只在所属状态提交后发布 live 的 `session/*`、`breakpoint/changed`、`console/output`、`adapter/output` 与 `capabilities/changed` 通知；拆除恰好执行一次 dispose 后才发布 `session/terminated`。跨工作区读取以 `DEBUG_WORKSPACE_MISMATCH` 失败。复合配置按有序会话列表聚合状态并携带 stop-all 策略。
 
 -----
 
@@ -44,11 +46,15 @@ kind: "package-reference"
 
 | 文件 | 职责 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 插件入口：`Debug` 服务（`registerProvider`/`provider`/`providers`）与 `ctx.debug` 合并 |
+| [`src/index.ts`](src/index.ts) | 插件入口：`Debug` 服务（`registerProvider`/`provider`/`providers`、`sessions`、`list`/`get`、`events`、launch/attach 守卫）与 `ctx.debug` 合并 |
 | [`src/brand.ts`](src/brand.ts) | 八个品牌化 id 类型及其构造器 |
 | [`src/types.ts`](src/types.ts) | 冻结的 seam 契约与 `DebugErrorCode` union |
 | [`src/error.ts`](src/error.ts) | `DebugError`（`HarnessError` 子类），携带身份与修复上下文 |
 | [`src/state.ts`](src/state.ts) | 七事件转移表上的 `advanceDebugState` 与 `debugTerminalOutcome` |
+| [`src/events.ts`](src/events.ts) | live `DebugEvent` union、`DebugEventSource` 与 containment 派发总线 |
+| [`src/registry.ts`](src/registry.ts) | 工作区作用域会话注册表：先提交后发布、幂等移除 |
+| [`src/session.ts`](src/session.ts) | `DebugSessionRecord` 与 live 会话的拆除面 |
+| [`src/compound.ts`](src/compound.ts) | 复合会话：stop-all 传播与聚合状态 |
 
 </details>
 
@@ -57,7 +63,8 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 ## 已知限制与延后工作
 
-- 会话生命周期尚未挂载：launch/attach、会话注册表、live 事件、耐久 `debug/*` Session 事件与 `debugSessions` 投影随本分支后续 IDE 调试任务落地。
+- launch 与 attach 以 `DEBUG_UNAVAILABLE` 拒绝；DAP 后端、耐久 `debug/*` Session 事件与 `debugSessions` 投影随本分支后续 IDE 调试任务落地。
+- live 会话的 `terminate` 与 `disconnect` 共享一条拆除路径；两个不同的 DAP 请求、复合配置的 `restart` 与完整检视面随后端落地。
 - `DebugAttachPlan` 与 `DebugAttachTarget` 是 provider 契约引用但未细化的 attach 形状的补缺定义；设计文档记录之前以本包为家。
 
 -----

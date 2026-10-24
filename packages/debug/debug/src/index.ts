@@ -1,21 +1,30 @@
 /**
  * Service Definition of the debug capability seam (`ctx.debug`): the
  * language-provider registry that reserves a branded id and an exclusive set
- * of file extensions atomically, plus the seam's exported vocabulary —
- * branded ids, the frozen contracts in `./types.ts`, the typed
- * {@link DebugError} taxonomy, and the session state machine.
+ * of file extensions atomically, the session registry with live events and
+ * workspace-scoped ownership, and compound configurations — plus the seam's
+ * exported vocabulary: branded ids, the frozen contracts in `./types.ts`, the
+ * typed {@link DebugError} taxonomy, and the session state machine.
  *
- * Session lifecycle (list/get, launch/attach, compounds, live events, durable
- * events, and the `debugSessions` projection) mounts on this service in
- * later tasks of the IDE debugging plan; until then the service exposes
- * exactly the registry.
+ * Launch and attach stay `DEBUG_UNAVAILABLE` until the DAP backend lands;
+ * durable `debug/*` events and the `debugSessions` projection follow it.
  * @module @deepseek-ai/dsh-debug
  */
 
 import { Context, Service } from '@deepseek-ai/cordis'
-import type { DebugProviderId } from './brand.ts'
+import type { DebugProviderId, DebugSessionId } from './brand.ts'
 import { DebugError } from './error.ts'
-import type { DebugProvider } from './types.ts'
+import type {
+  DebugAttachRequest,
+  DebugLaunchRequest,
+  DebugProvider,
+  DebugScope,
+  DebugSessionInfo,
+} from './types.ts'
+import type { DebugEventSource } from './events.ts'
+import { DebugSessionRegistry } from './registry.ts'
+import { LiveDebugSession, debugSessionInfoOf } from './session.ts'
+import type { DebugLiveSession, DebugSessionRecord } from './session.ts'
 
 export {
   DebugBreakpointId,
@@ -47,8 +56,10 @@ export type {
   DebugExecutionCapability,
   DebugLaunchPlan,
   DebugLaunchRequest,
+  DebugOperationOptions,
   DebugProvider,
   DebugResumeResult,
+  DebugScope,
   DebugScopeInfo,
   DebugSessionInfo,
   DebugSessionState,
@@ -65,6 +76,14 @@ export type {
 } from './types.ts'
 export { advanceDebugState, debugTerminalOutcome } from './state.ts'
 export type { DebugSessionOutcome, DebugStateEvent } from './state.ts'
+export { DebugEventBus } from './events.ts'
+export type { DebugEvent, DebugEventActor, DebugEventFilter, DebugEventSource } from './events.ts'
+export { DebugSessionRegistry } from './registry.ts'
+export type { DebugSessionScope } from './registry.ts'
+export { LiveDebugSession, debugSessionInfoOf } from './session.ts'
+export type { DebugLiveSession, DebugSessionRecord, DebugSessionTeardown } from './session.ts'
+export { DebugCompound, DebugCompoundRegistry } from './compound.ts'
+export type { DebugCompoundChild } from './compound.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -86,16 +105,71 @@ function normalizeExtension(extension: string): string {
 }
 
 /**
- * `ctx.debug`. Owns the provider table and the extension routes; a
- * registration's id reservation and extension reservations commit in one
- * lifecycle controller so disposal always releases them together.
+ * `ctx.debug`. Owns the provider table with its extension routes, the
+ * workspace-scoped session registry with live events, and the compound
+ * registry. A provider registration's id reservation and extension
+ * reservations commit in one lifecycle controller so disposal always releases
+ * them together.
  */
 export class Debug extends Service {
   private readonly providersById = new Map<DebugProviderId, DebugProvider>()
   private readonly extensionOwners = new Map<string, DebugProviderId>()
+  private readonly liveSessions = new WeakMap<DebugSessionRecord, LiveDebugSession>()
+
+  /** The session registry backing `list`/`get` and the live event source. */
+  readonly sessions = new DebugSessionRegistry()
 
   constructor(ctx: Context) {
     super(ctx, 'debug')
+  }
+
+  /** Live debug events, published only after the owning state committed. */
+  get events(): DebugEventSource {
+    return this.sessions.events
+  }
+
+  /**
+   * List debug sessions as read-facing infos.
+   * @param scope - workspace and owner narrowing; omit for every session.
+   * @returns the matching infos in registration order.
+   */
+  list(scope?: DebugScope): readonly DebugSessionInfo[] {
+    return this.sessions.list(scope).map(record => debugSessionInfoOf(record))
+  }
+
+  /**
+   * Resolve one registered session to its stable live-session object.
+   * @param id - the session's id.
+   * @returns the live session, or undefined when the id is not registered.
+   */
+  get(id: DebugSessionId): DebugLiveSession | undefined {
+    const record = this.sessions.get(id)
+    if (record === undefined) return undefined
+    const existing = this.liveSessions.get(record)
+    if (existing !== undefined) return existing
+    const session = new LiveDebugSession(record, this.sessions)
+    this.liveSessions.set(record, session)
+    return session
+  }
+
+  /**
+   * Launch a debug session.
+   * @param _request - the launch request; consumed once the DAP backend lands.
+   * @returns a promise for the live session; rejects until the backend lands.
+   * @throws {@link DebugError} `DEBUG_UNAVAILABLE` until the backend lands.
+   */
+  launch(_request: DebugLaunchRequest): Promise<DebugLiveSession> {
+    return Promise.reject(new DebugError('debug launch is unavailable until the DAP backend lands', 'DEBUG_UNAVAILABLE'))
+  }
+
+  /**
+   * Attach to a running target.
+   * @param _request - the attach request; consumed once the DAP backend lands.
+   * @returns a promise for the live session; rejects until the backend lands.
+   * @throws {@link DebugError} `DEBUG_UNAVAILABLE` until the backend lands.
+   */
+  attach(_request: DebugAttachRequest): Promise<DebugLiveSession> {
+    return Promise.reject(new DebugError('debug attach is unavailable until the DAP backend lands', 'DEBUG_UNAVAILABLE'))
   }
 
   /**

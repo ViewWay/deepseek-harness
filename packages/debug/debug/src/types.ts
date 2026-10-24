@@ -147,6 +147,22 @@ export interface DebugEnvironment {
 export type DebugCaller = { readonly kind: 'agent' | 'user'; readonly sessionId: SessionId }
 
 /**
+ * Per-operation options: cancellation and caller attribution. A request-level
+ * `caller` wins for launch and attach; the option-level caller attributes
+ * operations that carry no request of their own.
+ */
+export interface DebugOperationOptions {
+  readonly signal?: AbortSignal
+  readonly caller?: DebugCaller
+}
+
+/** Workspace narrowing for service reads; the service rejects cross-workspace requests. */
+export interface DebugScope {
+  readonly workspaceId: string
+  readonly ownerSessionId?: SessionId
+}
+
+/**
  * A launch request before provider resolution; defaults are materialized in
  * `resolveLaunch`, never in `launch`.
  */

@@ -1,5 +1,5 @@
 ---
-description: "The debug capability seam (ctx.debug): frozen debug vocabulary and branded ids, typed DebugError failures, the session state machine, and the language-provider registry, for users and maintainers composing IDE-level debugging."
+description: "The debug capability seam (ctx.debug): frozen debug vocabulary and branded ids, typed DebugError failures, the session state machine, the provider registry, the workspace-scoped session registry with live events, and compounds, for users and maintainers composing IDE-level debugging."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Use `dsh-debug` to give the harness one debug capability seam. The package owns the frozen contracts every debug surface shares: branded ids (`DebugSessionId`, `DebugProviderId`, …), the request/provider/plan vocabulary, the typed `DebugError` taxonomy with stable codes, the five-state session state machine, and the language-provider registry that reserves provider ids and file extensions atomically. Session lifecycle (registry-backed list/get, launch/attach, compounds, live events, durable `debug/*` session events, and the `debugSessions` projection) mounts on this service in the later IDE-debugging tasks; until then this package exposes exactly the vocabulary, the state machine, and the registry.
+Use `dsh-debug` to give the harness one debug capability seam. The package owns the frozen contracts every debug surface shares: branded ids (`DebugSessionId`, `DebugProviderId`, …), the request/provider/plan vocabulary, the typed `DebugError` taxonomy with stable codes, the five-state session state machine, the language-provider registry that reserves provider ids and file extensions atomically, the workspace-scoped session registry with live events and idempotent teardown, and compound configurations with a stop-all policy. Launch and attach reject with `DEBUG_UNAVAILABLE` until the DAP backend lands; durable `debug/*` session events and the `debugSessions` projection follow it.
 
 ## Table of Contents
 
@@ -26,6 +26,8 @@ Use `dsh-debug` to give the harness one debug capability seam. The package owns 
 Mount this service to own `ctx.debug`. A language provider registers with its branded id, display name, file extensions, adapter descriptor, config schema, and the two explicit resolve steps (`resolveLaunch`/`resolveAttach`) that turn a request into a fully resolved plan. Registration validates everything before mutating: an empty id, an empty or malformed extension list, or duplicate extensions fails with `DEBUG_INVALID_PROVIDER`; a reserved id or extension fails with `DEBUG_CONFLICT`; the returned disposer releases every reservation together, so an HMR reload leaves no stale routes.
 
 The session state machine is the single transition table every session follows: `starting → running ⇄ stopped` with terminal absorption in `terminated`/`failed`, where repeated `terminate`/`disconnect` is idempotent. Illegal combinations throw `DebugError` with `DEBUG_INVALID_STATE`; callers branch on `code` and read `providerId`/`sessionId`/`workspaceId`/`detail` when present, never on `message`.
+
+Registered sessions live in the workspace-scoped registry behind `ctx.debug.sessions`: `list`/`get` read it, `events` publishes live `session/*`, `breakpoint/changed`, `console/output`, `adapter/output`, and `capabilities/changed` notifications only after the owning state committed, and teardown disposes exactly once before publishing `session/terminated`. Cross-workspace reads fail with `DEBUG_WORKSPACE_MISMATCH`. Compounds group an ordered session list with a stop-all policy and aggregated state.
 
 -----
 
@@ -44,11 +46,15 @@ The session state machine is the single transition table every session follows: 
 
 | File | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | Plugin entry: `Debug` service (`registerProvider`/`provider`/`providers`), `ctx.debug` merge |
+| [`src/index.ts`](src/index.ts) | Plugin entry: `Debug` service (`registerProvider`/`provider`/`providers`, `sessions`, `list`/`get`, `events`, launch/attach guards), `ctx.debug` merge |
 | [`src/brand.ts`](src/brand.ts) | The eight branded id types and their constructors |
 | [`src/types.ts`](src/types.ts) | Frozen seam contracts and the `DebugErrorCode` union |
 | [`src/error.ts`](src/error.ts) | `DebugError` (`HarnessError` subclass) with identity and remediation details |
 | [`src/state.ts`](src/state.ts) | `advanceDebugState` and `debugTerminalOutcome` over the seven-event transition table |
+| [`src/events.ts`](src/events.ts) | Live `DebugEvent` union, `DebugEventSource`, and the contained-dispatch bus |
+| [`src/registry.ts`](src/registry.ts) | Workspace-scoped session registry with commit-then-publish and idempotent removal |
+| [`src/session.ts`](src/session.ts) | `DebugSessionRecord` and the live-session teardown face |
+| [`src/compound.ts`](src/compound.ts) | Compound sessions with stop-all propagation and aggregated state |
 
 </details>
 
@@ -57,7 +63,8 @@ The session state machine is the single transition table every session follows: 
 <a id="known-limitations-and-deferred-work"></a>
 ## Known Limitations and Deferred Work
 
-- Session lifecycle is not mounted yet: launch/attach, the session registry, live events, durable `debug/*` session events, and the `debugSessions` projection land with the later IDE-debugging tasks on this branch.
+- Launch and attach reject with `DEBUG_UNAVAILABLE`; the DAP backend, durable `debug/*` session events, and the `debugSessions` projection land with the later IDE-debugging tasks on this branch.
+- `terminate` and `disconnect` on a live session share one teardown path; the two distinct DAP requests, `restart` on compounds, and the full inspection surface arrive with the backend.
 - `DebugAttachPlan` and `DebugAttachTarget` are the seam's gap-filling definitions for the provider contract's referenced-but-underspecified attach shapes; their home is this package until the design document records them.
 
 -----
