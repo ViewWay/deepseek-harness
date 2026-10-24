@@ -85,6 +85,7 @@ const PACKAGE_LIBRARIES: Readonly<Record<string, string>> = {
   'packages/test-support/session-snapshot': 'Test infrastructure; mounts nothing into a product composition.',
   'packages/test-support/debug-fixture': 'Test fixture library; exports typed debug factories without a plugin entry.',
   'packages/test-support/fake-debug-adapter': 'Scripted in-memory DAP adapter for tests; no plugin entry.',
+  'packages/debug/debug-dap': 'DAP framing, transport, and request client library; no plugin entry.',
   'packages/test-support/agent-loop-testkit': 'Test helper library; mounts nothing into a product composition.',
   'packages/test-support/tool-testkit': 'Tool fixture library; exports helpers without a plugin entry.',
   'packages/test-support/client-runtime': 'Browser-side test infrastructure.',

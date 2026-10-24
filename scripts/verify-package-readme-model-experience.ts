@@ -43,6 +43,7 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
   'packages/debug/debug': 'The seam registry and frozen vocabulary delegate model rendering to dsh-tool-debug; the package registers no model-facing content.',
   'packages/test-support/debug-fixture': 'Fixture factories construct branded test values without making model requests.',
   'packages/test-support/fake-debug-adapter': 'The scripted DAP adapter serves tests only; it registers nothing model-facing.',
+  'packages/debug/debug-dap': 'The DAP client library transports and maps wire frames; it registers nothing model-facing.',
 }
 
 /**
