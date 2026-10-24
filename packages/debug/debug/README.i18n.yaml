@@ -3,29 +3,29 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/debug/debug/README.md
 /:
-  en: e58fa34908410930
-  zh: 71fcc5758698ef15
+  en: 931945971764a337
+  zh: 26be84a47355a0b1
 /deepseek-ai-dsh-debug:
   en: 48365d765d03dac5
   zh: 2124cb530e3d2367
 /deepseek-ai-dsh-debug/summary:
-  en: 62141d1aecafa759
-  zh: b9824438a544320f
+  en: 1b006898aab74539
+  zh: c92968573e0b9dd2
 /deepseek-ai-dsh-debug/table-of-contents:
   en: 9be40445baed505c
   zh: f94cf4a6add0a457
 /deepseek-ai-dsh-debug/use-this-package:
-  en: f4feac535d7609ec
-  zh: 47b84e7dbde51784
+  en: b6596e273285eaa5
+  zh: b77d556ca4490bdb
 /deepseek-ai-dsh-debug/understand-the-implementation:
   en: bc41c1df4aa1fe9d
   zh: f0b94aaf403700bd
 /deepseek-ai-dsh-debug/understand-the-implementation/source-map:
-  en: 39a4ccddb0de4d36
-  zh: cbc3098af2d8c3e0
+  en: cc760023d03fcc9d
+  zh: 877f5dc12ba71977
 /deepseek-ai-dsh-debug/known-limitations-and-deferred-work:
-  en: 36a7bf41d74e944c
-  zh: dcf5902ade954085
+  en: 04d0ba6057bff0cf
+  zh: b0ce4ff507ff74df
 /deepseek-ai-dsh-debug/dev-note:
   en: 5de1d6304e00c58f
   zh: 8d8225361cfa29e5

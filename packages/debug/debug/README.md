@@ -1,5 +1,5 @@
 ---
-description: "The debug capability seam (ctx.debug): frozen debug vocabulary and branded ids, typed DebugError failures, the session state machine, the provider registry, the workspace-scoped session registry with live events, and compounds, for users and maintainers composing IDE-level debugging."
+description: "The debug capability seam (ctx.debug): frozen debug vocabulary and branded ids, typed DebugError failures, the session state machine, the provider registry, the workspace-scoped session registry with live events, compounds, durable debug events, and the debugSessions projection, for users and maintainers composing IDE-level debugging."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Use `dsh-debug` to give the harness one debug capability seam. The package owns the frozen contracts every debug surface shares: branded ids (`DebugSessionId`, `DebugProviderId`, …), the request/provider/plan vocabulary, the typed `DebugError` taxonomy with stable codes, the five-state session state machine, the language-provider registry that reserves provider ids and file extensions atomically, the workspace-scoped session registry with live events and idempotent teardown, and compound configurations with a stop-all policy. Launch and attach reject with `DEBUG_UNAVAILABLE` until the DAP backend lands; durable `debug/*` session events and the `debugSessions` projection follow it.
+Use `dsh-debug` to give the harness one debug capability seam. The package owns the frozen contracts every debug surface shares: branded ids (`DebugSessionId`, `DebugProviderId`, …), the request/provider/plan vocabulary, the typed `DebugError` taxonomy with stable codes, the five-state session state machine, the language-provider registry that reserves provider ids and file extensions atomically, the workspace-scoped session registry with live events and idempotent teardown, compound configurations with a stop-all policy, the durable `debug/*` session events with the `debug` message source, and the `debugSessions` projection registered on `ctx.sessionProjections`. Launch and attach reject with `DEBUG_UNAVAILABLE` until the DAP backend lands; writers for the durable events arrive with it.
 
 ## Table of Contents
 
@@ -28,6 +28,8 @@ Mount this service to own `ctx.debug`. A language provider registers with its br
 The session state machine is the single transition table every session follows: `starting → running ⇄ stopped` with terminal absorption in `terminated`/`failed`, where repeated `terminate`/`disconnect` is idempotent. Illegal combinations throw `DebugError` with `DEBUG_INVALID_STATE`; callers branch on `code` and read `providerId`/`sessionId`/`workspaceId`/`detail` when present, never on `message`.
 
 Registered sessions live in the workspace-scoped registry behind `ctx.debug.sessions`: `list`/`get` read it, `events` publishes live `session/*`, `breakpoint/changed`, `console/output`, `adapter/output`, and `capabilities/changed` notifications only after the owning state committed, and teardown disposes exactly once before publishing `session/terminated`. Cross-workspace reads fail with `DEBUG_WORKSPACE_MISMATCH`. Compounds group an ordered session list with a stop-all policy and aggregated state.
+
+Durable debug facts use the `debug/session-started`, `debug/stopped`, `debug/session-ended`, and `debug/control` session events, all written with the `ignorable: true` envelope so readers without this plugin skip them safely; `SESSION_FORMAT_VERSION` does not change. Payloads carry only ids and audit facts — never variable values, memory, environment values, or DAP frames — and ids travel as their serialized string form, so replay never treats them as live handles. The `debugSessions` projection folds those events into a bounded view (Config: `maxProjectedSessions`, `maxProjectedStops`) for reconnection and session lists; it never enters the system prompt. The `debug` message source attributes model-visible notices this seam's consumers inject.
 
 -----
 
@@ -55,6 +57,8 @@ Registered sessions live in the workspace-scoped registry behind `ctx.debug.sess
 | [`src/registry.ts`](src/registry.ts) | Workspace-scoped session registry with commit-then-publish and idempotent removal |
 | [`src/session.ts`](src/session.ts) | `DebugSessionRecord` and the live-session teardown face |
 | [`src/compound.ts`](src/compound.ts) | Compound sessions with stop-all propagation and aggregated state |
+| [`src/session-events.ts`](src/session-events.ts) | Durable `debug/*` session-event payloads and the `debug` message source |
+| [`src/projection.ts`](src/projection.ts) | The bounded `debugSessions` projection and its retention-bounds factory |
 
 </details>
 
@@ -63,7 +67,7 @@ Registered sessions live in the workspace-scoped registry behind `ctx.debug.sess
 <a id="known-limitations-and-deferred-work"></a>
 ## Known Limitations and Deferred Work
 
-- Launch and attach reject with `DEBUG_UNAVAILABLE`; the DAP backend, durable `debug/*` session events, and the `debugSessions` projection land with the later IDE-debugging tasks on this branch.
+- Launch and attach reject with `DEBUG_UNAVAILABLE`, and no component writes the durable `debug/*` events yet; the DAP backend and durable event writing land with the later IDE-debugging tasks on this branch.
 - `terminate` and `disconnect` on a live session share one teardown path; the two distinct DAP requests, `restart` on compounds, and the full inspection surface arrive with the backend.
 - `DebugAttachPlan` and `DebugAttachTarget` are the seam's gap-filling definitions for the provider contract's referenced-but-underspecified attach shapes; their home is this package until the design document records them.
 

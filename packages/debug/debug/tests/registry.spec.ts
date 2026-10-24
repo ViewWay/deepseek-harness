@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
+import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import Debug, { DebugProviderId, type DebugProvider } from '@deepseek-ai/dsh-debug'
 
 function provider(id: string, extensions: string[]): DebugProvider {
@@ -22,6 +23,7 @@ function provider(id: string, extensions: string[]): DebugProvider {
 
 async function mount(): Promise<Debug> {
   const ctx = new Context()
+  await ctx.plugin(SessionProjectionRegistry)
   await ctx.plugin(Debug)
   return ctx.debug
 }

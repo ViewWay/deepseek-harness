@@ -22,7 +22,7 @@ kind: "package-library"
 <a id="use-this-package"></a>
 ## 使用本包
 
-导入被测值对应的工厂并传入一个小的稳定种子。`fixtureDebugSessionId(1)` 生成品牌化的 `DebugSessionId`，值为 `debug-0000000000000001`。种子必须是非负安全整数；其他值在构造时抛出 `RangeError`，让坏种子在所属测试处失败。
+导入被测值对应的工厂并传入一个小的稳定种子。`fixtureDebugSessionId(1)` 生成品牌化的 `DebugSessionId`，值为 `debug-0000000000000001`；`fixtureSessionId`、`fixtureThreadId` 与 `fixtureDebugCompoundId` 遵循同样的种子模式，`fixtureSessionHeader` 构造最小合法的 `SessionHeader`，`fixtureCompoundChild` 返回带可解析 `terminate` mock 的复合子项替身。种子必须是非负安全整数；其他值在构造时抛出 `RangeError`，让坏种子在所属测试处失败。
 
 -----
 

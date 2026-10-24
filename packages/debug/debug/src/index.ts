@@ -12,8 +12,12 @@
  */
 
 import { Context, Service } from '@deepseek-ai/cordis'
+import z from '@deepseek-ai/schemastery'
 import type { DebugProviderId, DebugSessionId } from './brand.ts'
 import { DebugError } from './error.ts'
+import { createDebugSessionsProjection } from './projection.ts'
+import type { DebugSessionsProjectionConfig } from './projection.ts'
+import { DEFAULT_MAX_PROJECTED_SESSIONS, DEFAULT_MAX_PROJECTED_STOPS } from './projection.ts'
 import type {
   DebugAttachRequest,
   DebugLaunchRequest,
@@ -84,6 +88,27 @@ export { LiveDebugSession, debugSessionInfoOf } from './session.ts'
 export type { DebugLiveSession, DebugSessionRecord, DebugSessionTeardown } from './session.ts'
 export { DebugCompound, DebugCompoundRegistry } from './compound.ts'
 export type { DebugCompoundChild } from './compound.ts'
+export type {
+  DebugControlEvent,
+  DebugMessageSource,
+  DebugSessionEndedEvent,
+  DebugSessionStartedEvent,
+  DebugStoppedEvent,
+} from './session-events.ts'
+export {
+  DEFAULT_MAX_PROJECTED_SESSIONS,
+  DEFAULT_MAX_PROJECTED_STOPS,
+  createDebugSessionsProjection,
+  debugSessionsProjection,
+} from './projection.ts'
+export type {
+  DebugProjectedSession,
+  DebugProjectedStop,
+  DebugSessionsProjectionConfig,
+  DebugSessionsProjectionDefinition,
+  DebugSessionsProjectionState,
+  DebugStoppedReason,
+} from './projection.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -93,6 +118,28 @@ declare module '@deepseek-ai/cordis' {
 
 /** A well-formed normalized extension: a dot followed by one or more non-dot, non-separator chars. */
 const EXTENSION_PATTERN = /^\.[^./\\]+$/
+
+/** Deployment configuration for the debug service. */
+export interface DebugConfig {
+  /** Newest sessions the `debugSessions` projection retains. */
+  maxProjectedSessions?: number
+  /** Stops the `debugSessions` projection retains per session. */
+  maxProjectedStops?: number
+}
+
+/**
+ * Validate one retention bound: a positive safe integer.
+ * @param value - the configured bound.
+ * @param field - the Config field name, for the failure message.
+ * @returns the validated bound.
+ * @throws RangeError for zero, negative, fractional, or unsafe values.
+ */
+function resolveBound(value: number, field: string): number {
+  if (!Number.isSafeInteger(value) || value < 1) {
+    throw new RangeError(`debug config "${field}" must be a positive safe integer, got ${value}`)
+  }
+  return value
+}
 
 /**
  * Normalize one provider extension to a lowercase leading-dot key (`.TS` → `.ts`).
@@ -112,15 +159,32 @@ function normalizeExtension(extension: string): string {
  * them together.
  */
 export class Debug extends Service {
+  static inject = ['sessionProjections']
+
+  /** Deployment-tunable retention bounds for the `debugSessions` projection. */
+  static Config: z<DebugConfig> = z.object({
+    maxProjectedSessions: z.number().default(DEFAULT_MAX_PROJECTED_SESSIONS),
+    maxProjectedStops: z.number().default(DEFAULT_MAX_PROJECTED_STOPS),
+  })
+
   private readonly providersById = new Map<DebugProviderId, DebugProvider>()
   private readonly extensionOwners = new Map<string, DebugProviderId>()
   private readonly liveSessions = new WeakMap<DebugSessionRecord, LiveDebugSession>()
+  private readonly projectionConfig: DebugSessionsProjectionConfig
 
   /** The session registry backing `list`/`get` and the live event source. */
   readonly sessions = new DebugSessionRegistry()
 
-  constructor(ctx: Context) {
+  constructor(ctx: Context, config: DebugConfig = {}) {
     super(ctx, 'debug')
+    this.projectionConfig = {
+      maxProjectedSessions: resolveBound(config.maxProjectedSessions ?? DEFAULT_MAX_PROJECTED_SESSIONS, 'maxProjectedSessions'),
+      maxProjectedStops: resolveBound(config.maxProjectedStops ?? DEFAULT_MAX_PROJECTED_STOPS, 'maxProjectedStops'),
+    }
+  }
+
+  protected async [Service.init](): Promise<void> {
+    await this.ctx.sessionProjections.register(createDebugSessionsProjection(this.projectionConfig))
   }
 
   /** Live debug events, published only after the owning state committed. */

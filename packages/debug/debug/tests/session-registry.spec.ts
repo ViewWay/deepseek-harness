@@ -5,6 +5,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
+import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import Debug from '@deepseek-ai/dsh-debug'
 import { fixtureDebugSessionId, fixtureSessionId } from '@deepseek-ai/dsh-debug-fixture'
 import { DebugProviderId } from '@deepseek-ai/dsh-debug'
@@ -100,6 +101,7 @@ describe('DebugSessionRegistry', () => {
 describe('Debug service session surface', () => {
   async function mount() {
     const ctx = new Context()
+    await ctx.plugin(SessionProjectionRegistry)
     await ctx.plugin(Debug)
     return { ctx, debug: ctx.debug }
   }

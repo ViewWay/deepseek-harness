@@ -22,7 +22,7 @@ Use `dsh-debug-fixture` to construct every `Debug*` test value through typed fac
 <a id="use-this-package"></a>
 ## Use this package
 
-Import the factory for the value under test and pass a small stable seed. `fixtureDebugSessionId(1)` yields `debug-0000000000000001` as a branded `DebugSessionId`. Seeds must be non-negative safe integers; anything else throws `RangeError` at construction so a broken seed fails the test that owns it.
+Import the factory for the value under test and pass a small stable seed. `fixtureDebugSessionId(1)` yields `debug-0000000000000001` as a branded `DebugSessionId`; `fixtureSessionId`, `fixtureThreadId`, and `fixtureDebugCompoundId` follow the same seeded pattern, `fixtureSessionHeader` builds a minimal valid `SessionHeader`, and `fixtureCompoundChild` returns a compound-child double with a resolving `terminate` mock. Seeds must be non-negative safe integers; anything else throws `RangeError` at construction so a broken seed fails the test that owns it.
 
 -----
 

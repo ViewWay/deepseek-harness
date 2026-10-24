@@ -12,14 +12,16 @@
 
 import { vi } from 'vitest'
 import type { Mock } from 'vitest'
-import { DebugCompoundId, DebugSessionId } from '@deepseek-ai/dsh-debug'
+import { DebugCompoundId, DebugSessionId, DebugThreadId } from '@deepseek-ai/dsh-debug'
 import type {
   DebugCompoundId as DebugCompoundIdValue,
   DebugSessionId as DebugSessionIdValue,
   DebugSessionState,
+  DebugThreadId as DebugThreadIdValue,
 } from '@deepseek-ai/dsh-debug'
 import { brandString } from '@deepseek-ai/dsh-brand'
-import type { SessionId } from '@deepseek-ai/dsh-session'
+import { SESSION_FORMAT_VERSION } from '@deepseek-ai/dsh-session'
+import type { SessionHeader, SessionId } from '@deepseek-ai/dsh-session'
 
 /**
  * Render one fixture seed as exactly 16 lowercase hex digits.
@@ -62,6 +64,30 @@ export function fixtureSessionId(seed: number): SessionId {
  */
 export function fixtureDebugCompoundId(seed: number): DebugCompoundIdValue {
   return DebugCompoundId(`debug-compound-${fixtureHex(seed)}`)
+}
+
+/**
+ * Build one deterministic debug thread id from a seed.
+ * @param seed - non-negative safe integer identifying the thread.
+ * @returns a branded id in the `thread-` + 16 lowercase hex digits format.
+ * @throws RangeError when the seed is negative or not a safe integer.
+ */
+export function fixtureThreadId(seed: number): DebugThreadIdValue {
+  return DebugThreadId(`thread-${fixtureHex(seed)}`)
+}
+
+/**
+ * Build one minimal valid session header for projection tests.
+ * @param idText - the header's session id text.
+ * @returns a header stamped with the current format version and no fork prefix.
+ */
+export function fixtureSessionHeader(idText: string): SessionHeader {
+  return {
+    version: SESSION_FORMAT_VERSION,
+    id: brandString<SessionId>(idText),
+    createdAt: 0,
+    isSeeded: false,
+  }
 }
 
 /** One compound child test double: identity, state, and an observable terminate. */
