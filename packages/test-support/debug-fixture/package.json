@@ -1,0 +1,35 @@
+{
+  "name": "@deepseek-ai/dsh-debug-fixture",
+  "description": "Typed fixture factories for debug-seam tests: deterministic branded ids in the debug-<16 hex> session-id format and Debug* value builders; tests never cast with as never or as unknown",
+  "version": "0.2.1-rc.3",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/test-support/debug-fixture"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-debug": "workspace:*"
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-debug": "workspace:*"
+  }
+}
