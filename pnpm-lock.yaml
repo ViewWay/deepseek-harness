@@ -7932,6 +7932,15 @@ importers:
         specifier: workspace:*
         version: link:../../subprocess/subprocess
 
+  packages/debug/debug-adapter-manager:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-debug':
+        specifier: workspace:*
+        version: link:../debug
+
   packages/debug/debug-dap:
     devDependencies:
       '@deepseek-ai/cordis':

@@ -470,6 +470,7 @@
     { "path": "./packages/deliverables/workspace-changes" },
     { "path": "./packages/debug/debug" },
     { "path": "./packages/debug/debug-dap" },
+    { "path": "./packages/debug/debug-adapter-manager" },
     { "path": "./packages/fs/fs" },
     { "path": "./packages/fs/fs-local" },
     { "path": "./packages/fs/fs-observation-policy" },

@@ -1,0 +1,31 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/debug/debug-adapter-manager/README.md
+/:
+  en: b27c00cb54e47259
+  zh: 7bf1e82bcaa2b36c
+/deepseek-ai-dsh-debug-adapter-manager:
+  en: 77d9bb08410a9f6b
+  zh: 0d37dc1fd0069a5e
+/deepseek-ai-dsh-debug-adapter-manager/summary:
+  en: 01408144bbd61eb4
+  zh: 23ec59d9b29202a1
+/deepseek-ai-dsh-debug-adapter-manager/table-of-contents:
+  en: 9be40445baed505c
+  zh: f94cf4a6add0a457
+/deepseek-ai-dsh-debug-adapter-manager/use-this-package:
+  en: 5938c3923b14ddd5
+  zh: 4c49e4df9c9414ff
+/deepseek-ai-dsh-debug-adapter-manager/understand-the-implementation:
+  en: c4d402b985eb4799
+  zh: a174ba1b6090d169
+/deepseek-ai-dsh-debug-adapter-manager/understand-the-implementation/source-map:
+  en: 2c4bf2551b7e4e63
+  zh: 6db98d3d518e3f18
+/deepseek-ai-dsh-debug-adapter-manager/known-limitations-and-deferred-work:
+  en: 00005c78d1756d60
+  zh: 029cf619b80247f2
+/deepseek-ai-dsh-debug-adapter-manager/dev-note:
+  en: 5de1d6304e00c58f
+  zh: 8d8225361cfa29e5
