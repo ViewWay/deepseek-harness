@@ -254,6 +254,244 @@ export interface DebugSource {
   readonly sourceReference?: DebugSourceReference
 }
 
+/** Step granularity the adapter applies; DAP's normalized set. */
+export type DebugSteppingGranularity = 'statement' | 'instruction' | 'line'
+
+/** Stack-trace paging: which frame slice to request. */
+export interface DebugStackTraceOptions {
+  /** Zero-based index of the first frame to return. */
+  readonly startFrame?: number
+  /** Maximum frame count to return. */
+  readonly levels?: number
+}
+
+/** One stack-trace page: the requested frames plus whole-stack totals. */
+export interface DebugStackTrace {
+  readonly frames: readonly DebugStackFrame[]
+  /** Total frames in the thread's stack, beyond any `levels` slice. */
+  readonly totalFrames: number
+  /** True when `levels` cut the returned slice short of `totalFrames`. */
+  readonly truncated: boolean
+}
+
+/** Variable paging: which slice of one variable container to request. */
+export interface DebugVariablesOptions {
+  /** Zero-based index of the first child to return. */
+  readonly start?: number
+  /** Maximum child count to return. */
+  readonly count?: number
+  /** Restrict to indexed or named children; omit for both. */
+  readonly filter?: 'indexed' | 'named'
+}
+
+/** One variables page: a single level of children plus container totals. */
+export interface DebugVariablesPage {
+  readonly variables: readonly DebugVariable[]
+  /** Total children in the container, beyond any `count` slice. */
+  readonly total: number
+  /** True when `count` cut the returned slice short of `total`. */
+  readonly truncated: boolean
+}
+
+/** Where an evaluation runs; DAP's complete context set. */
+export type DebugEvaluateContext = 'watch' | 'repl' | 'hover' | 'clipboard' | 'variables'
+
+/** One evaluation outcome: rendered value, optional type, and optional children. */
+export interface DebugEvaluateResult {
+  /** The rendered value string. */
+  readonly result: string
+  /** The adapter-reported type name. */
+  readonly type?: string
+  /** Children container; the no-children value when the result is a leaf. */
+  readonly variablesReference: DebugVariableReference
+}
+
+/** One completion candidate, normalized from the DAP item. */
+export interface DebugCompletion {
+  readonly label: string
+  /** Replacement text when it differs from the label. */
+  readonly text?: string
+  /** Zero-based replacement start offset. */
+  readonly start?: number
+  /** Replacement length. */
+  readonly length?: number
+}
+
+/** Request to set exception breakpoints by adapter filter names. */
+export interface DebugExceptionBreakpointRequest {
+  /** Adapter-declared exception filter ids to activate. */
+  readonly filters: readonly string[]
+}
+
+/** One function breakpoint as requested, before adapter verification. */
+export interface DebugFunctionBreakpointInput {
+  /** Function name to break on. */
+  readonly name: string
+  readonly condition?: string
+  readonly hitCondition?: string
+}
+
+/** Request to replace the session's function breakpoints. */
+export interface DebugFunctionBreakpointRequest {
+  readonly breakpoints: readonly DebugFunctionBreakpointInput[]
+}
+
+/** One data breakpoint as requested, addressing a watchable data id. */
+export interface DebugDataBreakpointInput {
+  /** Data id from a variable's data breakpoint info. */
+  readonly dataId: string
+  /** Bytes to watch, when the adapter sizes watches. */
+  readonly bytes?: number
+  readonly condition?: string
+  readonly hitCondition?: string
+}
+
+/** Request to replace the session's data breakpoints. */
+export interface DebugDataBreakpointRequest {
+  readonly breakpoints: readonly DebugDataBreakpointInput[]
+}
+
+/** One instruction breakpoint as requested, addressing disassembly output. */
+export interface DebugInstructionBreakpointInput {
+  /** Instruction address reference from a disassembly. */
+  readonly instructionReference: string
+  /** Negative or positive instruction offset from the reference. */
+  readonly offset?: number
+  readonly condition?: string
+  readonly hitCondition?: string
+}
+
+/** Request to replace the session's instruction breakpoints. */
+export interface DebugInstructionBreakpointRequest {
+  readonly breakpoints: readonly DebugInstructionBreakpointInput[]
+}
+
+/** Exception detail lines; no nested inner exceptions cross this seam. */
+export interface DebugExceptionDetails {
+  /** The exception's message text. */
+  readonly message?: string
+  readonly typeName?: string
+  readonly fullTypeName?: string
+  /** Expression that re-evaluates the exception in a watch. */
+  readonly evaluateName?: string
+  /** Formatted stack excerpt. */
+  readonly stack?: string
+}
+
+/** When the adapter breaks on exceptions; DAP's closed set. */
+export type DebugBreakMode = 'never' | 'always' | 'unhandled' | 'userUnhandled' | 'all'
+
+/** One stopped thread's exception, as `exceptionInfo` reports it. */
+export interface DebugExceptionInfo {
+  readonly exceptionId: string
+  readonly description?: string
+  readonly breakMode: DebugBreakMode
+  readonly details?: DebugExceptionDetails
+}
+
+/** One loaded module of the debugged process. */
+export interface DebugModule {
+  /** Adapter-assigned module id; numeric or symbolic per adapter. */
+  readonly id: number | string
+  readonly name: string
+  readonly path?: string
+  readonly version?: string
+}
+
+/** Module paging: which module slice to request. */
+export interface DebugModulesOptions {
+  /** Zero-based index of the first module to return. */
+  readonly startModule?: number
+  /** Maximum module count to return. */
+  readonly moduleCount?: number
+}
+
+/** One modules page plus whole-process totals. */
+export interface DebugModulesPage {
+  readonly modules: readonly DebugModule[]
+  /** Total loaded modules, beyond any `moduleCount` slice. */
+  readonly totalModules: number
+  readonly truncated: boolean
+}
+
+/** Source content fetched by `sourceReference`. */
+export interface DebugSourceContent {
+  readonly content: string
+  readonly mimeType?: string
+}
+
+/** Request to disassemble one instruction range. */
+export interface DebugDisassembleRequest {
+  readonly memoryReference: string
+  readonly instructionCount: number
+  /** Negative or positive first-instruction offset from the reference. */
+  readonly instructionOffset?: number
+  /** Byte offset from the reference. */
+  readonly offset?: number
+  /** Request symbol resolution when the adapter supports it. */
+  readonly resolveSymbols?: boolean
+}
+
+/** One disassembled instruction with optional symbol and source location. */
+export interface DebugDisassembledInstruction {
+  readonly address: string
+  readonly instruction: string
+  readonly symbol?: string
+  readonly location?: DebugSource
+  readonly line?: number
+  readonly column?: number
+}
+
+/** One disassembly page. */
+export interface DebugDisassembly {
+  readonly instructions: readonly DebugDisassembledInstruction[]
+  readonly truncated: boolean
+}
+
+/** Request to read target-process memory. */
+export interface DebugReadMemoryRequest {
+  readonly memoryReference: string
+  /** Byte count to read. */
+  readonly count: number
+  readonly offset?: number
+}
+
+/** Request to write target-process memory; `data` is base64 (DAP semantics). */
+export interface DebugWriteMemoryRequest {
+  readonly memoryReference: string
+  /** Base64-encoded bytes to write. */
+  readonly data: string
+  readonly offset?: number
+}
+
+/** Console-output category; DAP's output-event set. */
+export type DebugConsoleCategory = 'console' | 'important' | 'stdout' | 'stderr' | 'telemetry'
+
+/** One bounded console entry in the session's non-consuming ring. */
+export interface DebugConsoleEntry {
+  readonly category: DebugConsoleCategory
+  readonly output: string
+  /** Adapter-assigned grouping id, when the entry opens a group. */
+  readonly groupId?: number
+  /** Children container for structured output, when the adapter provides one. */
+  readonly variablesReference?: DebugVariableReference
+}
+
+/** Console paging by non-consuming offset cursor. */
+export interface DebugConsoleOptions {
+  /** Cursor from a previous page's `nextOffset`; omit to read from the oldest retained entry. */
+  readonly offset?: number
+  /** Maximum entry count to return. */
+  readonly limit?: number
+}
+
+/** One console page plus the cursor for the next read. */
+export interface DebugConsolePage {
+  readonly entries: readonly DebugConsoleEntry[]
+  readonly nextOffset: number
+  readonly truncated: boolean
+}
+
 /** The complete fact of one stop, as surfaces and tools report it. */
 export interface DebugStopSnapshot {
   readonly sessionId: DebugSessionId

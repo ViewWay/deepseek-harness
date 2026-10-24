@@ -50,7 +50,7 @@ kind: "package-reference"
 |---|---|
 | [`src/index.ts`](src/index.ts) | 插件入口：`Debug` 服务（`registerProvider`/`provider`/`providers`、`sessions`、`list`/`get`、`events`、launch/attach 守卫）与 `ctx.debug` 合并 |
 | [`src/brand.ts`](src/brand.ts) | 八个品牌化 id 类型及其构造器 |
-| [`src/types.ts`](src/types.ts) | 冻结的 seam 契约与 `DebugErrorCode` union |
+| [`src/types.ts`](src/types.ts) | 冻结的 seam 契约、`DebugErrorCode` union 与检视词汇（栈、变量、求值、断点、异常、模块、反汇编、内存、控制台） |
 | [`src/error.ts`](src/error.ts) | `DebugError`（`HarnessError` 子类），携带身份与修复上下文 |
 | [`src/state.ts`](src/state.ts) | 七事件转移表上的 `advanceDebugState` 与 `debugTerminalOutcome` |
 | [`src/events.ts`](src/events.ts) | live `DebugEvent` union、`DebugEventSource` 与 containment 派发总线 |
@@ -68,7 +68,7 @@ kind: "package-reference"
 ## 已知限制与延后工作
 
 - launch 与 attach 以 `DEBUG_UNAVAILABLE` 拒绝，且尚无组件写入耐久 `debug/*` 事件；DAP 后端与耐久事件写入随本分支后续 IDE 调试任务落地。
-- live 会话的 `terminate` 与 `disconnect` 共享一条拆除路径；两个不同的 DAP 请求、复合配置的 `restart` 与完整检视面随后端落地。
+- live 会话的 `terminate` 与 `disconnect` 共享一条拆除路径；两个不同的 DAP 请求、复合配置的 `restart` 与会话的检视方法（类型已由导出词汇定义）随后端落地。
 - `DebugAttachPlan` 与 `DebugAttachTarget` 是 provider 契约引用但未细化的 attach 形状的补缺定义；设计文档记录之前以本包为家。
 
 -----

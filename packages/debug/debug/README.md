@@ -50,7 +50,7 @@ Durable debug facts use the `debug/session-started`, `debug/stopped`, `debug/ses
 |---|---|
 | [`src/index.ts`](src/index.ts) | Plugin entry: `Debug` service (`registerProvider`/`provider`/`providers`, `sessions`, `list`/`get`, `events`, launch/attach guards), `ctx.debug` merge |
 | [`src/brand.ts`](src/brand.ts) | The eight branded id types and their constructors |
-| [`src/types.ts`](src/types.ts) | Frozen seam contracts and the `DebugErrorCode` union |
+| [`src/types.ts`](src/types.ts) | Frozen seam contracts, the `DebugErrorCode` union, and the inspection vocabulary (stack, variables, evaluate, breakpoints, exceptions, modules, disassembly, memory, console) |
 | [`src/error.ts`](src/error.ts) | `DebugError` (`HarnessError` subclass) with identity and remediation details |
 | [`src/state.ts`](src/state.ts) | `advanceDebugState` and `debugTerminalOutcome` over the seven-event transition table |
 | [`src/events.ts`](src/events.ts) | Live `DebugEvent` union, `DebugEventSource`, and the contained-dispatch bus |
@@ -68,7 +68,7 @@ Durable debug facts use the `debug/session-started`, `debug/stopped`, `debug/ses
 ## Known Limitations and Deferred Work
 
 - Launch and attach reject with `DEBUG_UNAVAILABLE`, and no component writes the durable `debug/*` events yet; the DAP backend and durable event writing land with the later IDE-debugging tasks on this branch.
-- `terminate` and `disconnect` on a live session share one teardown path; the two distinct DAP requests, `restart` on compounds, and the full inspection surface arrive with the backend.
+- `terminate` and `disconnect` on a live session share one teardown path; the two distinct DAP requests, `restart` on compounds, and the session's inspection methods (typed by the exported vocabulary) arrive with the backend.
 - `DebugAttachPlan` and `DebugAttachTarget` are the seam's gap-filling definitions for the provider contract's referenced-but-underspecified attach shapes; their home is this package until the design document records them.
 
 -----
