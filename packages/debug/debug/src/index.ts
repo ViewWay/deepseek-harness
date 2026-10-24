@@ -140,6 +140,13 @@ export type {
   DebugSessionsProjectionState,
   DebugStoppedReason,
 } from './projection.ts'
+export { expandDebugVariables, parseLaunchConfig } from './launch-config.ts'
+export type {
+  DebugCompoundConfiguration,
+  DebugLaunchConfig,
+  DebugLaunchConfigContext,
+  DebugLaunchConfiguration,
+} from './launch-config.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {

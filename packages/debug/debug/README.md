@@ -59,6 +59,7 @@ Durable debug facts use the `debug/session-started`, `debug/stopped`, `debug/ses
 | [`src/compound.ts`](src/compound.ts) | Compound sessions with stop-all propagation and aggregated state |
 | [`src/session-events.ts`](src/session-events.ts) | Durable `debug/*` session-event payloads and the `debug` message source |
 | [`src/projection.ts`](src/projection.ts) | The bounded `debugSessions` projection and its retention-bounds factory |
+| [`src/launch-config.ts`](src/launch-config.ts) | `.dsh/debug.json` parsing with the six-variable expansion and typed config failures |
 
 </details>
 

@@ -59,6 +59,7 @@ kind: "package-reference"
 | [`src/compound.ts`](src/compound.ts) | 复合会话：stop-all 传播与聚合状态 |
 | [`src/session-events.ts`](src/session-events.ts) | 耐久 `debug/*` Session 事件载荷与 `debug` 消息来源 |
 | [`src/projection.ts`](src/projection.ts) | 有界的 `debugSessions` 投影与保留上限工厂 |
+| [`src/launch-config.ts`](src/launch-config.ts) | `.dsh/debug.json` 解析：六变量展开与类型化配置失败 |
 
 </details>
 
