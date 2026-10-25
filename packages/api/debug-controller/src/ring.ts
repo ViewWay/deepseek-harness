@@ -10,6 +10,8 @@
  * @module @deepseek-ai/dsh-api-debug-controller/ring
  */
 
+import type { JsonValue } from '@deepseek-ai/dsh-debug'
+
 /** One sequenced debug event retained for replay. */
 export interface DebugEventRecord {
   /** Monotonic per-session `debugEventSeq`; a session's first event is 1. */
@@ -17,7 +19,7 @@ export interface DebugEventRecord {
   /** Session the event belongs to. */
   readonly sessionId: string
   /** Event payload as durable/wire-safe JSON. */
-  readonly payload: unknown
+  readonly payload: JsonValue
 }
 
 /** Outcome of one replay request. */
@@ -54,7 +56,7 @@ export class DebugEventRing {
    * @param payload - Event payload.
    * @returns The assigned `debugEventSeq`.
    */
-  append(sessionId: string, payload: unknown): number {
+  append(sessionId: string, payload: JsonValue): number {
     const next = (this.nextSeqBySession.get(sessionId) ?? 0) + 1
     this.nextSeqBySession.set(sessionId, next)
     this.records.push({ seq: next, sessionId, payload })

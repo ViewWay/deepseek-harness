@@ -15,7 +15,7 @@ import { Remote, TypertLookup, TypertRemoteService } from '@deepseek-ai/dsh-type
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-sandbox-policy'
 import { DebugError, DebugSessionId } from '@deepseek-ai/dsh-debug'
-import type { DebugBreakpointInput, DebugSessionInfo } from '@deepseek-ai/dsh-debug'
+import type { BreakpointSessionApplication, DebugBreakpointInput, DebugEvaluateResult, DebugResumeResult, DebugSessionInfo, DebugStackTrace, JsonValue } from '@deepseek-ai/dsh-debug'
 import { DebugEventRing } from './ring.ts'
 import type { DebugEventReplay } from './ring.ts'
 import { editorVersion, writeEditorText } from './editor-write.ts'
@@ -89,7 +89,7 @@ export class DebugController extends TypertRemoteService {
   }
 
   /** Record one live debug event into the replay ring. */
-  recordEvent(sessionId: string, payload: unknown): number {
+  recordEvent(sessionId: string, payload: JsonValue): number {
     return this.ring.append(sessionId, payload)
   }
 
@@ -139,7 +139,7 @@ export class DebugController extends TypertRemoteService {
    * @returns The resume outcome: stopped again, terminated, or running.
    */
   @Remote
-  executionContinue(sessionId: string): Promise<unknown> {
+  executionContinue(sessionId: string): Promise<DebugResumeResult> {
     return this.withSessionBackend(sessionId, backend => backend.continue())
   }
 
@@ -159,7 +159,7 @@ export class DebugController extends TypertRemoteService {
    * @returns The resume outcome.
    */
   @Remote
-  executionStep(sessionId: string, kind: 'over' | 'in' | 'out' | 'back'): Promise<unknown> {
+  executionStep(sessionId: string, kind: 'over' | 'in' | 'out' | 'back'): Promise<DebugResumeResult> {
     return this.withSessionBackend(sessionId, backend => backend.step(kind))
   }
 
@@ -169,7 +169,7 @@ export class DebugController extends TypertRemoteService {
    * @returns The stack page.
    */
   @Remote
-  inspectStackTrace(sessionId: string): Promise<unknown> {
+  inspectStackTrace(sessionId: string): Promise<DebugStackTrace> {
     return this.withSessionBackend(sessionId, backend => backend.currentThreadStack())
   }
 
@@ -180,7 +180,7 @@ export class DebugController extends TypertRemoteService {
    * @returns The evaluation result.
    */
   @Remote
-  inspectEvaluate(sessionId: string, expression: string): Promise<unknown> {
+  inspectEvaluate(sessionId: string, expression: string): Promise<DebugEvaluateResult> {
     return this.withSessionBackend(sessionId, backend => backend.evaluate(expression, 'repl'))
   }
 
@@ -192,7 +192,11 @@ export class DebugController extends TypertRemoteService {
    * @returns Per-session application results.
    */
   @Remote
-  breakpointsSetFile(workspaceId: string, path: string, breakpoints: readonly DebugBreakpointInput[]): Promise<unknown> {
+  breakpointsSetFile(
+    workspaceId: string,
+    path: string,
+    breakpoints: readonly DebugBreakpointInput[],
+  ): Promise<readonly BreakpointSessionApplication[]> {
     return this.ctx.debug.breakpoints.setFile(workspaceId, path, breakpoints)
   }
 
@@ -224,9 +228,9 @@ export class DebugController extends TypertRemoteService {
 
 /** The session-backend slice this controller drives. */
 export interface DebugSessionBackend {
-  continue(): Promise<unknown>
+  continue(): Promise<DebugResumeResult>
   pause(): Promise<void>
-  step(kind: 'over' | 'in' | 'out' | 'back'): Promise<unknown>
-  currentThreadStack(): Promise<unknown>
-  evaluate(expression: string, context: string): Promise<unknown>
+  step(kind: 'over' | 'in' | 'out' | 'back'): Promise<DebugResumeResult>
+  currentThreadStack(): Promise<DebugStackTrace>
+  evaluate(expression: string, context: string): Promise<DebugEvaluateResult>
 }

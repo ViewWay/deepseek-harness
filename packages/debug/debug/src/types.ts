@@ -602,3 +602,6 @@ export type DebugErrorCode =
   | 'DEBUG_SESSION_GONE' | 'DEBUG_WORKSPACE_MISMATCH' | 'DEBUG_APPROVAL_DENIED'
   | 'DEBUG_CONTROL_NOT_GRANTED' | 'DEBUG_INVALID_CONFIG' | 'DEBUG_BREAKPOINT_LIMIT'
   | 'DEBUG_UNKNOWN_OPERATION'
+
+// Task 7 seam additions that cross the Remote boundary (see breakpoints.ts).
+export type { BreakpointSessionApplication } from './breakpoints.ts'

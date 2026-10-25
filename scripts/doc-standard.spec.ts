@@ -84,6 +84,7 @@ const PACKAGE_LIBRARIES: Readonly<Record<string, string>> = {
   'packages/subprocess/win32-process': 'Low-level Win32 process and Job Object primitives.',
   'packages/test-support/session-snapshot': 'Test infrastructure; mounts nothing into a product composition.',
   'packages/test-support/debug-fixture': 'Test fixture library; exports typed debug factories without a plugin entry.',
+  'packages/test-support/debug-e2e': 'Real-adapter e2e harness; fixtures and skip guards without a plugin entry.',
   'packages/test-support/fake-debug-adapter': 'Scripted in-memory DAP adapter for tests; no plugin entry.',
   'packages/debug/debug-dap': 'DAP framing, transport, and request client library; no plugin entry.',
   'packages/test-support/agent-loop-testkit': 'Test helper library; mounts nothing into a product composition.',

@@ -45,6 +45,7 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
   'packages/test-support/fake-debug-adapter': 'The scripted DAP adapter serves tests only; it registers nothing model-facing.',
   'packages/debug/debug-dap': 'The DAP client library transports and maps wire frames; it registers nothing model-facing.',
   'packages/debug/debug-adapter-manager': 'Adapter manifests, probes, and installs never construct model input.',
+  'packages/test-support/debug-e2e': 'Real-adapter e2e fixtures and skip guards; constructs no model input.',
   'packages/debug/debug-node': 'The provider resolves launch plans and registers adapters; it constructs no model input.',
   'packages/debug/debug-python': 'The provider resolves launch plans; it constructs no model input.',
   'packages/debug/debug-go': 'The provider resolves launch plans and registers adapters; it constructs no model input.',

@@ -225,7 +225,7 @@ export class Debug extends Service {
   private readonly projectionConfig: DebugSessionsProjectionConfig
 
   /** The session registry backing `list`/`get` and the live event source. */
-  readonly sessions = new DebugSessionRegistry()
+  readonly sessions: DebugSessionRegistry = new DebugSessionRegistry()
 
   /** Validated, persisted, and session-applied breakpoint sets. */
   readonly breakpoints: BreakpointRegistry
