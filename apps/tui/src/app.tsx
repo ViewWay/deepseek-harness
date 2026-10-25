@@ -25,6 +25,39 @@ export interface TuiTranscriptSource {
   subscribe(callback: (transcript: TuiTranscript) => void): () => void
 }
 
+/**
+ * The optional debug pane service this app renders, declared structurally:
+ * the composition supplies the `tuiDebugPane` value built by
+ * `@deepseek-ai/dsh-tui-debug`, whose full face matches this subset.
+ */
+export interface TuiDebugPaneView {
+  /**
+   * The rendered pane lines as of now.
+   * @returns the plain-text lines in display order.
+   */
+  current(): readonly string[]
+  /**
+   * Subscribe to pane-line changes.
+   * @param listener - the listener receiving the next lines.
+   * @returns the disposer; after it runs the listener sees nothing further.
+   */
+  subscribe(listener: (lines: readonly string[]) => void): () => void
+  /**
+   * Run one raw `:` input line against the debug seam.
+   * @param line - the raw line, with or without the leading colon.
+   * @returns false when the line is not a debug command.
+   */
+  run(line: string): boolean
+  /**
+   * Run one debug function key as its mapped command.
+   * @param key - the decoded function-key name.
+   * @returns false when the key has no debug mapping.
+   */
+  runKey(key: string): boolean
+  /** Open the current source location in the configured editor. */
+  openEditor(): void
+}
+
 /** Props for the TUI app component. */
 export interface TuiAppProps {
   /** Submit one prompt through the session's send path. */
@@ -41,6 +74,11 @@ export interface TuiAppProps {
   readonly runningDebugSessions?: () => readonly string[]
   /** The debug pane; until `dsh-tui-debug` lands a placeholder renders instead. */
   readonly debugPane?: React.ReactNode
+  /**
+   * The composed `tuiDebugPane` service; when present its live pane replaces
+   * the placeholder, and input lines, function keys, and `o` route into it.
+   */
+  readonly debugPaneSource?: TuiDebugPaneView
   /** Layout restored from the persisted client state (default Chat). */
   readonly initialLayout?: TuiLayout
   /** Status-line label; the runner supplies session and model facts. */
@@ -88,6 +126,45 @@ function DebugPlaceholder(): React.ReactElement {
   )
 }
 
+/** The debug pane rendered from the composed `tuiDebugPane` service lines. */
+function DebugPaneView({ source }: { source: TuiDebugPaneView }): React.ReactElement {
+  const [lines, setLines] = useState<readonly string[]>(() => source.current())
+  useEffect(() => {
+    // Subscribe first, then re-sync: events landing between the initial
+    // snapshot and this commit become visible immediately.
+    const dispose = source.subscribe(setLines)
+    setLines(source.current())
+    return dispose
+  }, [source])
+  return (
+    <Box flexDirection="column" margin={1}>
+      {lines.map((line, index) => (
+        <Text key={index}>{line}</Text>
+      ))}
+    </Box>
+  )
+}
+
+/**
+ * Resolve the pane node to render: an explicit node wins, then the composed
+ * service's live view, then the placeholder.
+ * @param props - the app props carrying either pane form.
+ * @returns the pane node for the debug and split layouts.
+ */
+function debugPaneOf(props: Pick<TuiAppProps, 'debugPane' | 'debugPaneSource'>): React.ReactNode {
+  if (props.debugPane !== undefined) return props.debugPane
+  if (props.debugPaneSource === undefined) return <DebugPlaceholder />
+  try {
+    props.debugPaneSource.current()
+    return <DebugPaneView source={props.debugPaneSource} />
+  } catch (error) {
+    // A pane service that cannot answer must not take the terminal down;
+    // the placeholder keeps the layout usable.
+    void error
+    return <DebugPlaceholder />
+  }
+}
+
 /** The TUI app component. */
 export function TuiApp(props: TuiAppProps): React.ReactElement {
   const [transcript, setTranscript] = useState<TuiTranscript>(() => props.transcriptSource.current())
@@ -100,6 +177,12 @@ export function TuiApp(props: TuiAppProps): React.ReactElement {
   const [exitConfirm, setExitConfirm] = useState<readonly string[] | undefined>(undefined)
   const [approvalPending, setApprovalPending] = useState<TuiApprovalRequest | undefined>(() => props.approvals?.pending())
   const clientState = useRef(createTuiClientState())
+  // The raw stdin listener outlives renders; the refs carry the focus and
+  // props it must read at event time.
+  const focusRef = useRef<TuiFocus>('input')
+  focusRef.current = focus
+  const propsRef = useRef(props)
+  propsRef.current = props
 
   const applyLayout = useCallback((next: TuiLayout): void => {
     clientState.current.setLayout(next)
@@ -124,6 +207,7 @@ export function TuiApp(props: TuiAppProps): React.ReactElement {
       if (key === undefined) return
       if (key === 'f6') applyLayout('debug')
       else if (key === 'f7') applyLayout('split')
+      else if (focusRef.current === 'debug') propsRef.current.debugPaneSource?.runKey(key)
     }
     stdin.on('data', onData)
     return () => { stdin.off('data', onData) }
@@ -184,13 +268,20 @@ export function TuiApp(props: TuiAppProps): React.ReactElement {
       }
       return
     }
+    // In debug focus, `o` opens the current source location instead of typing.
+    if (focusRef.current === 'debug' && rawInput === 'o') {
+      props.debugPaneSource?.openEditor()
+      return
+    }
     const decoded = parseTuiKey(rawInput, key)
     switch (decoded.kind) {
       case 'ctrl-c':
         requestExit()
         return
       case 'tab':
-        if (props.debugPane !== undefined) setFocus(previous => previous === 'input' ? 'debug' : 'input')
+        if (props.debugPane !== undefined || props.debugPaneSource !== undefined) {
+          setFocus(previous => previous === 'input' ? 'debug' : 'input')
+        }
         return
       case 'return': {
         const line = inputRef.current
@@ -214,7 +305,7 @@ export function TuiApp(props: TuiAppProps): React.ReactElement {
   }, [approvalPending, exitConfirm, props, requestExit, submitLine])
   useInput(handleKey)
 
-  const debugPane = props.debugPane ?? <DebugPlaceholder />
+  const debugPane = debugPaneOf(props)
   const body = layout === 'debug'
     ? debugPane
     : layout === 'split'
@@ -230,7 +321,9 @@ export function TuiApp(props: TuiAppProps): React.ReactElement {
     <Box flexDirection="column">
       <Text dimColor>
         {props.statusLabel ?? 'dsh tui'} · {layout}
-        {props.debugPane !== undefined && focus === 'debug' ? ' · focus: debug (Tab)' : ''}
+        {(props.debugPane !== undefined || props.debugPaneSource !== undefined) && focus === 'debug'
+          ? ' · focus: debug (Tab)'
+          : ''}
       </Text>
       <Box flexDirection="column" flexGrow={1}>{body}</Box>
       <Text dimColor>─{'─'.repeat(38)}─</Text>

@@ -27,7 +27,7 @@ import type { TuiSession } from './session.ts'
 const HELP_LINES: readonly string[] = [
   ':chat · :split · :debug   switch layout (F6 debug, F7 split)',
   ':q                         quit (confirms while debug sessions run)',
-  'debug commands land with @deepseek-ai/dsh-tui-debug',
+  'debug commands run through the composed tui-debug pane',
 ]
 
 /**
@@ -89,6 +89,9 @@ export function mountTuiApp(ctx: Context): Promise<void> {
       }
       const fs = ctx.get('fs')
       const cwd = fs === undefined ? process.cwd() : fs.processPath(await fs.resolve('.'))
+      // The tui-debug plugin provides this service when ctx.debug is present;
+      // the string read stays outside the typed surface by design.
+      const paneSource = ctx.get('tuiDebugPane')
 
       let agent: Agent | undefined
       let failureNotice: string | undefined
@@ -141,11 +144,14 @@ export function mountTuiApp(ctx: Context): Promise<void> {
 
       const instance = renderTuiApp({
         onPrompt: text => session.submit(text),
-        onCommand: (name: string): void => {
+        onCommand: (name: string, args: readonly string[]): void => {
           if (name === 'help') {
             for (const line of HELP_LINES) notice(line)
             return
           }
+          // Non-app-owned `:` lines go to the debug pane first; false falls
+          // through to the unknown-command notice.
+          if (paneSource?.run(`:${[name, ...args].join(' ')}`)) return
           notice(`unknown command :${name}; :help lists the built-ins`)
         },
         onExit: (): void => {
@@ -177,6 +183,7 @@ export function mountTuiApp(ctx: Context): Promise<void> {
             .filter(info => info.state !== 'terminated' && info.state !== 'failed')
             .map(info => info.id)
         },
+        ...(paneSource !== undefined ? { debugPaneSource: paneSource } : {}),
         statusLabel: `session ${sessionId} · ${modelLabel}`,
       })
       resolve()
