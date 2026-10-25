@@ -4,6 +4,13 @@
   "include": ["src"],
   "references": [
     { "path": "../../../vendor/cosmokit" },
-    { "path": "../../../vendor/cordis" }
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../core/session" },
+    { "path": "../../debug/debug" },
+    { "path": "../../debug/debug-dap" },
+    { "path": "../../debug/debug-node" },
+    { "path": "../../debug/debug-python" },
+    { "path": "../../fs/fs-local" },
+    { "path": "../../subprocess/subprocess-local" }
   ]
 }
