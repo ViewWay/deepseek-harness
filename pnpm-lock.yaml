@@ -7903,9 +7903,6 @@ importers:
 
   packages/debug/debug:
     dependencies:
-      '@deepseek-ai/dsh-storage-domain':
-        specifier: workspace:*
-        version: link:../../storage/storage-domain
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -7931,6 +7928,9 @@ importers:
       '@deepseek-ai/dsh-session-projection':
         specifier: workspace:*
         version: link:../../session/session-projection
+      '@deepseek-ai/dsh-storage-domain':
+        specifier: workspace:*
+        version: link:../../storage/storage-domain
       '@deepseek-ai/dsh-subprocess':
         specifier: workspace:*
         version: link:../../subprocess/subprocess
@@ -7967,6 +7967,18 @@ importers:
       '@deepseek-ai/dsh-debug-adapter-manager':
         specifier: workspace:*
         version: link:../debug-adapter-manager
+      '@deepseek-ai/dsh-debug-fixture':
+        specifier: workspace:*
+        version: link:../../test-support/debug-fixture
+
+  packages/debug/debug-python:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-debug':
+        specifier: workspace:*
+        version: link:../debug
       '@deepseek-ai/dsh-debug-fixture':
         specifier: workspace:*
         version: link:../../test-support/debug-fixture

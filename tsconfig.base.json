@@ -430,6 +430,7 @@
       "@deepseek-ai/dsh-debug-dap": ["./packages/debug/debug-dap/src"],
       "@deepseek-ai/dsh-debug-fixture": ["./packages/test-support/debug-fixture/src"],
       "@deepseek-ai/dsh-debug-node": ["./packages/debug/debug-node/src"],
+      "@deepseek-ai/dsh-debug-python": ["./packages/debug/debug-python/src"],
       "@deepseek-ai/dsh-deepseek-llm-api-extensions": ["./packages/llm/deepseek-llm-api-extensions/src"],
       "@deepseek-ai/dsh-deliverable-file-references": ["./packages/deliverables/deliverable-file-references/src"],
       "@deepseek-ai/dsh-deque": ["./packages/util/deque/src"],

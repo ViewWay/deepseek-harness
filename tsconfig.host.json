@@ -472,6 +472,7 @@
     { "path": "./packages/debug/debug-dap" },
     { "path": "./packages/debug/debug-adapter-manager" },
     { "path": "./packages/debug/debug-node" },
+    { "path": "./packages/debug/debug-python" },
     { "path": "./packages/fs/fs" },
     { "path": "./packages/fs/fs-local" },
     { "path": "./packages/fs/fs-observation-policy" },

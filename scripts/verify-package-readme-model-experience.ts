@@ -46,6 +46,7 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
   'packages/debug/debug-dap': 'The DAP client library transports and maps wire frames; it registers nothing model-facing.',
   'packages/debug/debug-adapter-manager': 'Adapter manifests, probes, and installs never construct model input.',
   'packages/debug/debug-node': 'The provider resolves launch plans and registers adapters; it constructs no model input.',
+  'packages/debug/debug-python': 'The provider resolves launch plans; it constructs no model input.',
 }
 
 /**
