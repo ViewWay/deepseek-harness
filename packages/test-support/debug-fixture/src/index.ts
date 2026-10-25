@@ -25,7 +25,8 @@ import type {
   ResolvedDebugAdapter,
 } from '@deepseek-ai/dsh-debug'
 import { brandString } from '@deepseek-ai/dsh-brand'
-import { FileSystem } from '@deepseek-ai/dsh-fs'
+import { FileSystem, FsVersion } from '@deepseek-ai/dsh-fs'
+import type { FsVersion as FsVersionValue } from '@deepseek-ai/dsh-fs'
 import { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
 import type { SubprocessHandle, SubprocessSpawnSpec } from '@deepseek-ai/dsh-subprocess'
 import { SESSION_FORMAT_VERSION } from '@deepseek-ai/dsh-session'
@@ -391,4 +392,14 @@ export function fixtureLaunchEnvironment(
 ): FixtureDebugEnvironment & { subprocess: FakeLaunchSubprocessRuntime } {
   const base = fixtureDebugEnvironment(init)
   return { ...base, subprocess: new FakeLaunchSubprocessRuntime() }
+}
+
+
+/**
+ * Brand one fixture file version for editor-save guard tests.
+ * @param text - the opaque version text.
+ * @returns the branded version value.
+ */
+export function fixtureFsVersion(text: string): FsVersionValue {
+  return FsVersion(text)
 }

@@ -11,14 +11,33 @@
  * @module @deepseek-ai/dsh-api-debug-controller
  */
 import { Context } from '@deepseek-ai/cordis'
-import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import { Remote, TypertLookup, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import type { SessionId } from '@deepseek-ai/dsh-session'
+import type {} from '@deepseek-ai/dsh-sandbox-policy'
 import { DebugError, DebugSessionId } from '@deepseek-ai/dsh-debug'
 import type { DebugBreakpointInput, DebugSessionInfo } from '@deepseek-ai/dsh-debug'
 import { DebugEventRing } from './ring.ts'
 import type { DebugEventReplay } from './ring.ts'
+import { editorVersion, writeEditorText } from './editor-write.ts'
+import type { EditorWriteResult } from './editor-write.ts'
 
 /** Default replay retention; compositions pass their configured bound. */
 export const DEFAULT_DEBUG_EVENT_RING_LIMIT = 500
+
+/** Host-resolved editor scope: the Session identity and its workspace root. */
+export interface DebugEditorScope {
+  /** Session identity received on the wire. */
+  readonly sessionId: SessionId
+  /** Session workspace root, resolved from the session header host-side. */
+  readonly workspaceRoot: string
+}
+
+declare module '@deepseek-ai/dsh-typert-protocol' {
+  interface TypertLookupMap {
+    /** Resolve a Session id to its editor workspace root without loading its event body. */
+    debugEditorScope: TypertLookup<DebugEditorScope, SessionId>
+  }
+}
 
 /** Remote-layer flow control: the caller's event cursor fell out of the ring. */
 export class DebugEventCursorExpiredError extends Error {
@@ -36,7 +55,7 @@ export class DebugEventCursorExpiredError extends Error {
 
 /** Remote-facing debug controller. */
 export class DebugController extends TypertRemoteService {
-  static inject = ['debug']
+  static inject = ['debug', 'fs', 'sandboxPolicy', 'sessions', 'typert']
 
   private readonly ring: DebugEventRing
 
@@ -46,11 +65,63 @@ export class DebugController extends TypertRemoteService {
   constructor(ctx: Context, ringLimit: number = DEFAULT_DEBUG_EVENT_RING_LIMIT) {
     super(ctx, 'debugController', { namespace: 'debug' })
     this.ring = new DebugEventRing(ringLimit)
+    ctx.inject(['sessions', 'typert', 'sandboxPolicy'], (scope) => {
+      scope.typert.lookups.register('debugEditorScope', {
+        parameter: 'debugEditorScope',
+        wire: 'debugEditorScopeId',
+        resource: 'session',
+        hostTypeSymbol: '@deepseek-ai/dsh-api-debug-controller#DebugEditorScope',
+        wireTypeSymbol: '@deepseek-ai/dsh-session/types#SessionId',
+        resolve: async (sessionId) => {
+          const live = scope.sessions.get(sessionId)?.header
+          const stored = live === undefined
+            ? await scope.get('sessionPersistence')?.stat(sessionId)
+            : undefined
+          const header = live ?? stored?.header
+          if (header === undefined) return undefined
+          return {
+            sessionId,
+            workspaceRoot: header.cwd ?? scope.sandboxPolicy.workspaceRoot,
+          }
+        },
+      })
+    })
   }
 
   /** Record one live debug event into the replay ring. */
   recordEvent(sessionId: string, payload: unknown): number {
     return this.ring.append(sessionId, payload)
+  }
+
+  /**
+   * Save one editor file through the filesystem's version guard. The
+   * workspace root arrives host-resolved from the session header via the
+   * `debugEditorScope` lookup — the wire carries only the session identity,
+   * never a client-chosen root.
+   * @param debugEditorScope - header-derived workspace root for the session
+   *   identity on the wire.
+   * @param path - Workspace-relative path; escaping paths reject before any
+   *   filesystem access.
+   * @param content - Full replacement text.
+   * @param expectedVersion - The version the editor opened, or null to
+   *   create-only (an existing target conflicts and is never overwritten).
+   * @returns The new version, byte count, and create/update outcome.
+   */
+  @Remote
+  writeText(
+    debugEditorScope: DebugEditorScope,
+    path: string,
+    content: string,
+    expectedVersion: string | null,
+  ): Promise<EditorWriteResult> {
+    return writeEditorText({
+      sessionId: String(debugEditorScope.sessionId),
+      workspaceRoot: debugEditorScope.workspaceRoot,
+      path,
+      content,
+      expectedVersion: expectedVersion === null ? null : editorVersion(expectedVersion),
+      fs: this.ctx.fs,
+    })
   }
 
   /**

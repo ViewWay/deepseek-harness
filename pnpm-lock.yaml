@@ -517,6 +517,9 @@ importers:
       '@deepseek-ai/dsh-tool-workspace-dependencies':
         specifier: workspace:*
         version: link:../../packages/skill/tool-workspace-dependencies
+      '@deepseek-ai/dsh-tui-app':
+        specifier: workspace:*
+        version: link:../../packages/bundle/tui-app
       '@deepseek-ai/dsh-web-app':
         specifier: workspace:*
         version: link:../../packages/bundle/web-app
@@ -933,6 +936,8 @@ importers:
         specifier: ^4.22.4
         version: 4.23.13
 
+  apps/tui: {}
+
   apps/web:
     dependencies:
       '@deepseek-ai/dsh-message-quotes':
@@ -1324,6 +1329,12 @@ importers:
       '@deepseek-ai/dsh-debug':
         specifier: workspace:*
         version: link:../../debug/debug
+      '@deepseek-ai/dsh-sandbox-policy':
+        specifier: workspace:*
+        version: link:../../sandbox/sandbox-policy
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
 
   packages/api/gateway:
     dependencies:
@@ -2891,6 +2902,12 @@ importers:
       '@deepseek-ai/dsh-working-directory':
         specifier: workspace:*
         version: link:../../session/working-directory
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/bundle/tui-app:
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:~

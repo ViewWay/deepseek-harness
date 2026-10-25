@@ -25,4 +25,4 @@ Remote 调试调用不组装任何模型请求，提示词前缀与缓存上下�
 
 - **后端解析基于注册** — 执行与检查方法要求组合层接线 `ctx.debug.registerBackend`；未注册后端的会话以 `DEBUG_SESSION_GONE` 应答。
 - **续接直播归组合层** — `events` 只回放保留历史；向已连接客户端流式推送新事件随 Remote 事件通道接线落地。
-- **不做编辑器写入** — `writeText` 与版本守卫文件保存属于 Task 17 控制器的面。
+- **编辑器保存是唯一写路径** — `writeText` 完全委托 `ctx.fs` 版本守卫（冲突 `FS_STALE_VERSION`，expected version 为 `null` 走创建不覆盖）；逃逸路径在任何文件系统访问前以 `FS_PERMISSION_DENIED` 拒绝，不经此面暴露 rename/delete/mkdir。

@@ -25,4 +25,4 @@ These limits define where the controller needs care. They are current package co
 
 - **Backend resolution is registration-based** — `ctx.debug.registerBackend` must be wired by the composition for execution and inspection methods; sessions without a registered backend answer `DEBUG_SESSION_GONE`.
 - **Live continuation is composition-owned** — `events` replays retained history; streaming new events to a connected client arrives with the Remote event channel wiring.
-- **No editor writes** — `writeText` and version-guarded file saves are the Task 17 controller's surface.
+- **Editor saves are the only write** — `writeText` delegates entirely to `ctx.fs`'s version guard (`FS_STALE_VERSION` on conflict, `null` expected version creates without overwriting); escaping paths reject with `FS_PERMISSION_DENIED` before any filesystem access, and no rename/delete/mkdir crosses this seam.
