@@ -374,6 +374,119 @@ describe('DapDebugBackend lifecycle', () => {
       expect(result.rejected[0]).toMatchObject({ requestedLine: 4, actualLine: 6, verified: false, message: 'moved to next statement' })
     })
 
+    it('covers failure messages, double settle, and reverse-request routing', async () => {
+      const waiters: { resolve: (result: IteratorResult<Uint8Array>) => void }[] = []
+      const queued: IteratorResult<Uint8Array>[] = []
+      let wireSeq = 500
+      const deliver = (message: Record<string, unknown>): void => {
+        const bytes = encodeDapFrame(message as never)
+        const waiter = waiters.shift()
+        if (waiter === undefined) queued.push({ done: false, value: bytes })
+        else waiter.resolve({ done: false, value: bytes })
+      }
+      const sent: { command: string; request_seq: number }[] = []
+      const transport: DebugTransport = {
+        input: {
+          [Symbol.asyncIterator]() {
+            return {
+              next() {
+                const ready = queued.shift()
+                if (ready !== undefined) return Promise.resolve(ready)
+                return new Promise<IteratorResult<Uint8Array>>((resolve) => {
+                  waiters.push({ resolve })
+                })
+              },
+            }
+          },
+        },
+        async write(bytes: Uint8Array) {
+          for (const message of decodeDapFrames(bytes).messages) {
+            if (message.type !== 'request') continue
+            sent.push({ command: message.command, request_seq: message.seq })
+            if (message.command === 'initialize') {
+              deliver({ seq: wireSeq++, type: 'response', request_seq: message.seq, success: false, command: 'initialize' })
+              continue
+            }
+            deliver({ seq: wireSeq++, type: 'response', request_seq: message.seq, success: true, command: message.command, body: {} })
+          }
+        },
+        async end() {},
+      }
+      const backend = new DapDebugBackend(new DapClient(transport), {
+        sessionId: DebugSessionId('debug-0000000000000003'),
+        workspaceRoot: '/ws',
+        requestTimeoutMs: 100,
+        resumeTimeoutMs: 20,
+        consoleLimit: 4,
+      })
+      await expect(backend.setVariable(DebugVariableReference('1'), 'x', '1')).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
+      await expect(backend.start(HANDSHAKE_PLAN)).rejects.toMatchObject({ code: 'DEBUG_LAUNCH_FAILED' })
+      await backend.disconnect()
+    })
+
+    it('covers stop descriptions, console output fallbacks, and empty workspace roots', async () => {
+      const { backend } = mountBackend({
+        stops: [
+          { reason: 'exception', threadId: 1, line: 2, description: 'boom' },
+          { reason: 'breakpoint', threadId: 1, line: 3 },
+        ],
+        delayedEvent: { afterMs: 5, event: 'output', body: { category: 'stdout' } },
+      }, { workspaceRoot: '' })
+      await backend.start(HANDSHAKE_PLAN)
+      const resume = await backend.continue()
+      expect(resume).toMatchObject({ kind: 'stopped', stop: { reason: 'breakpoint', source: { workspaceRelativePath: '/ws/a.ts', absolutePath: '/ws/a.ts' } } })
+      await new Promise(resolve => setTimeout(resolve, 15))
+      const consolePage = await backend.console()
+      expect(consolePage.entries[0]).toMatchObject({ category: 'stdout', output: '' })
+    })
+
+    it('covers non-object wire entries and present optional arguments', async () => {
+      const scripted = mountScripted({
+        initialize: [{ response: { capabilities: {
+          supportsSetVariable: true,
+          supportsSetExpression: true,
+          supportsCompletionsRequest: true,
+          supportsExceptionInfoRequest: true,
+          supportsModulesRequest: true,
+          supportsLoadedSourcesRequest: true,
+          supportsDisassembleRequest: true,
+        } } }, { event: { name: 'initialized' } }],
+        launch: [{ response: {} }, { event: { name: 'stopped', body: { reason: 'breakpoint', threadId: 3 } } }],
+        stackTrace: [{ response: { stackFrames: [{ id: 7, name: 'f' }], totalFrames: 2 } }],
+        threads: [{ response: { threads: [7] } }],
+        scopes: [{ response: { scopes: ['not-an-object'] } }],
+        evaluate: [{ response: { result: 'r', type: 't', variablesReference: 9 } }],
+        setExpression: [{ response: { result: 'ok', type: 't', variablesReference: 0 } }],
+        setVariable: [{ response: { name: 'x', value: '1', type: 't', variablesReference: 0 } }],
+        completions: [{ response: { targets: [3] } }],
+        modules: [{ response: { modules: [4], totalModules: 2 } }],
+        loadedSources: [{ response: { sources: [5] } }],
+        disassemble: [{ response: { instructions: [6] } }],
+      })
+      const backend = scripted.backend
+      await backend.start(HANDSHAKE_PLAN)
+
+      await expect(backend.threads()).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+      const trace = await backend.stackTrace(DebugThreadId('3'), { startFrame: 0, levels: 1 })
+      expect(trace).toMatchObject({ totalFrames: 2, truncated: true })
+      const frame = trace.frames[0]?.id ?? DebugFrameId('7')
+      await expect(backend.scopes(frame)).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+      const evaluated = await backend.evaluate('e', 'repl', frame)
+      expect(evaluated).toMatchObject({ result: 'r', type: 't' })
+      await expect(backend.setExpression('x', '1', frame)).resolves.toMatchObject({ result: 'ok', type: 't' })
+      await expect(backend.setVariable(DebugVariableReference('9'), 'x', '1')).resolves.toMatchObject({ name: 'x', type: 't' })
+      await expect(backend.completions('t', 1, frame)).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+      await expect(backend.modules({ startModule: 0, moduleCount: 1 })).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+      await expect(backend.loadedSources()).resolves.toEqual([{ workspaceRelativePath: '', absolutePath: '' }])
+      await expect(backend.disassemble({
+        memoryReference: '0x1',
+        instructionCount: 1,
+        instructionOffset: -1,
+        offset: 0,
+        resolveSymbols: true,
+      })).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+    })
+
     it('maps empty-object bodies and absent optional fields', async () => {
       const empty: { readonly [key: string]: never } = {}
       const capabilities = {
