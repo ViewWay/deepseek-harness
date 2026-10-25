@@ -51,6 +51,15 @@ export class DebugSessionRegistry {
   }
 
   /**
+   * Publish one committed debug fact onto the live event source; owners of
+   * non-session events (for example `breakpoint/changed`) route through here.
+   * @param event - the committed fact to publish.
+   */
+  publish(event: DebugEvent): void {
+    this.bus.publish(event)
+  }
+
+  /**
    * Register one session record; publishes `session/starting` after the insert commits.
    * @param record - the record to register.
    * @throws {@link DebugError} `DEBUG_CONFLICT` when the id is already registered.

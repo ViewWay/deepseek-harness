@@ -27,6 +27,7 @@ import type {
 } from './types.ts'
 import type { DebugEventSource } from './events.ts'
 import { DebugSessionRegistry } from './registry.ts'
+import { BreakpointRegistry, DEFAULT_MAX_BREAKPOINTS_PER_FILE, MemoryBreakpointStore } from './breakpoints.ts'
 import { LiveDebugSession, debugSessionInfoOf } from './session.ts'
 import type { DebugLiveSession, DebugSessionRecord } from './session.ts'
 
@@ -110,6 +111,10 @@ export type {
   ResolvedDebugAdapter,
 } from './types.ts'
 export { advanceDebugState, debugTerminalOutcome } from './state.ts'
+export { BreakpointRegistry, DEFAULT_MAX_BREAKPOINTS_PER_FILE, normalizeWorkspacePath } from './breakpoints.ts'
+export type { BreakpointApplier, BreakpointRegistryOptions, BreakpointSessionApplication } from './breakpoints.ts'
+export { MemoryBreakpointStore, StorageBreakpointStore, breakpointDomain } from './breakpoint-store.ts'
+export type { BreakpointStore } from './breakpoint-store.ts'
 export type { DebugSessionOutcome, DebugStateEvent } from './state.ts'
 export { DebugEventBus } from './events.ts'
 export type { DebugEvent, DebugEventActor, DebugEventFilter, DebugEventSource } from './events.ts'
@@ -163,6 +168,8 @@ export interface DebugConfig {
   maxProjectedSessions?: number
   /** Stops the `debugSessions` projection retains per session. */
   maxProjectedStops?: number
+  /** Breakpoints one file may hold before `setBreakpoints` rejects. */
+  maxBreakpointsPerFile?: number
 }
 
 /**
@@ -203,6 +210,7 @@ export class Debug extends Service {
   static Config: z<DebugConfig> = z.object({
     maxProjectedSessions: z.number().default(DEFAULT_MAX_PROJECTED_SESSIONS),
     maxProjectedStops: z.number().default(DEFAULT_MAX_PROJECTED_STOPS),
+    maxBreakpointsPerFile: z.number().default(DEFAULT_MAX_BREAKPOINTS_PER_FILE),
   })
 
   private readonly providersById = new Map<DebugProviderId, DebugProvider>()
@@ -213,12 +221,21 @@ export class Debug extends Service {
   /** The session registry backing `list`/`get` and the live event source. */
   readonly sessions = new DebugSessionRegistry()
 
+  /** Validated, persisted, and session-applied breakpoint sets. */
+  readonly breakpoints: BreakpointRegistry
+
   constructor(ctx: Context, config: DebugConfig = {}) {
     super(ctx, 'debug')
     this.projectionConfig = {
       maxProjectedSessions: resolveBound(config.maxProjectedSessions ?? DEFAULT_MAX_PROJECTED_SESSIONS, 'maxProjectedSessions'),
       maxProjectedStops: resolveBound(config.maxProjectedStops ?? DEFAULT_MAX_PROJECTED_STOPS, 'maxProjectedStops'),
     }
+    this.breakpoints = new BreakpointRegistry(new MemoryBreakpointStore(), {
+      maxPerFile: resolveBound(config.maxBreakpointsPerFile ?? DEFAULT_MAX_BREAKPOINTS_PER_FILE, 'maxBreakpointsPerFile'),
+      publish: (event) => {
+        this.sessions.publish(event)
+      },
+    })
   }
 
   protected async [Service.init](): Promise<void> {
