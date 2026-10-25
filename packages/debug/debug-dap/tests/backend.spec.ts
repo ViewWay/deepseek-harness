@@ -374,6 +374,138 @@ describe('DapDebugBackend lifecycle', () => {
       expect(result.rejected[0]).toMatchObject({ requestedLine: 4, actualLine: 6, verified: false, message: 'moved to next statement' })
     })
 
+    it('maps empty-object bodies and absent optional fields', async () => {
+      const empty: { readonly [key: string]: never } = {}
+      const capabilities = {
+        supportsSetVariable: true,
+        supportsCompletionsRequest: true,
+        supportsExceptionInfoRequest: true,
+        supportsModulesRequest: true,
+        supportsLoadedSourcesRequest: true,
+        supportsDisassembleRequest: true,
+        supportsFunctionBreakpoints: true,
+      }
+      const scripted = mountScripted({
+        initialize: [{ response: { capabilities } }, { event: { name: 'initialized' } }],
+        launch: [{ response: {} }, { event: { name: 'stopped', body: { reason: 'breakpoint', threadId: 3 } } }],
+        stackTrace: [{ response: { stackFrames: [{ id: 7, name: 'f', source: { path: '/x/b.ts' } }], totalFrames: 1 } }],
+        threads: [{ response: empty }],
+        scopes: [{ response: empty }],
+        variables: [{ response: empty }],
+        evaluate: [{ response: { result: 'r', variablesReference: 9 } }],
+        setVariable: [{ response: { name: 'x', value: '1', variablesReference: 0 } }],
+        completions: [{ response: { targets: [{ label: 'x' }] } }],
+        exceptionInfo: [{ response: { exceptionId: 'X' } }],
+        modules: [{ response: empty }],
+        loadedSources: [{ response: { sources: [{ path: '/x/b.ts' }] } }],
+        disassemble: [{ response: { instructions: [{ address: '0x1', instruction: 'nop' }] } }],
+        setFunctionBreakpoints: [{ response: { breakpoints: [{ id: 4, verified: true }] } }],
+      })
+      const backend = scripted.backend
+      await backend.start(HANDSHAKE_PLAN)
+
+      await expect(backend.threads()).resolves.toEqual([])
+      const trace = await backend.stackTrace(DebugThreadId('3'))
+      expect(trace.frames[0]?.source).toMatchObject({ workspaceRelativePath: '/x/b.ts', absolutePath: '/x/b.ts' })
+      const frame = trace.frames[0]?.id ?? DebugFrameId('7')
+      await expect(backend.scopes(frame)).resolves.toEqual([])
+      await expect(backend.evaluate('e', 'repl')).resolves.toMatchObject({ result: 'r' })
+      await expect(backend.variables(DebugVariableReference('9'))).resolves.toMatchObject({ variables: [] })
+      const assigned = await backend.setVariable(DebugVariableReference('9'), 'x', '1')
+      expect(assigned).toMatchObject({ name: 'x', value: '1' })
+      expect('type' in assigned).toBe(false)
+      await expect(backend.completions('t', 1)).resolves.toEqual([{ label: 'x' }])
+      const exception = await backend.exceptionInfo(DebugThreadId('3'))
+      expect(exception).toMatchObject({ exceptionId: 'X', breakMode: 'never' })
+      expect('details' in exception).toBe(false)
+      expect('description' in exception).toBe(false)
+      await expect(backend.modules()).resolves.toMatchObject({ modules: [], totalModules: 0 })
+      await expect(backend.loadedSources()).resolves.toEqual([{ workspaceRelativePath: '/x/b.ts', absolutePath: '/x/b.ts' }])
+      const disassembly = await backend.disassemble({ memoryReference: '0x1', instructionCount: 1 })
+      expect(disassembly.instructions[0]).toMatchObject({ address: '0x1', instruction: 'nop' })
+      expect('symbol' in (disassembly.instructions[0] ?? {})).toBe(false)
+      const functions = await backend.setFunctionBreakpoints({ breakpoints: [{ name: 'f' }] })
+      expect(functions.applied[0]).toMatchObject({ verified: true })
+      expect('actualLine' in (functions.applied[0] ?? {})).toBe(false)
+      expect('message' in (functions.applied[0] ?? {})).toBe(false)
+    })
+
+    it('maps degenerate response bodies defensively', async () => {
+      const badBody = ['not', 'an', 'object']
+      const capabilities = {
+        supportsSetVariable: true,
+        supportsSetExpression: true,
+        supportsCompletionsRequest: true,
+        supportsExceptionInfoRequest: true,
+        supportsModulesRequest: true,
+        supportsLoadedSourcesRequest: true,
+        supportsDisassembleRequest: true,
+      }
+      const framed = mountScripted({
+        initialize: [{ response: { capabilities } }, { event: { name: 'initialized' } }],
+        launch: [{ response: {} }, { event: { name: 'stopped', body: { reason: 'breakpoint', threadId: 3 } } }],
+        stackTrace: [{ response: { stackFrames: [{ id: 7, name: 'f' }], totalFrames: 1 } }],
+        scopes: [{ response: badBody }],
+        variables: [{ response: badBody }],
+        setVariable: [{ response: badBody }],
+        evaluate: [{ response: { result: 'r', variablesReference: 9 } }],
+      })
+      await framed.backend.start(HANDSHAKE_PLAN)
+      const frame = (await framed.backend.stackTrace(DebugThreadId('3'))).frames[0]?.id ?? DebugFrameId('7')
+      await expect(framed.backend.scopes(frame)).resolves.toEqual([])
+      await expect(framed.backend.evaluate('e', 'repl')).resolves.toMatchObject({ result: 'r' })
+      await expect(framed.backend.variables(DebugVariableReference('9'))).resolves.toMatchObject({ variables: [] })
+      await expect(framed.backend.setVariable(DebugVariableReference('9'), 'x', '1')).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+
+      const degenerate = mountScripted({
+        initialize: [{ response: { capabilities } }, { event: { name: 'initialized' } }],
+        launch: [{ response: {} }, { event: { name: 'stopped', body: { reason: 'breakpoint', threadId: 3 } } }],
+        stackTrace: [{ response: badBody }],
+        threads: [{ response: badBody }],
+        evaluate: [{ response: badBody }],
+        setExpression: [{ response: badBody }],
+        completions: [{ response: badBody }],
+        exceptionInfo: [{ response: badBody }],
+        modules: [{ response: badBody }],
+        loadedSources: [{ response: badBody }],
+        source: [{ response: badBody }],
+        disassemble: [{ response: badBody }],
+      })
+      const backend = degenerate.backend
+      await backend.start(HANDSHAKE_PLAN)
+
+      await expect(backend.threads()).resolves.toEqual([])
+      await expect(backend.stackTrace(DebugThreadId('3'))).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+      await expect(backend.evaluate('e', 'repl')).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+      await expect(backend.setExpression('x', '1')).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+      await expect(backend.completions('t', 1)).resolves.toEqual([])
+      await expect(backend.exceptionInfo(DebugThreadId('3'))).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+      await expect(backend.modules()).resolves.toMatchObject({ modules: [], totalModules: 0, truncated: false })
+      await expect(backend.loadedSources()).resolves.toEqual([])
+      await expect(backend.source(DebugSourceReference('3'))).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+      await expect(backend.disassemble({ memoryReference: '0x1', instructionCount: 1 })).resolves.toMatchObject({ instructions: [] })
+    })
+
+    it('registers an abort listener when a live signal accompanies the resume', async () => {
+      const scripted = mountScripted({
+        initialize: [{ response: { capabilities: {} } }, { event: { name: 'initialized' } }],
+        launch: [{ response: {} }, { event: { name: 'stopped', body: { reason: 'breakpoint', threadId: 1 } } }],
+        stackTrace: [{ response: { stackFrames: [], totalFrames: 0 } }],
+        continue: [{ response: { allThreadsContinued: false } }],
+      })
+      await scripted.backend.start(HANDSHAKE_PLAN)
+      const controller = new AbortController()
+      await expect(scripted.backend.continue(undefined, { signal: controller.signal })).resolves.toMatchObject({ kind: 'running' })
+    })
+
+    it('contains a stopped event whose body is not an object', async () => {
+      const scripted = mountScripted({
+        initialize: [{ response: { capabilities: {} } }, { event: { name: 'initialized' } }],
+        launch: [{ response: {} }, { event: { name: 'stopped' } }],
+      })
+      await expect(scripted.backend.start(HANDSHAKE_PLAN)).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+    })
+
     it('maps minimal wire responses without optional fields', async () => {
       const scripted = mountScripted({
         initialize: [{ response: { capabilities: {

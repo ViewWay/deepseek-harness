@@ -701,7 +701,10 @@ export class DapDebugBackend {
   }
 
   private handleStopped(message: DapEvent): void {
-    this.stopSettling = this.settleStop(message)
+    this.stopSettling = this.settleStop(message).catch(() => {
+      // A malformed stopped event also fails the client's handshake wait; the
+      // reader loop owns that death, this handler must not leak a rejection.
+    })
   }
 
   private async settleStop(message: DapEvent): Promise<void> {
