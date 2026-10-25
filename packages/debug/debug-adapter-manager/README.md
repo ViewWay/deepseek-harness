@@ -56,7 +56,8 @@ Failures are typed: `DEBUG_INVALID_CONFIG` for malformed manifests (including `l
 ## Known Limitations and Deferred Work
 
 - The bridge from a full `DebugEnvironment` (subprocess and fs services) to the install environment lands with the execution-world tasks; this package defines and consumes the narrow I/O face.
-- Archive extraction beyond the checksum-verified single-file write, npm-source installs, and install-progress cancellation land with the adapter-matrix tasks; the self-test currently runs `<executable> --version`.
+- Archive extraction beyond the checksum-verified single-file write and install-progress cancellation land with the adapter-matrix tasks; archive self-tests run `<executable> --version` and pypi installs import-test the package inside the venv.
+- Wheel selection reads the default PyPI index; deployment index overrides land with the adapter-matrix tasks.
 
 -----
 

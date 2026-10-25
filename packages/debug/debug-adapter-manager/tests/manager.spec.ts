@@ -157,3 +157,92 @@ describe('DebugAdapterManager', () => {
 })
 
 type DebugEventKind = DebugAdapterEvent['kind']
+
+describe('DebugAdapterManager pypi sources', () => {
+  const wheelBytes = new Uint8Array([7, 7])
+  const wheelSha = sha256Hex(wheelBytes)
+
+  function pypiManifestRecord(): Record<string, unknown> {
+    return {
+      providerId: 'python',
+      version: '1.8.22',
+      license: 'MIT',
+      source: { kind: 'pypi', package: 'debugpy' },
+      command: ['python', '-m', 'debugpy.adapter'],
+    }
+  }
+
+  function pypiEnvironment() {
+    const written = new Set<string>()
+    return {
+      pathSeparator: '/' as const,
+      exists: vi.fn(async (path: string) => written.has(path)),
+      fetchJson: vi.fn(async () => ({
+        urls: [
+          { filename: 'debugpy-1.8.22-cp312-cp312-manylinux_2_34_x86_64.whl', url: 'https://files.example/debugpy-linux.whl', digests: { sha256: wheelSha }, size: 2 },
+        ],
+      })),
+      fetchBytes: vi.fn(async () => wheelBytes),
+      write: vi.fn(async (path: string) => {
+        written.add(path)
+      }),
+      remove: vi.fn(async (path: string) => {
+        for (const key of [...written]) {
+          if (key.startsWith(path)) written.delete(key)
+        }
+      }),
+      runPython: vi.fn(async (python: string) => {
+        written.add(python)
+        return { exitCode: 0, stdout: '', stderr: '' }
+      }),
+      written,
+    }
+  }
+
+  it('installs into a venv, resolves the venv interpreter, and uninstalls the version directory', async () => {
+    const manager = await mount()
+    manager.registerManifest(pypiManifestRecord())
+    const environment = pypiEnvironment()
+    await manager.install(DebugProviderId('python'), {
+      platform: 'linux-x64',
+      installRoot: '/adapters',
+      environment,
+      python: '/usr/bin/python3',
+      pythonTag: 'cp312',
+    })
+    expect(environment.runPython).toHaveBeenCalledWith('/usr/bin/python3', ['-m', 'venv', '/adapters/python/1.8.22/venv'])
+
+    const resolved = await manager.resolve(DebugProviderId('python'), {
+      platform: 'linux-x64',
+      installRoot: '/adapters',
+      environment,
+    })
+    expect(resolved).toMatchObject({
+      command: ['/adapters/python/1.8.22/venv/bin/python', '-m', 'debugpy.adapter'],
+      executablePath: '/adapters/python/1.8.22/venv/bin/python',
+      version: '1.8.22',
+      source: 'managed',
+    })
+
+    await manager.uninstall(DebugProviderId('python'), {
+      platform: 'linux-x64',
+      installRoot: '/adapters',
+      environment,
+    })
+    await expect(manager.resolve(DebugProviderId('python'), {
+      platform: 'linux-x64',
+      installRoot: '/adapters',
+      environment,
+    })).rejects.toMatchObject({ code: 'DEBUG_ADAPTER_NOT_FOUND' })
+  })
+
+  it('rejects a pypi install without interpreter facts', async () => {
+    const manager = await mount()
+    manager.registerManifest(pypiManifestRecord())
+    await expect(manager.install(DebugProviderId('python'), {
+      platform: 'linux-x64',
+      installRoot: '/adapters',
+      environment: pypiEnvironment(),
+    })).rejects.toMatchObject({ code: 'DEBUG_INVALID_CONFIG' })
+  })
+})

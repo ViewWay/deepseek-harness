@@ -56,3 +56,37 @@ describe('adapter manifest', () => {
       .toThrow(expect.objectContaining({ code: 'DEBUG_INVALID_CONFIG' }))
   })
 })
+
+describe('adapter manifest pypi sources', () => {
+  const pypiManifest = {
+    providerId: 'python',
+    version: '1.8.22',
+    license: 'MIT',
+    source: { kind: 'pypi', package: 'debugpy' },
+    command: ['python', '-m', 'debugpy.adapter'],
+  }
+
+  it('accepts a pypi source without platforms', () => {
+    const manifest = parseAdapterManifest(pypiManifest)
+    expect(manifest.source).toEqual({ kind: 'pypi', package: 'debugpy' })
+    expect(manifest.platforms).toBeUndefined()
+    expect(manifest.command).toEqual(['python', '-m', 'debugpy.adapter'])
+  })
+
+  it('rejects retired npm and system kinds', () => {
+    expect(() => parseAdapterManifest({ ...pypiManifest, source: { kind: 'npm', url: 'https://x', package: 'p' } }))
+      .toThrow(expect.objectContaining({ code: 'DEBUG_INVALID_CONFIG' }))
+    expect(() => parseAdapterManifest({ ...pypiManifest, source: { kind: 'system' } }))
+      .toThrow(expect.objectContaining({ code: 'DEBUG_INVALID_CONFIG' }))
+  })
+
+  it('rejects pypi sources with platforms, a missing package, or a non-python command', () => {
+    expect(() => parseAdapterManifest({ ...pypiManifest, platforms: {
+      'linux-x64': { archive: 'a.whl', sha256: 'a'.repeat(64), executable: 'bin/x', sizeBytes: 1 },
+    } })).toThrow(expect.objectContaining({ code: 'DEBUG_INVALID_CONFIG' }))
+    expect(() => parseAdapterManifest({ ...pypiManifest, source: { kind: 'pypi' } }))
+      .toThrow(expect.objectContaining({ code: 'DEBUG_INVALID_CONFIG' }))
+    expect(() => parseAdapterManifest({ ...pypiManifest, command: ['node', 'x.js'] }))
+      .toThrow(expect.objectContaining({ code: 'DEBUG_INVALID_CONFIG' }))
+  })
+})

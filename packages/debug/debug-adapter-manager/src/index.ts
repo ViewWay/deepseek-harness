@@ -13,11 +13,14 @@ export type {
   DebugAdapterPlatformKey,
   DebugAdapterSource,
 } from './manifest.ts'
-export { adapterInstallPath, installAdapter } from './install.ts'
+export { DEFAULT_PYPI_INDEX, adapterInstallPath, installAdapter, installPypiAdapter, pypiInstallLayout } from './install.ts'
 export type {
   DebugAdapterInstallEnvironment,
   DebugAdapterInstallPath,
   DebugAdapterInstallRequest,
+  DebugPypiInstallEnvironment,
+  DebugPypiInstallLayout,
+  DebugPypiInstallRequest,
 } from './install.ts'
 import { DebugAdapterManager } from './manager.ts'
 export { DebugAdapterManager }

@@ -13,11 +13,10 @@ import { DebugError } from '@deepseek-ai/dsh-debug'
 /** One published platform combination, e.g. `linux-x64`. */
 export type DebugAdapterPlatformKey = string
 
-/** Where an adapter comes from: an archive download, an npm package, or the system. */
+/** Where an adapter comes from: a release archive download, or a PyPI package installed into a venv. */
 export type DebugAdapterSource =
   | { readonly kind: 'archive'; readonly url: string }
-  | { readonly kind: 'npm'; readonly url: string; readonly package: string; readonly subpath?: string }
-  | { readonly kind: 'system' }
+  | { readonly kind: 'pypi'; readonly package: string; readonly subpath?: string }
 
 /** One platform's downloadable entry. */
 export interface DebugAdapterPlatformEntry {
@@ -33,13 +32,14 @@ export interface DebugAdapterPlatformEntry {
   readonly dependencies?: readonly string[]
 }
 
-/** A validated adapter manifest: identity, source, per-platform downloads, and argv template. */
+/** A validated adapter manifest: identity, source, per-platform downloads (archive sources), and argv template. */
 export interface DebugAdapterManifest {
   readonly providerId: DebugProviderIdValue
   readonly version: string
   readonly license: string
   readonly source: DebugAdapterSource
-  readonly platforms: Readonly<Record<DebugAdapterPlatformKey, DebugAdapterPlatformEntry>>
+  /** Present with at least one entry for archive sources; omitted for pypi sources. */
+  readonly platforms?: Readonly<Record<DebugAdapterPlatformKey, DebugAdapterPlatformEntry>>
   readonly command: readonly string[]
   readonly environment?: Readonly<Record<string, string>>
   readonly requires?: readonly DebugExecutionCapability[]
@@ -107,18 +107,16 @@ function parseSource(value: unknown): DebugAdapterSource {
   if (kind === 'archive') {
     return { kind, url: requiredString(record, 'url', 'source.url') }
   }
-  if (kind === 'npm') {
+  if (kind === 'pypi') {
     const subpath = record['subpath']
     if (subpath !== undefined && typeof subpath !== 'string') throw invalid('source.subpath must be a string')
     return {
       kind,
-      url: requiredString(record, 'url', 'source.url'),
       package: requiredString(record, 'package', 'source.package'),
       ...(subpath !== undefined ? { subpath } : {}),
     }
   }
-  if (kind === 'system') return { kind }
-  throw invalid('source.kind must be archive, npm, or system')
+  throw invalid('source.kind must be archive or pypi')
 }
 
 /** Validate one platform entry including its checksum format. */
@@ -170,18 +168,28 @@ export function parseAdapterManifest(value: unknown): DebugAdapterManifest {
   const license = requiredString(record, 'license')
   const source = parseSource(record['source'])
 
-  const rawPlatforms = recordOf(record['platforms'], 'platforms')
-  const platformKeys = Object.keys(rawPlatforms)
-  if (platformKeys.length === 0) throw invalid('platforms must list at least one platform')
-  const platforms: Record<DebugAdapterPlatformKey, DebugAdapterPlatformEntry> = {}
-  for (const key of platformKeys) {
-    if (!/^[a-z0-9]+-[a-z0-9]+$/.test(key)) throw invalid(`platform key "${key}" must be <platform>-<arch>`)
-    platforms[key] = parsePlatformEntry(providerId, key, rawPlatforms[key])
+  // Archive sources publish per-platform downloads; pypi sources resolve
+  // wheels against the target interpreter and must not carry platforms.
+  let platforms: Record<DebugAdapterPlatformKey, DebugAdapterPlatformEntry> | undefined
+  if (source.kind === 'archive') {
+    const rawPlatforms = recordOf(record['platforms'], 'platforms')
+    const platformKeys = Object.keys(rawPlatforms)
+    if (platformKeys.length === 0) throw invalid('platforms must list at least one platform')
+    platforms = {}
+    for (const key of platformKeys) {
+      if (!/^[a-z0-9]+-[a-z0-9]+$/.test(key)) throw invalid(`platform key "${key}" must be <platform>-<arch>`)
+      platforms[key] = parsePlatformEntry(providerId, key, rawPlatforms[key])
+    }
+  } else if (record['platforms'] !== undefined) {
+    throw invalid('pypi sources omit platforms; wheels resolve against the target interpreter')
   }
 
   const command = parseStringArray(record, 'command', 'command')
   if (command === undefined || command.length === 0) {
     throw invalid('command must be a non-empty array of strings')
+  }
+  if (source.kind === 'pypi' && command[0] !== 'python') {
+    throw invalid('pypi sources template their command on the venv interpreter: command[0] must be "python"')
   }
 
   const rawRequires = record['requires']
@@ -205,7 +213,7 @@ export function parseAdapterManifest(value: unknown): DebugAdapterManifest {
     version,
     license,
     source,
-    platforms,
+    ...(platforms !== undefined ? { platforms } : {}),
     command,
     ...(environment !== undefined ? { environment } : {}),
     ...(requires !== undefined ? { requires } : {}),
@@ -220,7 +228,7 @@ export function parseAdapterManifest(value: unknown): DebugAdapterManifest {
  * @throws {@link DebugError} `DEBUG_ADAPTER_UNSUPPORTED` when the platform was never published.
  */
 export function resolveAdapterPlatform(manifest: DebugAdapterManifest, platform: DebugAdapterPlatformKey): DebugAdapterPlatformEntry {
-  const entry = manifest.platforms[platform]
+  const entry = manifest.platforms?.[platform]
   if (entry === undefined) {
     throw new DebugError(
       `adapter "${manifest.providerId}" publishes no ${platform} build`,

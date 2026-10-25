@@ -10,8 +10,9 @@
 import { Context, Service } from '@deepseek-ai/cordis'
 import { DebugError } from '@deepseek-ai/dsh-debug'
 import type { DebugProviderId as DebugProviderIdValue, ResolvedDebugAdapter } from '@deepseek-ai/dsh-debug'
-import type { DebugAdapterInstallEnvironment, DebugAdapterInstallPath } from './install.ts'
-import { adapterInstallPath, installAdapter } from './install.ts'
+import type { DebugAdapterInstallEnvironment, DebugAdapterInstallPath, DebugPypiInstallEnvironment } from './install.ts'
+import { adapterInstallPath, installAdapter, installPypiAdapter, pypiInstallLayout } from './install.ts'
+import type { DebugPypiInstallRequest as DebugPypiInstallRequestShape } from './install.ts'
 import type { DebugAdapterManifest, DebugAdapterPlatformKey } from './manifest.ts'
 import { parseAdapterManifest, resolveAdapterPlatform } from './manifest.ts'
 
@@ -20,6 +21,17 @@ export type DebugAdapterEvent =
   | { readonly kind: 'adapter/installed'; readonly providerId: DebugProviderIdValue; readonly platform: DebugAdapterPlatformKey }
   | { readonly kind: 'adapter/uninstalled'; readonly providerId: DebugProviderIdValue; readonly platform: DebugAdapterPlatformKey }
   | { readonly kind: 'adapter/install-failed'; readonly providerId: DebugProviderIdValue; readonly platform: DebugAdapterPlatformKey; readonly code: string }
+
+/** The committed layout of either install flow. */
+export type DebugAdapterInstalledLayout = DebugAdapterInstallPath | import('./install.ts').DebugPypiInstallLayout
+
+/** Either install flow's I/O face. */
+type AnyInstallEnvironment = DebugAdapterInstallEnvironment | DebugPypiInstallEnvironment
+
+/** Narrow one environment to the archive flow's I/O face. */
+function isArchiveEnvironment(environment: AnyInstallEnvironment): environment is DebugAdapterInstallEnvironment {
+  return 'runSelfTest' in environment
+}
 
 /** Subscription face over adapter install lifecycle events. */
 export interface DebugAdapterEventSource {
@@ -42,8 +54,13 @@ export interface DebugAdapterStatus {
 export interface DebugAdapterInstallCall {
   readonly platform: DebugAdapterPlatformKey
   readonly installRoot: string
-  readonly environment: DebugAdapterInstallEnvironment
+  readonly environment: DebugAdapterInstallEnvironment | DebugPypiInstallEnvironment
+  /** Target interpreter owning the venv; required for pypi sources. */
+  readonly python?: string
+  /** Target interpreter ABI tag; required for pypi sources. */
+  readonly pythonTag?: string
 }
+
 
 /** One adapter resolution invocation. */
 export interface DebugAdapterResolveCall {
@@ -60,7 +77,7 @@ export interface DebugAdapterResolveCall {
 export class DebugAdapterManager extends Service {
   private readonly manifests = new Map<DebugProviderIdValue, DebugAdapterManifest>()
   private readonly listeners = new Set<(event: DebugAdapterEvent) => void>()
-  private readonly inFlightInstalls = new Map<string, Promise<DebugAdapterInstallPath>>()
+  private readonly inFlightInstalls = new Map<string, Promise<DebugAdapterInstalledLayout>>()
 
   constructor(ctx: Context) {
     super(ctx, 'debugAdapters')
@@ -112,7 +129,7 @@ export class DebugAdapterManager extends Service {
     return [...this.manifests.values()].map(manifest => ({
       providerId: manifest.providerId,
       version: manifest.version,
-      platforms: Object.keys(manifest.platforms),
+      platforms: manifest.platforms !== undefined ? Object.keys(manifest.platforms) : [],
     }))
   }
 
@@ -126,14 +143,16 @@ export class DebugAdapterManager extends Service {
    * registered; install failures carry `DEBUG_ADAPTER_CHECKSUM` or
    * `DEBUG_ADAPTER_UNSUPPORTED`.
    */
-  async install(providerId: DebugProviderIdValue, call: DebugAdapterInstallCall): Promise<DebugAdapterInstallPath> {
+  async install(providerId: DebugProviderIdValue, call: DebugAdapterInstallCall): Promise<DebugAdapterInstalledLayout> {
     const manifest = this.requireManifest(providerId)
     const key = `${providerId}:${call.platform}`
     const existing = this.inFlightInstalls.get(key)
     if (existing !== undefined) return existing
     const operation = (async () => {
       try {
-        const layout = await installAdapter({ manifest, ...call })
+        const layout = manifest.source.kind === 'pypi'
+          ? await installPypiAdapter(this.pypiRequest(manifest, call))
+          : await installAdapter(this.archiveRequest(manifest, call))
         this.publish({ kind: 'adapter/installed', providerId, platform: call.platform })
         return layout
       } catch (error: unknown) {
@@ -159,8 +178,10 @@ export class DebugAdapterManager extends Service {
    */
   async uninstall(providerId: DebugProviderIdValue, call: DebugAdapterInstallCall): Promise<void> {
     const manifest = this.requireManifest(providerId)
-    const layout = adapterInstallPath(manifest, call.platform, call.installRoot, call.environment)
-    await call.environment.remove(layout.directory)
+    const directory = manifest.source.kind === 'pypi'
+      ? pypiInstallLayout(manifest, call.installRoot, call.environment).directory
+      : adapterInstallPath(manifest, call.platform, call.installRoot, call.environment).directory
+    await call.environment.remove(directory)
     this.publish({ kind: 'adapter/uninstalled', providerId, platform: call.platform })
   }
 
@@ -176,6 +197,25 @@ export class DebugAdapterManager extends Service {
    */
   async resolve(providerId: DebugProviderIdValue, call: DebugAdapterResolveCall): Promise<ResolvedDebugAdapter> {
     const manifest = this.requireManifest(providerId)
+    if (manifest.source.kind === 'pypi') {
+      const layout = pypiInstallLayout(manifest, call.installRoot, call.environment)
+      if (!(await call.environment.exists(layout.venvPython))) {
+        throw new DebugError(
+          `adapter "${providerId}" has no venv install; install it first`,
+          'DEBUG_ADAPTER_NOT_FOUND',
+          { providerId, detail: `expected ${layout.venvPython} in the target execution world` },
+        )
+      }
+      return {
+        command: [layout.venvPython, ...manifest.command.slice(1)],
+        args: [],
+        env: manifest.environment ?? {},
+        version: manifest.version,
+        platform: call.platform,
+        source: 'managed',
+        executablePath: layout.venvPython,
+      }
+    }
     resolveAdapterPlatform(manifest, call.platform)
     const layout = adapterInstallPath(manifest, call.platform, call.installRoot, call.environment)
     const executablePath = layout.executableFile
@@ -194,6 +234,37 @@ export class DebugAdapterManager extends Service {
       platform: call.platform,
       source: 'managed',
       executablePath,
+    }
+  }
+
+  /** Build the archive install request from a call, requiring the archive I/O face. */
+  private archiveRequest(manifest: DebugAdapterManifest, call: DebugAdapterInstallCall): import('./install.ts').DebugAdapterInstallRequest {
+    if (!isArchiveEnvironment(call.environment)) {
+      throw new DebugError(
+        `archive adapter "${manifest.providerId}" installs need the archive I/O face`,
+        'DEBUG_INVALID_CONFIG',
+        { providerId: manifest.providerId },
+      )
+    }
+    return { manifest, platform: call.platform, installRoot: call.installRoot, environment: call.environment }
+  }
+
+  /** Build the pypi install request from a call, requiring interpreter facts. */
+  private pypiRequest(manifest: DebugAdapterManifest, call: DebugAdapterInstallCall): DebugPypiInstallRequestShape {
+    if (call.python === undefined || call.pythonTag === undefined) {
+      throw new DebugError(
+        `pypi adapter "${manifest.providerId}" installs need the target interpreter and its ABI tag`,
+        'DEBUG_INVALID_CONFIG',
+        { providerId: manifest.providerId },
+      )
+    }
+    return {
+      manifest,
+      platform: call.platform,
+      python: call.python,
+      pythonTag: call.pythonTag,
+      installRoot: call.installRoot,
+      environment: call.environment as DebugPypiInstallEnvironment,
     }
   }
 

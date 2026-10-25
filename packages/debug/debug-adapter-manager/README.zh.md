@@ -56,7 +56,8 @@ kind: "package-reference"
 ## 已知限制与延后工作
 
 - 从完整 `DebugEnvironment`（subprocess 与 fs 服务）到安装环境的桥接随执行世界任务落地；本包定义并消费窄 I/O 面。
-- 单文件校验和写入之外的归档解包、npm 源安装与安装进度取消随适配器矩阵任务落地；自检当前执行 `<executable> --version`。
+- 单文件校验和写入之外的归档解包与安装进度取消随适配器矩阵任务落地；归档自检执行 `<executable> --version`，pypi 安装在 venv 内做导入自检。
+- wheel 选择读取默认 PyPI index；部署级 index 覆盖随适配器矩阵任务落地。
 
 -----
 
