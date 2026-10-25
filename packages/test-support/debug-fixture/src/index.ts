@@ -12,14 +12,20 @@
 
 import { vi } from 'vitest'
 import type { Mock } from 'vitest'
+import { Context } from '@deepseek-ai/cordis'
 import { DebugCompoundId, DebugSessionId, DebugThreadId } from '@deepseek-ai/dsh-debug'
 import type {
   DebugCompoundId as DebugCompoundIdValue,
+  DebugEnvironment,
+  DebugProviderId as DebugProviderIdValue,
   DebugSessionId as DebugSessionIdValue,
   DebugSessionState,
   DebugThreadId as DebugThreadIdValue,
+  ResolvedDebugAdapter,
 } from '@deepseek-ai/dsh-debug'
 import { brandString } from '@deepseek-ai/dsh-brand'
+import { FileSystem } from '@deepseek-ai/dsh-fs'
+import { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
 import { SESSION_FORMAT_VERSION } from '@deepseek-ai/dsh-session'
 import type { SessionHeader, SessionId } from '@deepseek-ai/dsh-session'
 
@@ -104,4 +110,134 @@ export interface FixtureCompoundChild {
  */
 export function fixtureCompoundChild(init: { id: DebugSessionIdValue; state: DebugSessionState }): FixtureCompoundChild {
   return { id: init.id, state: init.state, terminate: vi.fn(async () => {}) }
+}
+
+
+/** One throwaway error for unused fixture service methods. */
+function unused(): Error {
+  return new Error('fixtureDebugEnvironment services are placeholders and must not be called')
+}
+
+/** Placeholder filesystem: satisfies the abstract contract, refuses every call. */
+class FixtureFileSystem extends FileSystem {
+  override resolve(): Promise<never> {
+    throw unused()
+  }
+
+  override processPath(): string {
+    throw unused()
+  }
+
+  override fileUrl(): string {
+    throw unused()
+  }
+
+  override contains(): boolean {
+    throw unused()
+  }
+
+  override stat(): Promise<never> {
+    throw unused()
+  }
+
+  override lstat(): Promise<never> {
+    throw unused()
+  }
+
+  override readText(): Promise<never> {
+    throw unused()
+  }
+
+  override streamText(): Promise<never> {
+    throw unused()
+  }
+
+  override readBytes(): Promise<never> {
+    throw unused()
+  }
+
+  override readByteRange(): Promise<never> {
+    throw unused()
+  }
+
+  override listDir(): Promise<never> {
+    throw unused()
+  }
+
+  override writeText(): Promise<never> {
+    throw unused()
+  }
+
+  override editText(): Promise<never> {
+    throw unused()
+  }
+}
+
+/** Placeholder subprocess runtime: satisfies the abstract contract, refuses every call. */
+class FixtureSubprocessRuntime extends SubprocessRuntime {
+  override resolveExecutable(): Promise<never> {
+    throw unused()
+  }
+
+  override terminalEnvironment(): Promise<never> {
+    throw unused()
+  }
+
+  override spawn(): never {
+    throw unused()
+  }
+
+  override spawnTerminal(): Promise<never> {
+    throw unused()
+  }
+}
+
+/** One typed debug environment double with an observable adapter resolver. */
+export interface FixtureDebugEnvironment extends DebugEnvironment {
+  readonly adapters: {
+    resolve: Mock<(providerId: DebugProviderIdValue) => Promise<ResolvedDebugAdapter>>
+  }
+}
+
+/** Overrides for the fixture environment's facts and resolved adapter. */
+export interface FixtureDebugEnvironmentInit {
+  readonly workspaceRoot?: string
+  readonly cwd?: string
+  readonly platform?: NodeJS.Platform
+  readonly arch?: string
+  readonly pathSeparator?: '/' | '\\'
+  readonly resolvedCommand?: readonly string[]
+  readonly resolvedVersion?: string
+}
+
+/**
+ * Build one typed `DebugEnvironment` double for provider-resolution tests.
+ * The subprocess and fs services are placeholders that throw on any use;
+ * providers resolve through `adapters.resolve`, which returns a managed
+ * js-debug-shaped adapter by default.
+ * @param init - optional fact and adapter overrides.
+ * @returns the typed environment double.
+ */
+export function fixtureDebugEnvironment(init: FixtureDebugEnvironmentInit = {}): FixtureDebugEnvironment {
+  const ctx = new Context()
+  const resolved: ResolvedDebugAdapter = {
+    command: init.resolvedCommand ?? ['node', 'js-debug/src/dapDebugServer.js'],
+    args: [],
+    env: {},
+    version: init.resolvedVersion ?? '1.140.0',
+    platform: 'any',
+    source: 'managed',
+    executablePath: '/adapters/node/js-debug/src/dapDebugServer.js',
+  }
+  return {
+    workspaceRoot: init.workspaceRoot ?? '/ws',
+    cwd: init.cwd ?? '/ws',
+    platform: init.platform ?? 'linux',
+    arch: init.arch ?? 'x64',
+    pathSeparator: init.pathSeparator ?? '/',
+    subprocess: new FixtureSubprocessRuntime(ctx),
+    fs: new FixtureFileSystem(ctx),
+    adapters: { resolve: vi.fn((_providerId: DebugProviderIdValue): Promise<ResolvedDebugAdapter> => Promise.resolve(resolved)) },
+    requiredCapabilities: [],
+  }
 }
