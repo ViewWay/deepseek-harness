@@ -1,0 +1,40 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/client/ui-code-editor/README.md
+/:
+  en: d9ff95e3c1a2a68f
+  zh: 24edf33e2a65b660
+/deepseek-ai-dsh-client-ui-code-editor:
+  en: f85827d5dbb0726b
+  zh: 3f1ac085044c1814
+/deepseek-ai-dsh-client-ui-code-editor/summary:
+  en: 309560fb12cf1e6f
+  zh: 339b4093429d9239
+/deepseek-ai-dsh-client-ui-code-editor/use-this-package:
+  en: bbff250eba0f1b89
+  zh: 0a618f05cc88ee2b
+/deepseek-ai-dsh-client-ui-code-editor/use-this-package/editing-a-file:
+  en: 363679d9a8a898dc
+  zh: 92d262d19a916511
+/deepseek-ai-dsh-client-ui-code-editor/use-this-package/saving-with-a-version-guard:
+  en: dc2975395cdb0ceb
+  zh: 83ed42ce73a05007
+/deepseek-ai-dsh-client-ui-code-editor/use-this-package/toggling-breakpoints:
+  en: d188ae0340e7fd00
+  zh: c4b24b6503e8ccdd
+/deepseek-ai-dsh-client-ui-code-editor/use-this-package/keeping-drafts:
+  en: 6c9d7d9f5cf6b945
+  zh: a651ef5ccf284de6
+/deepseek-ai-dsh-client-ui-code-editor/understand-the-implementation:
+  en: 9e8872737a4a04e5
+  zh: 454728dc830ddca0
+/deepseek-ai-dsh-client-ui-code-editor/model-experience:
+  en: 66a5cd5a3caacdc4
+  zh: 149d6ab21ec2f093
+/deepseek-ai-dsh-client-ui-code-editor/model-experience/kv-cache-effect:
+  en: fd86b45aac0ae67c
+  zh: 3f0e2dcd4cca97aa
+/deepseek-ai-dsh-client-ui-code-editor/known-limitations-and-deferred-work:
+  en: 436f60551539b23b
+  zh: 1206e2d0df278327

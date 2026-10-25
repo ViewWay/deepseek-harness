@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Editor de código",
+    "description": "Edite arquivos do workspace com calha de breakpoints e salvamento protegido por versão."
+  }
+}
