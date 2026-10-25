@@ -36,6 +36,7 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-tool-goal` | `create_goal`, `get_goal`, `update_goal` | `ctx.tools`, `ctx.agents`, `ctx.goals`, `ctx.systemPrompt`, `a calling Agent in an authorized open turn` | `tool/call`, `goal/change for mutations`, `tool/result` | - | create, edit, pause, and resume require direct-human root authority; complete and blocked also accept the exact current goal round. The default blocked lower bound is three admitted rounds. |
 | `@deepseek-ai/dsh-tool-schedule` | `schedule_create`, `schedule_delete`, `schedule_list`, `schedule_update` | `ctx.tools`, `ctx.schedule` | `tool/call`, `Schedule storage domain create, update, or delete`, `tool/result` | - | A preset or Agent scope mounts this package; the preset decides which agents receive the four management tools. Each call acts on the calling Agent's Session. Accepts after_seconds, explicit absolute at, bounded fixed-rate every_seconds, daily and weekly local times in an explicit IANA zone, and cron as a five-field expression. Management uses the Host storage domain; due messages resume the original Session. |
 | `@deepseek-ai/dsh-tool-lsp` | `lsp` | `ctx.workingDirectory`, `ctx.tools`, `ctx.lsp`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | The lsp tool keeps provider selection and language-server subprocesses behind ctx.lsp, so its model-visible schema stays stable across providers. Requires a registered provider (e.g. `@deepseek-ai/dsh-lsp-stdio`) at runtime; without one, a query returns the structured `LSP_UNAVAILABLE` error rather than changing the schema. |
+| `@deepseek-ai/dsh-tool-debug` | `debug_breakpoints`, `debug_execution`, `debug_inspect`, `debug_session` | `ctx.tools`, `ctx.debug`, `ctx.systemPrompt` | `tool/call`, `tool/result` | - | The four debug tools keep adapter selection, DAP, and session state behind ctx.debug, so their model-visible schemas stay stable across providers. Operation unions are closed; an unknown operation returns the structured DEBUG_UNKNOWN_OPERATION error rather than changing the schema. |
 | `@deepseek-ai/dsh-tool-ralph` | `ralph` | `ctx.tools`, `ctx.workflowEngine`, `ctx.subagents`, `ctx.systemPrompt`, `a calling Agent (exec.agent parents every fresh round)` | `tool/call`, `tool/result`, `workflow and child session events during execution` | - | A fixed foreground workflow starts one fresh structured child per round; the model selects only the immutable objective and an optional round cap. |
 | `@deepseek-ai/dsh-tool-skill` | `skill` | `ctx.workingDirectory`, `ctx.tools`, `ctx.agents`, `ctx.skills` | `tool/call`, `tool/result`, `user/message replacement catalogs via agent.inject()` | - | - |
 | `@deepseek-ai/dsh-tool-session-query` | `session_event_read`, `session_event_search`, `session_event_trace`, `session_search`, `session_trace` | `ctx.tools`, `ctx.systemPrompt`, `ctx.sessionQuery`, `ctx.agents`, `a calling Agent for workspace authority` | `tool/call`, `tool/result` | - | The five read-only tools hide provider cursors and authorize every result from the immutable calling agent session. The package is opt-in; compositions that need enforced deadlines or bounded inline output also mount the generic timeout or spill policies. |
@@ -1815,6 +1816,243 @@ Query a language server for precise code navigation. operation is one of goToDef
 Source: [`packages/lsp/tool-lsp/src/index.ts`](../packages/lsp/tool-lsp/src/index.ts)
 
 The lsp tool keeps provider selection and language-server subprocesses behind ctx.lsp, so its model-visible schema stays stable across providers. Requires a registered provider (e.g. `@deepseek-ai/dsh-lsp-stdio`) at runtime; without one, a query returns the structured `LSP_UNAVAILABLE` error rather than changing the schema.
+
+<a id="deepseek-aidsh-tool-debug"></a>
+
+## `@deepseek-ai/dsh-tool-debug`
+
+### `debug_breakpoints`
+
+Manage breakpoints. operation is one of set_file, set_function, set_exception, set_data, set_instruction, list, clear. Workspace-scoped operations replace the persisted set and apply to every matching live session; session-scoped operations need sessionId. set_file replaces the complete file set; an empty list clears.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "description": "The breakpoint operation to run.",
+      "enum": [
+        "set_file",
+        "set_function",
+        "set_exception",
+        "set_data",
+        "set_instruction",
+        "list",
+        "clear"
+      ]
+    },
+    "workspaceId": {
+      "type": "string",
+      "description": "Workspace owning the persisted breakpoint sets."
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Scope the operation to one live debug session."
+    },
+    "file": {
+      "type": "string",
+      "description": "Workspace-relative file path for file breakpoints."
+    },
+    "breakpoints": {
+      "type": "array",
+      "description": "Complete replacement set for set_file; omit with clear.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "line": {
+            "type": "number"
+          },
+          "condition": {
+            "type": "string"
+          },
+          "hitCondition": {
+            "type": "string"
+          },
+          "logMessage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "line"
+        ]
+      }
+    }
+  },
+  "required": [
+    "operation",
+    "workspaceId"
+  ]
+}
+```
+
+Source: [`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/src/index.ts)
+
+### `debug_execution`
+
+Control a debug session. operation is one of continue, pause, step_over, step_in, step_out, step_back, restart, restart_frame, wait_for_stop. Most operations need the session id; continue and step wait for the next stop.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "description": "The execution operation to run.",
+      "enum": [
+        "continue",
+        "pause",
+        "step_over",
+        "step_in",
+        "step_out",
+        "step_back",
+        "restart",
+        "restart_frame",
+        "wait_for_stop"
+      ]
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Debug session id, serialized debug-<hex> form."
+    }
+  },
+  "required": [
+    "operation",
+    "sessionId"
+  ]
+}
+```
+
+Source: [`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/src/index.ts)
+
+### `debug_inspect`
+
+Inspect a stopped debug session. operation is one of threads, stack_trace, scopes, variables, evaluate, set_variable, set_expression, completions, exception_info, modules, loaded_sources, source, disassemble, read_memory, write_memory, console. Results are bounded; variables expand one level per call.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "description": "The inspection operation to run.",
+      "enum": [
+        "threads",
+        "stack_trace",
+        "scopes",
+        "variables",
+        "evaluate",
+        "set_variable",
+        "set_expression",
+        "completions",
+        "exception_info",
+        "modules",
+        "loaded_sources",
+        "source",
+        "disassemble",
+        "read_memory",
+        "write_memory",
+        "console"
+      ]
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Debug session id, serialized debug-<hex> form."
+    },
+    "threadId": {
+      "type": "string",
+      "description": "Thread id for stack traces and stepping."
+    },
+    "frameId": {
+      "type": "string",
+      "description": "Frame id for scopes and evaluation."
+    },
+    "variablesReference": {
+      "type": "number",
+      "description": "Child container reference for variables."
+    },
+    "expression": {
+      "type": "string",
+      "description": "Expression for evaluate and set_expression."
+    }
+  },
+  "required": [
+    "operation",
+    "sessionId"
+  ]
+}
+```
+
+Source: [`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/src/index.ts)
+
+### `debug_session`
+
+Manage debug sessions. operation is one of launch, attach, launch_compound, list, list_compounds, get, get_compound, terminate, terminate_compound, disconnect, attach_targets. Launch and attach require a provider and a workspace root; the calling session owns the debug session.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "description": "The session operation to run.",
+      "enum": [
+        "launch",
+        "attach",
+        "launch_compound",
+        "list",
+        "list_compounds",
+        "get",
+        "get_compound",
+        "terminate",
+        "terminate_compound",
+        "disconnect",
+        "attach_targets"
+      ]
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Debug session id, serialized debug-<hex> form; required by get, terminate, and disconnect."
+    },
+    "workspaceId": {
+      "type": "string",
+      "description": "Workspace scope for list."
+    },
+    "providerId": {
+      "type": "string",
+      "description": "Provider id for launch and attach, e.g. node, python, go, native."
+    },
+    "program": {
+      "type": "string",
+      "description": "Program path for launch, workspace-relative or absolute."
+    },
+    "module": {
+      "type": "string",
+      "description": "Module or package name for launch."
+    },
+    "cwd": {
+      "type": "string",
+      "description": "Working directory for the debug session."
+    },
+    "processId": {
+      "type": "number",
+      "description": "Process id for attach."
+    },
+    "port": {
+      "type": "number",
+      "description": "Inspector or debug port for attach."
+    }
+  },
+  "required": [
+    "operation"
+  ]
+}
+```
+
+Source: [`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/src/index.ts)
+
+The four debug tools keep adapter selection, DAP, and session state behind ctx.debug, so their model-visible schemas stay stable across providers. Operation unions are closed; an unknown operation returns the structured DEBUG_UNKNOWN_OPERATION error rather than changing the schema.
 
 <a id="deepseek-aidsh-tool-ralph"></a>
 

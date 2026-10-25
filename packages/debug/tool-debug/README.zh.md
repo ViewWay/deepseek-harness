@@ -1,0 +1,110 @@
+---
+description: "面向模型的调试工具（ctx.debug 之上）：四个注册工具带封闭操作 union、有界规范结果、固定系统提示词段与纯渲染函数，供组合 agent 调试的维护者阅读。"
+kind: "package-reference"
+---
+
+# @deepseek-ai/dsh-tool-debug
+
+[English](README.md) | 中文
+
+## 概述
+
+使用 `dsh-tool-debug` 把调试 seam 暴露给模型。插件注册四个工具——`debug_session`、`debug_execution`、`debug_inspect`、`debug_breakpoints`——各自带封闭操作 union，未知操作以 `DEBUG_UNKNOWN_OPERATION` 拒绝。已落地的服务面直接分派：会话 list/get/terminate/disconnect 与工作区作用域的文件断点替换（set_file/clear）直接运行在 `ctx.debug` 上；其余操作的会话面随后端落地前一律类型化失败 `DEBUG_UNAVAILABLE` 并指名等待中的面。固定系统提示词段定位工具用法：仅限运行态相关失败、启动前设断点、最小化求值、结束前终止会话、普通导航用文件/LSP 工具。
+
+## 目录
+
+- [使用本包](#use-this-package)
+- [开发备注](#dev-note)
+- [Model Experience](#model-experience)
+- [已知限制与延后工作](#known-limitations-and-deferred-work)
+
+-----
+
+<a id="use-this-package"></a>
+## 使用本包
+
+在 `dsh-debug` 之后组合本插件。工具先校验操作 union，再校验会话 id 与各操作字段；领域失败以模型可读的 `DebugError` code 呈现。断点操作带显式 `workspaceId`；无 `sessionId` 时作用于持久化工作区集合并应用到全部匹配的活跃会话，带 `sessionId` 时限定单会话（会话面落地前类型化不可用）。渲染把栈源路径相对化到工作区、按上限截断值并保留子引用、每个有界视图都带 `truncated`/`total`。
+
+-----
+
+<a id="dev-note"></a>
+## 开发备注
+
+<details>
+<summary>维护者的工作上下文——点击展开</summary>
+
+无。
+
+</details>
+
+-----
+
+<a id="model-experience"></a>
+## Model Experience
+
+### 系统提示词
+
+#### 模型可见内容
+
+一个系统提示词段（注册在 LSP 工具段之后）以如下文本定位四个调试工具：
+
+##### 逐字指引
+
+```markdown
+Use the debug tools when a failure depends on runtime state that reading code and tests cannot explain. Set breakpoints before launching; after a stop, inspect threads, the stack, and scopes before stepping or continuing. Evaluate only the minimal necessary expressions; memory writes need an explicit justification and approval. Terminate every debug session you started before finishing; do not leave background debug processes running. Use file and language-server tools for ordinary code navigation; do not substitute the debugger for search.
+```
+
+#### Token 影响
+
+插件激活期间每次请求承担固定的指引成本。
+
+#### KV Cache 影响
+
+插件作用域与指引文本不变时前缀稳定；激活或停用可能使本段起的缓存复用失效。
+
+### 工具 schema
+
+#### 模型可见内容
+
+四个工具 schema，各带封闭 `operation` 枚举，枚举值与其 union 的词汇逐字一致：`debug_session`（launch、attach、launch_compound、list、list_compounds、get、get_compound、terminate、terminate_compound、disconnect、attach_targets）、`debug_execution`（continue、pause、step_over、step_in、step_out、step_back、restart、restart_frame、wait_for_stop）、`debug_inspect`（threads、stack_trace、scopes、variables、evaluate、set_variable、set_expression、completions、exception_info、modules、loaded_sources、source、disassemble、read_memory、write_memory、console）、`debug_breakpoints`（set_file、set_function、set_exception、set_data、set_instruction、list、clear）。模型可见的生成 schema 见[调试工具 schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-debug)。
+
+#### Token 影响
+
+启用期间每次请求承担固定的 schema 成本；四个枚举各把全部操作名列出一次。
+
+#### KV Cache 影响
+
+可见工具定义与顺序不变时前缀稳定；注册生命周期或作用域限制可能使首个变化 schema token 起的缓存复用失效。
+
+### 结果
+
+#### 模型可见内容
+
+有界规范 JSON：会话列表与信息为纯记录；栈带工作区相对源路径与帧上限（每个有界视图都带 `truncated`/`total`）；变量带每值上限并保留子级 `variablesReference` 供懒展开。领域失败以模型可路由的 `DebugError` code 呈现（`DEBUG_UNKNOWN_OPERATION`、`DEBUG_SESSION_GONE`、`DEBUG_UNAVAILABLE`、`DEBUG_INVALID_CONFIG`、`DEBUG_BREAKPOINT_LIMIT`），无需解析 message 文本。
+
+#### Token 影响
+
+每个视图受渲染上限约束（帧上限、值上限）；断点应用结果枚举 applied 与 rejected 两侧。
+
+#### KV Cache 影响
+
+工具结果追加在缓存请求前缀之后，不直接使其失效。
+
+### UI 呈现
+
+#### 模型可见内容
+
+无。客户端从原始工具结果渲染通用卡片；本任务不交付调试专用 presenter。
+
+#### Token 影响
+
+渲染仅发生在客户端，直接 token 影响为零。
+
+#### KV Cache 影响
+
+无；UI 呈现在模型请求之外。
+
+## 已知限制与延后工作
+
+- launch 与 attach 先校验字段，随后以 `DEBUG_UNAVAILABLE` 失败，等待审批接线的编排任务落地；execution 与 inspection 操作在 DAP 会话面暴露到 live 会话之前同样类型化失败。
+- 复合操作、attach 目标探测、函数/异常/数据/指令断点、持久化集合的读取面随后端服务落地。
