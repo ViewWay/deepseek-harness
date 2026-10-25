@@ -230,6 +230,31 @@ export class Debug extends Service {
   /** Validated, persisted, and session-applied breakpoint sets. */
   readonly breakpoints: BreakpointRegistry
 
+  private readonly sessionBackends = new Map<DebugSessionId, unknown>()
+
+  /**
+   * Register one live session's backend handle; controllers resolve it to
+   * drive execution and inspection without touching DAP.
+   * @param sessionId - the session the backend serves.
+   * @param backend - the composition's backend handle.
+   * @returns disposer removing the registration.
+   */
+  registerBackend<T>(sessionId: DebugSessionId, backend: T): () => void {
+    this.sessionBackends.set(sessionId, backend)
+    return () => {
+      if (this.sessionBackends.get(sessionId) === backend) this.sessionBackends.delete(sessionId)
+    }
+  }
+
+  /**
+   * Resolve one session's registered backend handle.
+   * @param sessionId - the session to resolve.
+   * @returns the handle, or undefined when the session has none registered.
+   */
+  backendOf<T>(sessionId: DebugSessionId): T | undefined {
+    return this.sessionBackends.get(sessionId) as T | undefined
+  }
+
   constructor(ctx: Context, config: DebugConfig = {}) {
     super(ctx, 'debug')
     this.projectionConfig = {

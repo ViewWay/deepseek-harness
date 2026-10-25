@@ -97,6 +97,8 @@
 
       "@deepseek-ai/dsh-office-to-pdf/types": ["./packages/document/office-to-pdf/src/types.ts"],
       "@deepseek-ai/dsh-api-terminal-controller": ["./packages/api/terminal-controller/src/index.ts"],
+      "@deepseek-ai/dsh-api-debug-controller": ["./packages/api/debug-controller/src/index.ts"],
+      "@deepseek-ai/dsh-api-debug-controller/types": ["./packages/api/debug-controller/src/types.ts"],
       "@deepseek-ai/dsh-api-terminal-controller/types": ["./packages/api/terminal-controller/src/types.ts"],
       "@deepseek-ai/dsh-api-terminal-controller/client": ["./packages/api/terminal-controller/src/client/index.ts"],
       "@deepseek-ai/dsh-client-ui-sidebar-terminal": ["./packages/client/ui-sidebar-terminal/src/index.ts"],

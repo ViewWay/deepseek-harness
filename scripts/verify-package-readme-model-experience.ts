@@ -74,6 +74,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/telemetry/otel': { kind: 'none', reason: 'The service delivers caller-selected records without changing model context.' },
   'packages/host/product-telemetry-otel': { kind: 'none', reason: 'The plugin exports explicit analytics records without contributing model context.' },
   'packages/api/terminal-controller': { kind: 'indirect', reason: 'Working-directory recovery owns directory context; user terminal screens never enter model requests.' },
+  'packages/api/debug-controller': { kind: 'indirect', reason: 'The Remote layer transports debug facts; the seam and tools own every model-visible input.' },
   'packages/client/ui-sidebar-terminal': { kind: 'none', reason: 'The browser renders user terminal screens without exposing them to the model.' },
   'packages/ssh/ssh-helper-runtime': { kind: 'none', reason: 'The private executable carrier registers no model-facing content; its providers and consumers own operation results.' },
   'packages/experimental/worktree': { kind: 'indirect', reason: 'The worktree tool renders creation results; the working-directory service owns model-visible directory context.' },

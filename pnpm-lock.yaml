@@ -1316,6 +1316,15 @@ importers:
         specifier: workspace:*
         version: link:../../typert/protocol
 
+  packages/api/debug-controller:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-debug':
+        specifier: workspace:*
+        version: link:../../debug/debug
+
   packages/api/gateway:
     dependencies:
       '@deepseek-ai/dsh-deque':
