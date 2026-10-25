@@ -1,0 +1,40 @@
+{
+  "name": "@deepseek-ai/dsh-debug-native",
+  "description": "Rust/C/C++ debug provider registering on ctx.debug: launch and attach resolution into the frozen plan shapes for lldb-dap, plus the verified LLVM 23.1.4 archive manifest with GitHub-published SHA-256 digests",
+  "version": "0.2.1-rc.3",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/debug/debug-native"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-debug": "workspace:*",
+    "@deepseek-ai/dsh-debug-adapter-manager": "workspace:*"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-debug": "workspace:*",
+    "@deepseek-ai/dsh-debug-adapter-manager": "workspace:*",
+    "@deepseek-ai/dsh-debug-fixture": "workspace:*"
+  }
+}

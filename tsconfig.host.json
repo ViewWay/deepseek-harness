@@ -474,6 +474,7 @@
     { "path": "./packages/debug/debug-node" },
     { "path": "./packages/debug/debug-python" },
     { "path": "./packages/debug/debug-go" },
+    { "path": "./packages/debug/debug-native" },
     { "path": "./packages/fs/fs" },
     { "path": "./packages/fs/fs-local" },
     { "path": "./packages/fs/fs-observation-policy" },
