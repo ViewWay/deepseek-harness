@@ -11,6 +11,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import { lastAssistantStreamChunk } from '@deepseek-ai/dsh-llm/assistant-stream'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
+import type {} from '@deepseek-ai/dsh-debug'
 
 /** Default per-string and per-key cap applied to every bounded projected payload. */
 export const MAX_STRING_BYTES = 8 * 1024
@@ -312,6 +313,14 @@ export function projectJsonRun(
         })
         return
       }
+      case 'debug/session-started':
+      case 'debug/stopped':
+      case 'debug/session-ended':
+      case 'debug/control':
+        // Durable debug facts carry only bounded ids and audit fields; the
+        // per-string cap bounds any long workspace root or source path.
+        write({ type: event.type, data: event.data })
+        return
       default:
         return
     }

@@ -11,6 +11,8 @@ kind: "package-bundle"
 
 `dsh-headless` 从命令行运行一个 dsh 任务并打印最终答案，然后退出——没有 GUI、没有服务器、没有浏览器。输入 `dsh --profile headless "run the tests"`，agent（智能体）会以与所有其他表层相同的模型、工具与安全默认值完成该任务。它非常适合脚本、CI 与一次性任务：进程不打开任何端口，也不会留下任何后台运行的东西。监督进程还可以通过按行 JSON 事件流（`--json`）驱动它，并用该事件流报告的标识（`--session-id`）在同一段对话上继续唤醒。退出码告诉你结果——任务完成时为 0，中止或出错时为 1。主要边界：每次调用只运行一个任务，没有交互式后续。
 
+`--json` 事件流在 `dsh-debug` 已组合时也输出四个耐久调试 Session 事件（`debug/session-started`、`debug/stopped`、`debug/session-ended`、`debug/control`）：每个事件以一行 NDJSON 投影其 Session 日志字段，受同一逐字符串上限约束；绝不出现变量值、内存、环境变量值或原始 DAP 帧。
+
 ## 目录
 
 - [使用本包](#use-this-package)
