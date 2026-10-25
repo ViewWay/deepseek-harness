@@ -16566,6 +16566,15 @@ importers:
       '@deepseek-ai/dsh-debug-python':
         specifier: workspace:*
         version: link:../../debug/debug-python
+      '@deepseek-ai/dsh-fs-local':
+        specifier: workspace:*
+        version: link:../../fs/fs-local
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-subprocess-local':
+        specifier: workspace:*
+        version: link:../../subprocess/subprocess-local
 
   packages/test-support/debug-fixture:
     dependencies:
