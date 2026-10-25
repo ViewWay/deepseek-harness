@@ -19,6 +19,7 @@ import type {
 } from '@deepseek-ai/dsh-debug'
 import { PYTHON_OPTIONS_SCHEMA, resolvePythonAttachConfig, resolvePythonLaunchConfig } from './config.ts'
 import type { PythonAttachConfig, PythonLaunchConfig } from './config.ts'
+import type { DebugAdapterManager } from '@deepseek-ai/dsh-debug-adapter-manager'
 
 /** Absolutize a workspace-relative script path in the target world. */
 function absolute(entry: string, workspaceRoot: string, separator: string): string {
@@ -52,6 +53,15 @@ function attachRequest(config: PythonAttachConfig): Readonly<Record<string, Json
     ...(config.processId !== undefined ? { processId: config.processId } : {}),
     ...(config.port !== undefined ? { listen: { host: '127.0.0.1', port: config.port } } : {}),
   }
+}
+
+/** Raw pypi manifest data for the managed debugpy adapter (verified upstream facts). */
+export const PY_ADAPTER_MANIFEST = {
+  providerId: 'python',
+  version: '1.8.22',
+  license: 'MIT',
+  source: { kind: 'pypi', package: 'debugpy' },
+  command: ['python', '-m', 'debugpy.adapter'],
 }
 
 /** The Python provider object; register it on `ctx.debug`. */
@@ -109,13 +119,17 @@ export const name = 'debug-python'
 export const inject = ['debug']
 
 /**
- * Register the python provider on `ctx.debug`.
+ * Register the python provider and, when the adapter manager is composed, its
+ * verified pypi manifest. Both registrations release together with the plugin.
  * @param ctx - the plugin's context.
  */
 export function apply(ctx: Context): void {
   ctx.effect(function* (this: Context) {
     const disposeProvider = this.debug.registerProvider(pythonDebugProvider)
+    const manager: DebugAdapterManager | undefined = this.get('debugAdapters')
+    const disposeManifest = manager?.registerManifest(PY_ADAPTER_MANIFEST)
     yield () => {
+      disposeManifest?.()
       disposeProvider()
     }
   }.bind(ctx), 'debug-python.apply()')

@@ -7,9 +7,10 @@ import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import Debug, { DebugProviderId } from '@deepseek-ai/dsh-debug'
 import type { DebugAttachRequest, DebugLaunchRequest } from '@deepseek-ai/dsh-debug'
+import { parseAdapterManifest } from '@deepseek-ai/dsh-debug-adapter-manager'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import { fixtureDebugEnvironment, fixtureSessionId } from '@deepseek-ai/dsh-debug-fixture'
-import { apply, inject, name, pythonDebugProvider } from '../src/index.ts'
+import { PY_ADAPTER_MANIFEST, apply, inject, name, pythonDebugProvider } from '../src/index.ts'
 
 const environment = fixtureDebugEnvironment({
   resolvedCommand: ['/venv/bin/python', '-m', 'debugpy.adapter'],
@@ -97,5 +98,13 @@ describe('pythonDebugProvider registration', () => {
     expect(ctx.debug.providers().map(provider => provider.id)).toContain(DebugProviderId('python'))
     await fiber.dispose()
     expect(ctx.debug.providers()).toHaveLength(0)
+  })
+
+  it('exposes a pypi manifest that validates against the manager', () => {
+    const manifest = parseAdapterManifest(PY_ADAPTER_MANIFEST)
+    expect(manifest.version).toBe('1.8.22')
+    expect(manifest.source).toEqual({ kind: 'pypi', package: 'debugpy' })
+    expect(manifest.platforms).toBeUndefined()
+    expect(manifest.command).toEqual(['python', '-m', 'debugpy.adapter'])
   })
 })

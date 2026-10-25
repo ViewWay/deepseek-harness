@@ -28,11 +28,13 @@
   "license": "MIT",
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-debug": "workspace:*"
+    "@deepseek-ai/dsh-debug": "workspace:*",
+    "@deepseek-ai/dsh-debug-adapter-manager": "workspace:*"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
     "@deepseek-ai/dsh-debug": "workspace:*",
+    "@deepseek-ai/dsh-debug-adapter-manager": "workspace:*",
     "@deepseek-ai/dsh-debug-fixture": "workspace:*"
   }
 }
