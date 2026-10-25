@@ -5,3 +5,6 @@
 - insert:
     - id: tui-app
       name: '@deepseek-ai/dsh-tui'
+
+    - id: tui-debug
+      name: '@deepseek-ai/dsh-tui-debug'
