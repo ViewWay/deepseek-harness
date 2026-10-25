@@ -16545,9 +16545,27 @@ importers:
       '@deepseek-ai/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-debug':
+        specifier: workspace:*
+        version: link:../../debug/debug
+      '@deepseek-ai/dsh-debug-adapter-manager':
+        specifier: workspace:*
+        version: link:../../debug/debug-adapter-manager
       '@deepseek-ai/dsh-debug-dap':
         specifier: workspace:*
         version: link:../../debug/debug-dap
+      '@deepseek-ai/dsh-debug-go':
+        specifier: workspace:*
+        version: link:../../debug/debug-go
+      '@deepseek-ai/dsh-debug-native':
+        specifier: workspace:*
+        version: link:../../debug/debug-native
+      '@deepseek-ai/dsh-debug-node':
+        specifier: workspace:*
+        version: link:../../debug/debug-node
+      '@deepseek-ai/dsh-debug-python':
+        specifier: workspace:*
+        version: link:../../debug/debug-python
 
   packages/test-support/debug-fixture:
     dependencies:
