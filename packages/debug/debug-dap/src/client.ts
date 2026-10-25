@@ -273,8 +273,9 @@ export class DapClient {
     try {
       const body = await handler(request)
       await this.answerReverseRequest(request, true, body, undefined)
-    } catch {
-      await this.answerReverseRequest(request, false, undefined, 'reverse request handler failed')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'reverse request handler failed'
+      await this.answerReverseRequest(request, false, undefined, message)
     }
   }
 

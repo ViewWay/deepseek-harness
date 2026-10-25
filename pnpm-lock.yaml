@@ -7953,6 +7953,21 @@ importers:
         specifier: workspace:*
         version: link:../../test-support/fake-debug-adapter
 
+  packages/debug/debug-node:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-debug':
+        specifier: workspace:*
+        version: link:../debug
+      '@deepseek-ai/dsh-debug-adapter-manager':
+        specifier: workspace:*
+        version: link:../debug-adapter-manager
+      '@deepseek-ai/dsh-debug-fixture':
+        specifier: workspace:*
+        version: link:../../test-support/debug-fixture
+
   packages/deliverables/deliverable-file-references:
     devDependencies:
       '@deepseek-ai/cordis':

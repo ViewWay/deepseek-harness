@@ -1,5 +1,6 @@
 import { FakeDebugAdapterCrashError, type FakeDebugAdapter } from '@deepseek-ai/dsh-fake-debug-adapter'
-import { decodeDapFrames, type DebugTransport } from '../src/frames.ts'
+import { decodeDapFrames } from '../src/frames.ts'
+import type { DebugTransport } from '../src/transport.ts'
 
 /**
  * Bridges a fake adapter to a {@link DebugTransport} at the wire level: the
@@ -12,7 +13,7 @@ import { decodeDapFrames, type DebugTransport } from '../src/frames.ts'
 export function createMemoryTransport(adapter: FakeDebugAdapter): DebugTransport {
   return {
     input: adapterFrames(adapter),
-    async write(bytes) {
+    async write(bytes: Uint8Array) {
       for (const message of decodeDapFrames(bytes).messages) {
         if (message.type === 'event') throw new Error('memory transport received a client-side event')
         adapter.write(message)

@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { createFakeDebugAdapter, type FakeDebugAdapter } from '@deepseek-ai/dsh-fake-debug-adapter'
 import { createMemoryTransport } from './memory-transport.ts'
 import { DapClient } from '../src/client.ts'
-import { encodeDapFrame, MAX_MESSAGE_BYTES, type DebugTransport } from '../src/frames.ts'
+import { encodeDapFrame, MAX_MESSAGE_BYTES } from '../src/frames.ts'
+import type { DebugTransport } from '../src/transport.ts'
 
 interface PushTransport {
   readonly transport: DebugTransport
@@ -207,7 +208,18 @@ describe('DapClient', () => {
     })
     await client.request('launch', {})
     await vi.waitFor(() => expect(adapter.reverseRequestResponses).toHaveLength(1))
-    expect(adapter.reverseRequestResponses[0]).toMatchObject({ success: false })
+    expect(adapter.reverseRequestResponses[0]).toMatchObject({ success: false, message: 'no terminal service' })
+    await client.dispose()
+  })
+
+  it('falls back to a generic message when a handler rejects with a non-error', async () => {
+    const { adapter, client } = mount({ runInTerminal: { args: ['node', 'app.js'] } })
+    client.onReverseRequest(async () => {
+      throw 'boom'
+    })
+    await client.request('launch', {})
+    await vi.waitFor(() => expect(adapter.reverseRequestResponses).toHaveLength(1))
+    expect(adapter.reverseRequestResponses[0]).toMatchObject({ success: false, message: 'reverse request handler failed' })
     await client.dispose()
   })
 

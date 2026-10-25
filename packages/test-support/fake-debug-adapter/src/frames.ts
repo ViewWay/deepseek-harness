@@ -30,7 +30,7 @@ export interface DapResponse {
   readonly success: boolean
   readonly command: string
   readonly message?: string
-  readonly body?: JsonRecord
+  readonly body?: JsonValue
 }
 
 /** An adapter-to-client event notification. */
@@ -38,7 +38,7 @@ export interface DapEvent {
   readonly seq: number
   readonly type: 'event'
   readonly event: string
-  readonly body?: JsonRecord
+  readonly body?: JsonValue
 }
 
 /** Any adapter-to-client message. */

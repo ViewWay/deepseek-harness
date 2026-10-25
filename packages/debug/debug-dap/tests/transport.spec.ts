@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { connect, createServer } from 'node:net'
 import { PassThrough, Writable, type Duplex } from 'node:stream'
 import { once } from 'node:events'
-import { createStdioTransport, createTunnelTransport } from '../src/transport.ts'
-import { type DebugTransport } from '../src/frames.ts'
+import { createStdioTransport, createTunnelTransport, type DebugTransport } from '../src/transport.ts'
 
 async function collectChunks(transport: DebugTransport, count: number): Promise<Uint8Array[]> {
   const chunks: Uint8Array[] = []
@@ -30,7 +29,8 @@ describe('stdio transport', () => {
     const pushed = new TextEncoder().encode('adapter-bytes')
     stdout.write(pushed)
     const [received] = await collectChunks(transport, 1)
-    expect(new Uint8Array(received)).toEqual(pushed)
+    if (received === undefined) throw new Error('stdio transport produced no chunk')
+    expect(Buffer.compare(Buffer.from(received), Buffer.from(pushed))).toBe(0)
     await transport.end()
     expect(stdin.writableEnded).toBe(true)
   })
@@ -111,7 +111,8 @@ describe('tunnel transport', () => {
     const answer = new TextEncoder().encode('tunnel-answer')
     serverSocket.write(answer)
     const [fromServer] = await collectChunks(transport, 1)
-    expect(new Uint8Array(fromServer)).toEqual(answer)
+    if (fromServer === undefined) throw new Error('tunnel transport produced no chunk')
+    expect(Buffer.compare(Buffer.from(fromServer), Buffer.from(answer))).toBe(0)
 
     await transport.end()
     await once(serverSocket, 'end')

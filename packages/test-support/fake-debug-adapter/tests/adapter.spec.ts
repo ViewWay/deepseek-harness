@@ -251,6 +251,19 @@ describe('fake debug adapter', () => {
     await expect(adapter.read()).resolves.toMatchObject({ type: 'response', command: 'completions', success: false })
   })
 
+  it('answers scripted failures with unsuccessful responses', async () => {
+    const adapter = createFakeDebugAdapter({ fail: ['evaluate'] })
+    adapter.write(request(1, 'initialize', {}))
+    await readMessages(adapter, 2)
+    adapter.write(request(2, 'evaluate', { expression: '1' }))
+    await expect(adapter.read()).resolves.toMatchObject({
+      type: 'response',
+      command: 'evaluate',
+      success: false,
+      message: 'scripted failure: evaluate',
+    })
+  })
+
   it('never responds to hung commands while later requests still answer', async () => {
     const adapter = createFakeDebugAdapter({ hang: ['threads'] })
     adapter.write(request(1, 'initialize', {}))

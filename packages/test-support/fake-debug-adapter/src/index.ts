@@ -43,6 +43,8 @@ export interface FakeDebugAdapterScript {
   readonly stops?: readonly FakeScriptedStop[]
   /** Commands that never receive a response. */
   readonly hang?: readonly string[]
+  /** Commands answered with a scripted failure response. */
+  readonly fail?: readonly string[]
   /** Commands after which one malformed wire chunk is emitted next. */
   readonly malformedAfter?: readonly string[]
   /** See {@link FakeDelayedEventScript}. */
@@ -156,6 +158,7 @@ class ScriptedAdapter implements FakeDebugAdapter {
   private nextSeq = 1
   private stopCursor = 0
   private stopEmitted = false
+  private frameEpoch = 0
   private currentStop: FakeScriptedStop | undefined
   private stderrCollected = ''
   private crashed = false
@@ -221,6 +224,17 @@ class ScriptedAdapter implements FakeDebugAdapter {
       return
     }
     if (this.script.hang?.includes(request.command)) return
+    if (this.script.fail?.includes(request.command)) {
+      this.enqueue({
+        seq: this.nextSeq++,
+        type: 'response',
+        request_seq: request.seq,
+        success: false,
+        command: request.command,
+        message: `scripted failure: ${request.command}`,
+      })
+      return
+    }
     const args: JsonRecord = request.arguments ?? {}
     switch (request.command) {
       case 'initialize':
@@ -276,7 +290,7 @@ class ScriptedAdapter implements FakeDebugAdapter {
       case 'stackTrace': {
         const stop = this.currentStop
         this.respondOk(request, { stackFrames: [{
-          id: 1000,
+          id: 999 + Math.max(this.frameEpoch, 1),
           name: 'fake frame',
           source: { path: '/ws/a.ts', name: 'a.ts' },
           line: stop?.line ?? 1,
@@ -316,6 +330,7 @@ class ScriptedAdapter implements FakeDebugAdapter {
         this.enqueueEvent('process', { name: 'fake-debuggee', systemProcessId: 4242, isLocalProcess: true, startMethod: 'launch' })
         this.stopCursor = 0
         this.stopEmitted = false
+        this.frameEpoch = 0
         this.advance()
         break
       case 'terminate':
@@ -349,6 +364,7 @@ class ScriptedAdapter implements FakeDebugAdapter {
 
   private advance(): void {
     const stop = (this.script.stops ?? [])[this.stopCursor]
+    this.frameEpoch += 1
     if (stop === undefined) {
       this.enqueueEvent('terminated')
       return
