@@ -477,6 +477,8 @@
     { "path": "./packages/debug/debug-native" },
     { "path": "./packages/debug/tool-debug" },
     { "path": "./packages/api/debug-controller" },
+    { "path": "./apps/tui" },
+    { "path": "./packages/bundle/tui-app" },
     { "path": "./packages/fs/fs" },
     { "path": "./packages/fs/fs-local" },
     { "path": "./packages/fs/fs-observation-policy" },

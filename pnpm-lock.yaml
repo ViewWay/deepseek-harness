@@ -936,7 +936,11 @@ importers:
         specifier: ^4.22.4
         version: 4.23.13
 
-  apps/tui: {}
+  apps/tui:
+    dependencies:
+      commander:
+        specifier: ^15.0.0
+        version: 15.0.0
 
   apps/web:
     dependencies:

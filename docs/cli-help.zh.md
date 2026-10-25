@@ -17,6 +17,7 @@
 - [`dsh headless`](#dsh-headless)
 - [`dsh sdk`](#dsh-sdk)
 - [`dsh sdk-minimal`](#dsh-sdk-minimal)
+- [`dsh tui`](#dsh-tui)
 - [`dsh web`](#dsh-web)
 
 <a id="dsh"></a>
@@ -169,6 +170,27 @@ Options:
 
 Example:
   dsh --profile sdk-minimal     serve one SDK runtime until its client disconnects
+
+```
+
+<a id="dsh-tui"></a>
+## `dsh tui`
+
+调用方式: `dsh tui --help`, `dsh --profile tui --help`
+
+```text
+Usage: dsh --profile tui [options]
+
+Interactive terminal UI for the DeepSeek Harness; press Ctrl+C to exit.
+
+Options:
+  --session-id <id>  adopt the persisted Session with this id; an unknown id is
+                     an error
+  -h, --help         show this help
+
+Examples:
+  dsh --profile tui                                    start a new interactive session
+  dsh --profile tui --session-id session-…             resume an existing Session
 
 ```
 

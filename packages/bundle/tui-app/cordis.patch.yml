@@ -1,0 +1,7 @@
+# The dsh-tui-app bundle patch: the terminal app surface over the dsh-base layer.
+# It stacks no browser transport; the TUI plugin renders in the launching
+# terminal and consumes ctx.debug in-process.
+
+- insert:
+    - id: tui-app
+      name: '@deepseek-ai/dsh-tui'
