@@ -63,6 +63,7 @@ import { DesktopUpdateOverlays } from './update-overlay.ts'
 import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
+import { debugMenu, debugMenuCommand, type DebugMenuCommandId } from './debug/menu.ts'
 
 let focusPrimaryWindow = (): void => {}
 let stopForRecovery = async (): Promise<void> => {}
@@ -973,9 +974,27 @@ async function main(): Promise<void> {
   // its standard menus and application hide commands declared explicitly.
   // Keep app.name stable: Electron derives its default userData directory from it.
   const darwin = process.platform === 'darwin'
+  const debugMenuDispatch = (commandId: DebugMenuCommandId): void => {
+    const window = mainWindow
+    if (window === undefined || window.isDestroyed()) return
+    const input = shortcuts.menuCommand(debugMenuCommand(commandId))
+    if (input !== null) window.webContents.send(DESKTOP_IPC.shortcutsInput, input)
+  }
+  const debugMenuEntry = (): MenuItemConstructorOptions => debugMenu({
+    labels: {
+      menu: currentDesktopLocale().messages.debugMenu,
+      start: currentDesktopLocale().messages.debugStartMenu,
+      continue: currentDesktopLocale().messages.debugContinueMenu,
+      step: currentDesktopLocale().messages.debugStepMenu,
+      stop: currentDesktopLocale().messages.debugStopMenu,
+      toggleBreakpoint: currentDesktopLocale().messages.debugToggleBreakpointMenu,
+    },
+    dispatch: debugMenuDispatch,
+    enabled: (): boolean => mainWindow !== undefined && !mainWindow.isDestroyed(),
+  })
   const platformMenus = (): MenuItemConstructorOptions[] => darwin
-    ? [shortcuts.fileMenu(currentDesktopLocale().messages), { role: 'editMenu' }, { role: 'windowMenu' }]
-    : [{ role: 'editMenu' }]
+    ? [shortcuts.fileMenu(currentDesktopLocale().messages), debugMenuEntry(), { role: 'editMenu' }, { role: 'windowMenu' }]
+    : [debugMenuEntry(), { role: 'editMenu' }]
   const hideCommands: MenuItemConstructorOptions[] = darwin
     ? [{ role: 'hide', label: currentDesktopLocale().messages.hideApplication },
       { role: 'hideOthers', label: currentDesktopLocale().messages.hideOtherApplications },

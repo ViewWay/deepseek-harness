@@ -1,7 +1,7 @@
 /** Product-window preference IPC and native menu interception during physical-key dispatch/recording. */
 import { ipcMain, type BrowserWindow, type IpcMainInvokeEvent, type Input, type MenuItemConstructorOptions, type WebContents } from 'electron'
 import { bindingKey, effectiveShortcuts, presentBinding, parseShortcutDefinitions, parseShortcutEdit } from '@deepseek-ai/dsh-client-shortcuts/protocol'
-import type { NormalizedBinding, ShortcutConfigSnapshot, ShortcutDefinition, ShortcutPlatform, ShortcutRevision } from '@deepseek-ai/dsh-client-shortcuts/protocol'
+import type { NormalizedBinding, ShortcutCommandId, ShortcutConfigSnapshot, ShortcutDefinition, ShortcutPlatform, ShortcutRevision } from '@deepseek-ai/dsh-client-shortcuts/protocol'
 import type { DesktopBrowserLeaseId } from '@deepseek-ai/dsh-client-ui-sidebar-browser/types'
 import { desktopKeybindings } from './keybindings.ts'
 import { DESKTOP_IPC, assertDesktopSender } from './ipc.ts'
@@ -20,6 +20,12 @@ export function installDesktopShortcuts(
   overlayInput: (window: BrowserWindow) => { readonly revision: number; readonly blocked: boolean },
 ): {
   fileMenu(labels: { fileMenu: string; closePage: string }): MenuItemConstructorOptions
+  /**
+   * Build one menu-originated command input for the product window's command registry.
+   * @param commandId - command id the client registry resolves.
+   * @returns the shortcuts input payload, or null when the window cannot accept commands.
+   */
+  menuCommand(commandId: ShortcutCommandId): { kind: 'menu'; commandId: ShortcutCommandId; revision: ShortcutRevision } | null
   /**
    * Send a native Edit action to the editor without matching user shortcuts.
    * @param keyCode - edit key.
@@ -246,6 +252,17 @@ export function installDesktopShortcuts(
         ...accelerator === undefined ? {} : { accelerator },
         click: sendMenuClose,
       }] }
+    },
+    /**
+     * Build one menu-originated command input for the product window's command registry.
+     * @param commandId - command id the client registry resolves.
+     * @returns the shortcuts input payload, or null when the window cannot accept commands.
+     */
+    menuCommand(commandId: ShortcutCommandId): { kind: 'menu'; commandId: ShortcutCommandId; revision: ShortcutRevision } | null {
+      const window = getWindow()
+      if (window === undefined || window.isDestroyed() || !window.isFocused() || !window.isEnabled()
+        || revision === undefined || recording || overlayInput(window).blocked) return null
+      return { kind: 'menu', commandId, revision }
     },
     attach(window) { attachInput(window, window.webContents) },
     attachGuest: attachInput,

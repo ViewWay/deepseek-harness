@@ -1030,8 +1030,14 @@ describe('desktop main startup', () => {
       .find(items => items.some(item => item.role === 'editMenu'))
     if (template === undefined) throw new Error('application menu missing')
     expect(template.map(describeItem)).toEqual(platform === 'darwin'
-      ? ['Desktop test', en.fileMenu, 'editMenu', 'windowMenu']
-      : ['Application', 'editMenu'])
+      ? ['Desktop test', en.fileMenu, en.debugMenu, 'editMenu', 'windowMenu']
+      : ['Application', en.debugMenu, 'editMenu'])
+    const debug = template.find(item => item.label === en.debugMenu)!.submenu as MenuItemConstructorOptions[]
+    expect(debug.map(describeItem))
+      .toEqual([en.debugStartMenu, en.debugContinueMenu, en.debugStepMenu, en.debugStopMenu, en.debugToggleBreakpointMenu])
+    for (const item of debug) expect(item.click).toBeTypeOf('function')
+    expect(debug.map(item => (item as { accelerator?: string }).accelerator))
+      .toEqual(['CmdOrCtrl+Shift+F5', 'F5', 'F10', 'Shift+F5', 'F9'])
     const application = template[0]!.submenu as MenuItemConstructorOptions[]
     expect(application.filter(item => item.visible !== false).map(describeItem)).toEqual(platform === 'darwin'
       ? ['about', 'separator', en.checkUpdatesMenu, en.cliCommandMenu, 'separator', 'hide', 'hideOthers', 'unhide', 'separator', 'quit']
