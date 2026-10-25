@@ -167,6 +167,23 @@ describe('DAP handshake', () => {
     await client.dispose()
   })
 
+  it('skips non-matching events and rejects non-object stop bodies', async () => {
+    const scripted = createScriptedTransport({
+      initialize: [
+        { response: { capabilities: {} } },
+        { event: { name: 'output', body: { output: 'noise' } } },
+        { event: { name: 'initialized' } },
+      ],
+      launch: [{ response: {} }, { event: { name: 'stopped', body: ['not', 'an', 'object'] } }],
+    })
+    const client = new DapClient(scripted.transport)
+    await expect(initializeDebugAdapter(client, {
+      launch: { request: 'launch' },
+      timeoutMs: 200,
+    })).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+    await client.dispose()
+  })
+
   it('rejects a stopped event without a numeric threadId as malformed', async () => {
     const scripted = createScriptedTransport({
       initialize: [responseFrame(1, 'initialize', true, { capabilities: {} }), eventFrame('initialized')],

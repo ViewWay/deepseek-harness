@@ -28,6 +28,12 @@ describe('debug tunnel transport', () => {
       } },
       { host: '10.255.255.1', port: 1 },
     )).rejects.toMatchObject({ code: 'DEBUG_ATTACH_UNSUPPORTED' })
+    await expect(connectDebugTunnel(
+      { connectTcpStream: async () => {
+        throw 'plain-string failure'
+      } },
+      { host: '10.255.255.1', port: 1 },
+    )).rejects.toMatchObject({ code: 'DEBUG_ATTACH_UNSUPPORTED' })
   })
 })
 
