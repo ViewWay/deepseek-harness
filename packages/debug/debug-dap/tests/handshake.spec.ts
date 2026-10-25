@@ -99,6 +99,22 @@ describe('DAP handshake', () => {
     await client.dispose()
   })
 
+  it('reads spec-form initialize bodies whose body is the capability record', async () => {
+    const scripted = createScriptedTransport({
+      initialize: [responseFrame(1, 'initialize', true, { supportsTerminateRequest: true, supportsConfigurationDoneRequest: true }), eventFrame('initialized')],
+      configurationDone: [responseFrame(2, 'configurationDone', true, {})],
+      attach: [responseFrame(3, 'attach', true, {}), eventFrame('terminated')],
+    })
+    const client = new DapClient(scripted.transport)
+    const result = await initializeDebugAdapter(client, {
+      launch: { request: 'attach' },
+      timeoutMs: 1000,
+    })
+    expect(scripted.sentCommands).toEqual(['initialize', 'configurationDone', 'attach'])
+    expect(result.capabilities.supportsTerminateRequest).toBe(true)
+    await client.dispose()
+  })
+
   it('resolves without a stop when the adapter terminates after attach', async () => {
     const adapter = createFakeDebugAdapter({ capabilities: { supportsConfigurationDoneRequest: false } })
     const client = new DapClient(createMemoryTransport(adapter))

@@ -142,7 +142,9 @@ function requireSuccess(response: DapResponse, command: string): void {
 
 function capabilitiesOf(response: DapResponse): JsonValue | undefined {
   if (!isJsonObject(response.body)) return undefined
-  return response.body['capabilities']
+  // The specification makes the body the capability record itself; adapters
+  // that nest it under `capabilities` keep that precedence.
+  return 'capabilities' in response.body ? response.body['capabilities'] : response.body
 }
 
 function eventWait(client: DapClient, event: string, signal: AbortSignal): Promise<DapEvent> {
