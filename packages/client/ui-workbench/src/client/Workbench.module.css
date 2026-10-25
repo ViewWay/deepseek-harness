@@ -1,0 +1,125 @@
+/* The workbench frame: toolbar row over the design's regions. Grid areas keep
+ * the wide arrangement (files | editor | panels over terminal) and the narrow
+ * collapse (editor over panel tabs over terminal) on one element each. */
+
+.frame {
+  display: grid;
+  grid-template:
+    'toolbar toolbar toolbar' auto
+    'left center right' 1fr
+    'bottom bottom bottom' minmax(8rem, auto)
+    / minmax(12rem, 1fr) 3fr minmax(14rem, 1fr);
+  gap: 0.25rem;
+  height: 100%;
+  min-height: 0;
+}
+
+.header {
+  grid-area: toolbar;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header > :first-child {
+  margin-inline-end: auto;
+}
+
+.left {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 0;
+  overflow: auto;
+}
+
+.center {
+  grid-area: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
+
+.right {
+  grid-area: right;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 0;
+  overflow: auto;
+}
+
+.bottom {
+  grid-area: bottom;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 0;
+}
+
+.dock {
+  flex: 1;
+  min-height: 8rem;
+}
+
+.announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Narrow: side regions leave the grid; editor, panel tabs, and terminal stay. */
+.frame[data-narrow='true'] {
+  grid-template:
+    'toolbar' auto
+    'center' 1fr
+    'bottom' minmax(8rem, auto)
+    / 1fr;
+}
+
+.frame[data-narrow='true'] .left,
+.frame[data-narrow='true'] .right {
+  display: none;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.tab {
+  border: 1px solid currentcolor;
+  background: none;
+  padding: 0.125rem 0.5rem;
+}
+
+.tab[aria-selected='true'] {
+  font-weight: 600;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.error {
+  margin: 0;
+  color: #b3261e;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frame,
+  .tab {
+    transition: none;
+  }
+}

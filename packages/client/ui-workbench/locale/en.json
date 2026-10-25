@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Debug workbench",
+    "description": "Workbench layout, panel registry, and shared file tree and terminal surfaces composing the debug workbench."
+  }
+}
