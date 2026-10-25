@@ -23,4 +23,17 @@ describe('TUI session', () => {
     expect(session.transcript().entries).toHaveLength(1)
     expect(session.transcript().entries[0]).toMatchObject({ kind: 'assistant', text: 'Done.' })
   })
+
+  it('notifies subscribers on transcript changes and stops on unsubscribe', async () => {
+    const send = vi.fn(async () => {})
+    const session = createTuiSession({ send, sessionId: 'session-1' })
+    const seen: number[] = []
+    const stop = session.subscribe((transcript) => { seen.push(transcript.entries.length) })
+    await session.submit('hello')
+    session.receive({ kind: 'assistant', text: 'Done.' })
+    stop()
+    session.receive({ kind: 'assistant', text: 'Later.' })
+    expect(seen).toEqual([1, 2])
+    expect(session.transcript().entries).toHaveLength(3)
+  })
 })

@@ -1,12 +1,14 @@
 /**
  * The TUI app's command-line provider: it parses the session identity and
  * help, then publishes {@link TUI_STARTUP_SERVICE}. The Ink interactive loop
- * mounts as a consumer of that service in a later batch.
+ * mounts from {@link mountTuiApp} as that service's consumer.
  * @module @deepseek-ai/dsh-tui/startup
  */
 
 import { Command } from 'commander'
 import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-cmdline'
+import { mountTuiApp } from './run.ts'
 
 /** Stable Cordis plugin name. */
 export const name = 'tui-startup'
@@ -49,7 +51,7 @@ Examples:
 
 /**
  * Parse and provide the TUI startup values. On `--help` and on missing
- * options commander prints and exits; the Ink loop consumes the service.
+ * options commander prints and exits; the action then mounts the Ink loop.
  * @param ctx - plugin context carrying the command line.
  */
 export function apply(ctx: Context): void {
@@ -61,9 +63,13 @@ export function apply(ctx: Context): void {
       program.error('error: --session-id requires a non-empty session id')
     }
     ctx.provide(TUI_STARTUP_SERVICE, { sessionId })
-    // The interactive Ink loop mounts in a later batch; until then, print the
-    // help so gen-cli-help and early adopters get a clean exit.
-    program.outputHelp()
+    mountTuiApp(ctx).catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error)
+      process.stderr.write(`dsh: ${message}\n`)
+      const exit = ctx.get('appExit')
+      if (exit !== undefined) exit(1)
+      else process.exitCode = 1
+    })
   })
   program.parse(ctx.get('cmdlineArgs')?.get() ?? [], { from: 'user' })
 }

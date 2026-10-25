@@ -27,6 +27,9 @@
     "cordis.patch.yml"
   ],
   "license": "MIT",
+  "dependencies": {
+    "@deepseek-ai/dsh-tui": "workspace:*"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~"
   },

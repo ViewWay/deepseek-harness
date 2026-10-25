@@ -1,16 +1,44 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "lib/types",
     "jsx": "react-jsx"
   },
   "include": [
-    "src"
+    "src",
+    "tests"
   ],
   "references": [
     {
       "path": "../../vendor/cordis"
+    },
+    {
+      "path": "../../packages/boot/cmdline"
+    },
+    {
+      "path": "../../packages/core/agent"
+    },
+    {
+      "path": "../../packages/core/agent-default-model"
+    },
+    {
+      "path": "../../packages/core/session"
+    },
+    {
+      "path": "../../packages/debug/debug"
+    },
+    {
+      "path": "../../packages/interaction/user-approval"
+    },
+    {
+      "path": "../../packages/llm/llm"
+    },
+    {
+      "path": "../../packages/session-query/session-query"
+    },
+    {
+      "path": "../../packages/util/brand"
     }
   ]
 }

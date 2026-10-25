@@ -20,6 +20,8 @@ export interface TuiSession {
   submit(text: string): Promise<void>
   receive(entry: TuiTranscriptEntry): void
   transcript(): TuiTranscript
+  /** Notify on transcript changes; returns the unsubscribe function. */
+  subscribe(callback: (transcript: TuiTranscript) => void): () => void
 }
 
 /**
@@ -29,17 +31,27 @@ export interface TuiSession {
  */
 export function createTuiSession(deps: TuiSessionDeps): TuiSession {
   let transcript = createTranscript()
+  const listeners = new Set<(transcript: TuiTranscript) => void>()
+  const notify = (): void => {
+    for (const listener of listeners) listener(transcript)
+  }
   return {
     sessionId: deps.sessionId,
     async submit(text: string): Promise<void> {
       transcript = appendTranscript(transcript, { kind: 'user', text })
+      notify()
       await deps.send(text)
     },
     receive(entry: TuiTranscriptEntry): void {
       transcript = appendTranscript(transcript, entry)
+      notify()
     },
     transcript(): TuiTranscript {
       return transcript
+    },
+    subscribe(callback: (transcript: TuiTranscript) => void): () => void {
+      listeners.add(callback)
+      return () => { listeners.delete(callback) }
     },
   }
 }
