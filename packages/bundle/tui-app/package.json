@@ -28,7 +28,8 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@deepseek-ai/dsh-tui": "workspace:*"
+    "@deepseek-ai/dsh-tui": "workspace:*",
+    "@deepseek-ai/dsh-tui-debug": "workspace:*"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~"

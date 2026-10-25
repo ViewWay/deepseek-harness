@@ -476,6 +476,7 @@
     { "path": "./packages/debug/debug-go" },
     { "path": "./packages/debug/debug-native" },
     { "path": "./packages/debug/tool-debug" },
+    { "path": "./packages/tui/tui-debug" },
     { "path": "./packages/api/debug-controller" },
     { "path": "./apps/tui" },
     { "path": "./packages/bundle/tui-app" },

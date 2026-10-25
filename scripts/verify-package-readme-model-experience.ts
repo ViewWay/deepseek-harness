@@ -181,6 +181,8 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/client/ui-sidebar-files': { kind: 'none', reason: 'Browser-only workspace file tree; registers no tool, prompt section, or session event.' },
   'packages/client/ui-code-editor': { kind: 'none', reason: 'Browser-only CodeMirror editor with breakpoint gutter; reads and guarded saves travel the Remote and assemble no model request.' },
   'packages/client/ui-debug': { kind: 'none', reason: 'Browser-only debug toolbar, panels, and tool cards; every view projects already-logged events and assembles no model request.' },
+  'packages/client/ui-workbench': { kind: 'none', reason: 'Browser-only workbench layout and panel registry; projects already-logged events and assembles no model request.' },
+  'packages/tui/tui-debug': { kind: 'none', reason: 'Terminal-side debug panels and commands over already-logged events; assembles no model request.' },
   'packages/client/resources': { kind: 'none', reason: 'Browser-side resource model (providers, pinning, useResource); registers nothing model-facing.' },
   'packages/client/ui-settings': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },
   'packages/client/ui-settings-general': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },
