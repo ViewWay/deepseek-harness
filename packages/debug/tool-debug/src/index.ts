@@ -37,6 +37,10 @@ export type { DebugToolName } from './tools.ts'
 export { DEBUG_PROMPT_SECTION, DEBUG_PROMPT_TEXT } from './prompt.ts'
 export { renderStackTrace, renderVariables } from './render.ts'
 export type { RenderedFrame, RenderedStackTrace, RenderedVariable, RenderedVariables } from './render.ts'
+export { createStopNotice, shouldWake } from './notices.ts'
+export type { DebugNoticeBounds, DebugStopDelivery, DebugStopFacts, DebugWakeFacts } from './notices.ts'
+export { grantControl, requestDebugApproval } from './approval.ts'
+export type { DebugApprovalFace, DebugApprovalKind, DebugApprovalRequest, DebugControlGrant, DebugControlGrantSource, DebugControlFacts } from './approval.ts'
 
 /** Project one session info into its plain JSON form for tool results. */
 function sessionJson(info: {
