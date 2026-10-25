@@ -15,6 +15,7 @@ import { Context, Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { DebugProviderId, DebugSessionId } from './brand.ts'
 import { DebugError } from './error.ts'
+import { installDebugArchiveAdmission } from './archive-admission.ts'
 import { createDebugSessionsProjection } from './projection.ts'
 import type { DebugSessionsProjectionConfig } from './projection.ts'
 import { DEFAULT_MAX_PROJECTED_SESSIONS, DEFAULT_MAX_PROJECTED_STOPS } from './projection.ts'
@@ -147,6 +148,9 @@ export type {
   DebugSessionsProjectionState,
   DebugStoppedReason,
 } from './projection.ts'
+export { installDebugArchiveAdmission } from './archive-admission.ts'
+export { probeDebugEnvironment } from './environment.ts'
+export type { DebugEnvironmentProbe } from './environment.ts'
 export { expandDebugVariables, parseLaunchConfig } from './launch-config.ts'
 export type {
   DebugCompoundConfiguration,
@@ -242,6 +246,7 @@ export class Debug extends Service {
 
   protected async [Service.init](): Promise<void> {
     await this.ctx.sessionProjections.register(createDebugSessionsProjection(this.projectionConfig))
+    installDebugArchiveAdmission(this.ctx, this.sessions)
   }
 
   /** Live debug events, published only after the owning state committed. */

@@ -2,14 +2,14 @@
 import { randomBytes, randomUUID } from 'node:crypto'
 import { chmod, mkdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { Socket } from 'node:net'
+import { connect as connectTcp, type Socket } from 'node:net'
 import { createServer, type Server } from 'node:tls'
 import type { Duplex, Readable, Writable } from 'node:stream'
 import { finished, pipeline } from 'node:stream/promises'
 import type { Context } from '@deepseek-ai/cordis'
 import type { SubprocessHandle, SubprocessSpawnSpec, SubprocessTerminalHandle } from '@deepseek-ai/dsh-subprocess'
 import { logSpillFailure, OutputCollector, prepareManagedProcessBinding, type SpillFailureReporter } from '@deepseek-ai/dsh-subprocess-local/output'
-import { doneSchema, outputSnapshotFrameLimit, spawnSchema, type SshProcessId, type SshStreamEndpoint } from './schemas.ts'
+import { doneSchema, outputSnapshotFrameLimit, spawnSchema, tcpTargetSchema, type SshProcessId, type SshStreamEndpoint } from './schemas.ts'
 import { z } from 'zod'
 import { SSH_STREAM_TLS_OPTIONS } from './stream-security.ts'
 import { SshRpcPeer } from './protocol.ts'
@@ -92,6 +92,8 @@ export class RemoteProcesses {
   // Settled promises preserve the original rejection for late done requests.
   private readonly completed = new Map<SshProcessId, Promise<Completion>>()
   private readonly cleanups = new Set<Promise<void>>()
+  // TCP forwarding endpoints live outside process records and close with the helper.
+  private readonly tcpEndpoints = new Set<Endpoint>()
   private closing = false
 
   /** Spill failures reach the helper's logger; the remote caller then receives the tail without a spill path. */
@@ -364,9 +366,41 @@ export class RemoteProcesses {
     if (this.closing) return
     this.closing = true
     const releases = [...this.records.keys()].map(id => this.release(id))
-    const outcomes = await Promise.allSettled([...releases, ...this.cleanups])
+    const tcpClosures = [...this.tcpEndpoints].map(endpoint => closeEndpoint(endpoint))
+    const outcomes = await Promise.allSettled([...releases, ...this.cleanups, ...tcpClosures])
     const errors = [...new Set(outcomes.flatMap(result => result.status === 'rejected' ? [result.reason as unknown] : []))]
     if (errors.length > 0) throw new AggregateError(errors, 'SSH remote process cleanup failed')
+  }
+
+  /**
+   * Reserve one authenticated stream that forwards to a remote TCP target.
+   * The first authenticated client connection triggers the dial; the stream
+   * ends when either side closes.
+   * @param raw - untrusted tcp target received over SSH.
+   * @returns the authenticated stream coordinates for `ssh -L` forwarding.
+   */
+  async prepareTcp(raw: unknown): Promise<SshStreamEndpoint> {
+    const target = tcpTargetSchema.parse(raw)
+    const path = join(this.root, `tcp-${randomUUID()}`)
+    const endpoint = await this.endpoint(path)
+    this.tcpEndpoints.add(endpoint)
+    void endpoint.connected.then(async (socket) => {
+      const dial = connectTcp({ host: target.host, port: target.port, allowHalfOpen: true })
+      dial.on('error', () => { socket.destroy() })
+      socket.on('error', () => { dial.destroy() })
+      dial.pipe(socket)
+      socket.pipe(dial)
+      // The endpoint pauses its accepted socket; the pipes are wired, so let bytes flow.
+      socket.resume()
+      await Promise.allSettled([
+        finished(dial).catch(() => {}),
+        finished(socket).catch(() => {}),
+      ])
+      endpoint.server.close()
+    }).catch(() => {
+      void closeEndpoint(endpoint)
+    })
+    return { path: endpoint.path, capability: endpoint.capability }
   }
 
   private async release(id: SshProcessId): Promise<void> {

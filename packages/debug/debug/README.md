@@ -60,6 +60,8 @@ Durable debug facts use the `debug/session-started`, `debug/stopped`, `debug/ses
 | [`src/session-events.ts`](src/session-events.ts) | Durable `debug/*` session-event payloads and the `debug` message source |
 | [`src/projection.ts`](src/projection.ts) | The bounded `debugSessions` projection and its retention-bounds factory |
 | [`src/launch-config.ts`](src/launch-config.ts) | `.dsh/debug.json` parsing with the six-variable expansion and typed config failures |
+| [`src/environment.ts`](src/environment.ts) | Execution-environment probing through the world's own services with typed capability checks |
+| [`src/archive-admission.ts`](src/archive-admission.ts) | The `debug` family of Workspace archive admission: report owned live sessions, stop them on archive |
 
 </details>
 

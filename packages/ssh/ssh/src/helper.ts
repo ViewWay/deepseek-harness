@@ -121,6 +121,7 @@ export async function runSshHelper(transport: HelperTransport): Promise<void> {
     if (method === 'heartbeat') { object.parse(raw); touchLease(); return null }
     if (method === 'close') { object.parse(raw); await close(); return null }
     if (method === 'process.prepare') return processes.prepare(raw)
+    if (method === 'tcp.prepare') return processes.prepareTcp(raw)
     if (method === 'process.start') return processes.start(processIdRequest.parse(raw).id, signal)
     if (method === 'process.done') return processes.done(processIdRequest.parse(raw).id)
     if (method === 'process.wait') return processes.wait(processIdRequest.parse(raw).id, signal)

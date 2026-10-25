@@ -9,7 +9,7 @@ import schema from '@deepseek-ai/schemastery'
 import { z } from 'zod'
 import { assertNever } from '@deepseek-ai/dsh-util-values'
 import { SshRpcPeer, SSH_PROTOCOL_VERSION } from './protocol.ts'
-import { helloSchema, type SshStreamEndpoint } from './schemas.ts'
+import { helloSchema, streamEndpointSchema, tcpTargetSchema, type SshStreamEndpoint } from './schemas.ts'
 import { authenticateStream } from './stream-security.ts'
 
 type Hello = z.infer<typeof helloSchema>
@@ -151,6 +151,20 @@ export class SshConnection extends Service {
    */
   async connectStream(endpoint: SshStreamEndpoint, signal?: AbortSignal): Promise<Socket> {
     return this.track(this.establishStream(endpoint, signal))
+  }
+
+  /**
+   * Forward one authenticated stream to a remote TCP target: the helper dials
+   * the target on the remote side and returns private stream coordinates.
+   * @param host - dialable host name or address on the remote side.
+   * @param port - target TCP port, 1–65535.
+   * @param signal - cancellation of allocation and the resulting socket.
+   * @returns a paused authenticated socket; attach a consumer before resuming it.
+   */
+  async connectTcpStream(host: string, port: number, signal?: AbortSignal): Promise<Socket> {
+    const target = tcpTargetSchema.parse({ host, port })
+    const endpoint = await this.request('tcp.prepare', target, streamEndpointSchema, signal)
+    return this.connectStream(endpoint, signal)
   }
 
   private async establishStream(endpoint: SshStreamEndpoint, signal?: AbortSignal): Promise<Socket> {

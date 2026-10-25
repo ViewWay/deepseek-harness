@@ -70,6 +70,11 @@ export const helloSchema = z.object({
 export const streamEndpointSchema = z.object({ path: remotePath, capability: z.string().regex(/^[0-9a-f]{64}$/) }).strict()
 /** A stream capability reaches only the authenticated SSH client and its helper. */
 export type SshStreamEndpoint = z.infer<typeof streamEndpointSchema>
+/** A remote TCP forwarding target: a dialable host and a valid port. */
+export const tcpTargetSchema = z.object({
+  host: z.string().min(1).max(253).regex(/^[A-Za-z0-9._:-]+$/, 'expected a dialable host name or address'),
+  port: z.number().int().min(1).max(65_535),
+}).strict()
 /** Prepared process and its independently authenticated stream endpoints. */
 export const preparedSchema = z.object({ id: processIdSchema, streams: z.partialRecord(z.enum(['stdin', 'stdout', 'stderr', 'control', 'terminal']), streamEndpointSchema) }).strict()
 /** Direct process exit facts. */

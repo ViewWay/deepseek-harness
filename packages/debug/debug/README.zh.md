@@ -60,6 +60,8 @@ kind: "package-reference"
 | [`src/session-events.ts`](src/session-events.ts) | 耐久 `debug/*` Session 事件载荷与 `debug` 消息来源 |
 | [`src/projection.ts`](src/projection.ts) | 有界的 `debugSessions` 投影与保留上限工厂 |
 | [`src/launch-config.ts`](src/launch-config.ts) | `.dsh/debug.json` 解析：六变量展开与类型化配置失败 |
+| [`src/environment.ts`](src/environment.ts) | 经世界自身服务的执行环境探测与类型化能力检查 |
+| [`src/archive-admission.ts`](src/archive-admission.ts) | Workspace 归档 admission 的 `debug` 家族：报告自有活跃会话、归档时终止 |
 
 </details>
 

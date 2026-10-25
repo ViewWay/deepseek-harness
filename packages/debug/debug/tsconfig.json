@@ -30,6 +30,9 @@
       "path": "../../fs/fs"
     },
     {
+      "path": "../../workspace/workspace"
+    },
+    {
       "path": "../../session/session-projection"
     },
     {

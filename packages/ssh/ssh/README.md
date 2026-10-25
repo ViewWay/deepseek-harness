@@ -59,6 +59,8 @@ Pass the verified `ctx.ssh.ptcLaunch` as the `launch` configuration of [`NodePtc
 
 The OpenSSH master carries private administrative RPC. Each program stream uses a separate forwarded Unix socket and an independent SSH channel. Program stdout cannot forge administrative replies or occupy the control stream’s channel window. SSH transport congestion still affects the shared connection.
 
+`connectTcpStream(host, port)` reserves the same authenticated stream machinery for a remote TCP target: the helper dials the target on the remote side after the first authenticated client connects, and bytes flow through the TLS-protected channel in both directions until either side closes. Targets validate as a dialable host name and a 1–65535 port; the stream ends when the dial fails.
+
 Each stream reservation has a random 256-bit TLS pre-shared key carried only by administrative RPC. TLS authenticates both endpoints and protects every stream byte; the key is never sent as a stream preface. Socket directories are private (`0700`) and sockets use `0600`. Replacing a writable socket path cannot impersonate an endpoint or reveal the stream key; an attacker can still interrupt service or relay opaque TLS records.
 
 Connection disposal joins forwarding and cancellation subprocesses and partially established streams before removing local resources. Transport loss rejects pending operations and invalidates the connection. The helper starts managed cleanup on SSH EOF, termination signals or heartbeat expiry. A disconnected client cannot confirm the remote outcome; operations are never reconnected or replayed automatically.
