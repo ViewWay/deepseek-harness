@@ -115,6 +115,8 @@ export { BreakpointRegistry, DEFAULT_MAX_BREAKPOINTS_PER_FILE, normalizeWorkspac
 export type { BreakpointApplier, BreakpointRegistryOptions, BreakpointSessionApplication } from './breakpoints.ts'
 export { MemoryBreakpointStore, StorageBreakpointStore, breakpointDomain } from './breakpoint-store.ts'
 export type { BreakpointStore } from './breakpoint-store.ts'
+export { attachDebugSession, launchDebugSession } from './launch.ts'
+export type { AttachDependencies, DebugDurableAppend, LaunchBackend, LaunchDependencies, LaunchOutcome } from './launch.ts'
 export type { DebugSessionOutcome, DebugStateEvent } from './state.ts'
 export { DebugEventBus } from './events.ts'
 export type { DebugEvent, DebugEventActor, DebugEventFilter, DebugEventSource } from './events.ts'

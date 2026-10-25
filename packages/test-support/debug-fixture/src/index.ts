@@ -10,6 +10,7 @@
  * @module @deepseek-ai/dsh-debug-fixture
  */
 
+import { PassThrough } from 'node:stream'
 import { vi } from 'vitest'
 import type { Mock } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
@@ -26,6 +27,7 @@ import type {
 import { brandString } from '@deepseek-ai/dsh-brand'
 import { FileSystem } from '@deepseek-ai/dsh-fs'
 import { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
+import type { SubprocessHandle, SubprocessSpawnSpec } from '@deepseek-ai/dsh-subprocess'
 import { SESSION_FORMAT_VERSION } from '@deepseek-ai/dsh-session'
 import type { SessionHeader, SessionId } from '@deepseek-ai/dsh-session'
 
@@ -240,4 +242,153 @@ export function fixtureDebugEnvironment(init: FixtureDebugEnvironmentInit = {}):
     adapters: { resolve: vi.fn((_providerId: DebugProviderIdValue): Promise<ResolvedDebugAdapter> => Promise.resolve(resolved)) },
     requiredCapabilities: [],
   }
+}
+
+
+/** Overrides for the launch-plan fixture. */
+export interface FixtureLaunchPlanInit {
+  readonly command?: readonly string[]
+  readonly dapRequest?: Readonly<Record<string, unknown>>
+}
+
+/** Default shape of {@link fixtureLaunchPlan}. */
+export interface FixtureLaunchPlan {
+  readonly adapter: {
+    readonly command: readonly string[]
+    readonly args: readonly string[]
+    readonly env: Readonly<Record<string, string>>
+    readonly cwd: string
+  }
+  readonly dapRequest: Readonly<Record<string, unknown>>
+  readonly target: {
+    readonly executable: string
+    readonly args: readonly string[]
+    readonly env: Readonly<Record<string, string>>
+    readonly cwd: string
+  }
+  readonly requires: readonly []
+  readonly manifestVersion: string
+  readonly failureHint: string
+}
+
+/**
+ * Build one resolved launch plan double.
+ * @param init - adapter command and DAP request overrides.
+ * @returns The typed plan double.
+ */
+export function fixtureLaunchPlan(init: FixtureLaunchPlanInit = {}): FixtureLaunchPlan {
+  return {
+    adapter: { command: init.command ?? ['adapter'], args: [], env: {}, cwd: '/ws' },
+    dapRequest: init.dapRequest ?? {},
+    target: { executable: '/ws/src/a.ts', args: [], env: {}, cwd: '/ws' },
+    requires: [],
+    manifestVersion: 'fixture-1',
+    failureHint: 'fixture hint',
+  }
+}
+
+/** A launch-orchestration backend double: start, setBreakpoints, dispose. */
+export interface FixtureBackend {
+  readonly start: Mock<
+    (options: { launch: Readonly<Record<string, unknown>>; timeoutMs: number }) =>
+    Promise<{ terminated: boolean; stop?: { reason: string; threadId: string; source: string; line: number } }>
+  >
+  readonly setBreakpoints: Mock<
+    (request: { source: string; breakpoints: readonly unknown[] }) =>
+    Promise<{ applied: readonly unknown[]; rejected: readonly unknown[] }>
+  >
+  readonly dispose: Mock<() => Promise<void>>
+}
+
+/**
+ * Build one orchestration backend double.
+ * @param init - start-result overrides.
+ * @returns The backend double with observable methods.
+ */
+export function fixtureBackend(init: { terminated?: boolean } = {}): FixtureBackend {
+  return {
+    start: vi.fn(async () => init.terminated === true
+      ? { terminated: true }
+      : { terminated: false, stop: { reason: 'breakpoint', threadId: '1', source: 'src/a.ts', line: 4 } }),
+    setBreakpoints: vi.fn(async () => ({ applied: [], rejected: [] })),
+    dispose: vi.fn(async () => {}),
+  }
+}
+
+/**
+ * Build one provider double whose resolve steps are observable mocks.
+ * @param id - provider id text.
+ * @param resolveLaunch - the plan the provider resolves.
+ * @returns The typed provider double.
+ */
+export function fixtureProvider(id: string, resolveLaunch: () => Promise<FixtureLaunchPlan>): {
+  id: DebugProviderIdValue
+  displayName: string
+  extensions: readonly string[]
+  adapter: { kind: 'managed' }
+  configSchema: Readonly<Record<string, unknown>>
+  resolveLaunch: Mock<() => Promise<FixtureLaunchPlan>>
+  resolveAttach: Mock<() => Promise<never>>
+} {
+  return {
+    id: brandString<DebugProviderIdValue>(id),
+    displayName: id,
+    extensions: ['.ts'],
+    adapter: { kind: 'managed' },
+    configSchema: { type: 'object' },
+    resolveLaunch: vi.fn(resolveLaunch),
+    resolveAttach: vi.fn(async () => {
+      throw new Error('fixture provider cannot attach')
+    }),
+  }
+}
+
+/** A subprocess double that records spawn specs and yields pipe stdio. */
+export class FakeLaunchSubprocessRuntime extends SubprocessRuntime {
+  /** Every spawn spec, in call order. */
+  readonly spawns: { argv: readonly string[]; cwd: string }[] = []
+
+  constructor() {
+    super(new Context())
+  }
+
+  override resolveExecutable(): Promise<never> {
+    throw new Error('fake launch subprocess cannot resolve executables')
+  }
+
+  override terminalEnvironment(): Promise<never> {
+    throw new Error('fake launch subprocess has no terminal environment')
+  }
+
+  override spawn(spec: SubprocessSpawnSpec): SubprocessHandle {
+    this.spawns.push({ argv: spec.argv, cwd: spec.cwd })
+    const stdin = new PassThrough()
+    const stdout = new PassThrough()
+    return {
+      stdin,
+      stdout,
+      stderr: new PassThrough(),
+      control: undefined,
+      collected: {},
+      done: Promise.resolve({ exitCode: 0, signal: null }),
+      terminate: () => {},
+      waitForExit: async () => true,
+    }
+  }
+
+  override spawnTerminal(): Promise<never> {
+    throw new Error('fake launch subprocess cannot spawn terminals')
+  }
+}
+
+/**
+ * Build one environment double whose subprocess records adapter spawns.
+ * @param init - fact and adapter-resolution overrides.
+ * @returns The environment double with the recording subprocess.
+ */
+export function fixtureLaunchEnvironment(
+  init: FixtureDebugEnvironmentInit = {},
+): FixtureDebugEnvironment & { subprocess: FakeLaunchSubprocessRuntime } {
+  const base = fixtureDebugEnvironment(init)
+  return { ...base, subprocess: new FakeLaunchSubprocessRuntime() }
 }
