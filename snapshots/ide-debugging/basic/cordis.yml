@@ -1,0 +1,15 @@
+# Live-recording patch for the basic web debug scenario: the model-side debug
+# seam (service, adapter manager, node provider, agent tool) over the shipped
+# web profile composition.
+- insert:
+    - id: debug
+      name: '@deepseek-ai/dsh-debug'
+
+    - id: debug-adapters
+      name: '@deepseek-ai/dsh-debug-adapter-manager'
+
+    - id: debug-node
+      name: '@deepseek-ai/dsh-debug-node'
+
+    - id: tool-debug
+      name: '@deepseek-ai/dsh-tool-debug'

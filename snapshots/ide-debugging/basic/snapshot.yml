@@ -1,0 +1,8 @@
+version: 1
+scenario: basic
+profile: web
+composition: debug-basic
+recording: live
+header:
+  class: web-debug-basic
+  pin: true

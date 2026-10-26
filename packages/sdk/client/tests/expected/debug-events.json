@@ -1,0 +1,126 @@
+{
+  "finalResponse": "debug scenario complete",
+  "debugEvents": [
+    {
+      "type": "debug/session-started",
+      "seq": 3,
+      "time": 0,
+      "ignorable": true,
+      "data": {
+        "sessionId": "debug-0000000000000001",
+        "providerId": "node",
+        "language": "node",
+        "mode": "launch",
+        "workspaceRoot": "/ws",
+        "adapterVersion": "1.140.0"
+      }
+    },
+    {
+      "type": "debug/stopped",
+      "seq": 4,
+      "time": 0,
+      "ignorable": true,
+      "data": {
+        "sessionId": "debug-0000000000000001",
+        "reason": "breakpoint",
+        "threadId": "thread-1",
+        "source": "src/a.ts",
+        "line": 4,
+        "column": 2
+      }
+    },
+    {
+      "type": "debug/control",
+      "seq": 5,
+      "time": 0,
+      "ignorable": true,
+      "data": {
+        "sessionId": "debug-0000000000000001",
+        "actor": "user",
+        "operation": "continue",
+        "threadId": "thread-1"
+      }
+    },
+    {
+      "type": "debug/session-ended",
+      "seq": 6,
+      "time": 0,
+      "ignorable": true,
+      "data": {
+        "sessionId": "debug-0000000000000001",
+        "outcome": "terminated",
+        "reason": "completed",
+        "durationMs": 5000
+      }
+    }
+  ],
+  "debugNotifications": [
+    {
+      "method": "session.event",
+      "event": {
+        "type": "debug/session-started",
+        "seq": 3,
+        "time": 0,
+        "ignorable": true,
+        "data": {
+          "sessionId": "debug-0000000000000001",
+          "providerId": "node",
+          "language": "node",
+          "mode": "launch",
+          "workspaceRoot": "/ws",
+          "adapterVersion": "1.140.0"
+        }
+      }
+    },
+    {
+      "method": "session.event",
+      "event": {
+        "type": "debug/stopped",
+        "seq": 4,
+        "time": 0,
+        "ignorable": true,
+        "data": {
+          "sessionId": "debug-0000000000000001",
+          "reason": "breakpoint",
+          "threadId": "thread-1",
+          "source": "src/a.ts",
+          "line": 4,
+          "column": 2
+        }
+      }
+    },
+    {
+      "method": "session.event",
+      "event": {
+        "type": "debug/control",
+        "seq": 5,
+        "time": 0,
+        "ignorable": true,
+        "data": {
+          "sessionId": "debug-0000000000000001",
+          "actor": "user",
+          "operation": "continue",
+          "threadId": "thread-1"
+        }
+      }
+    },
+    {
+      "method": "session.event",
+      "event": {
+        "type": "debug/session-ended",
+        "seq": 6,
+        "time": 0,
+        "ignorable": true,
+        "data": {
+          "sessionId": "debug-0000000000000001",
+          "outcome": "terminated",
+          "reason": "completed",
+          "durationMs": 5000
+        }
+      }
+    }
+  ],
+  "assistantTexts": [
+    "debug scenario complete"
+  ]
+}

@@ -1,0 +1,8 @@
+version: 1
+scenario: human-agent-handoff
+profile: web
+composition: debug-human-agent-handoff
+recording: live
+header:
+  class: web-debug-handoff
+  pin: true
