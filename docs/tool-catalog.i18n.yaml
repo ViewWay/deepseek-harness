@@ -9,8 +9,8 @@
   en: 6cc2cd9ced70bb09
   zh: 1c0e6cb4ba2ed637
 /tool-schema-catalog/tool-package-map:
-  en: 4d42222acd39d083
-  zh: 8153a5065bf2ebd6
+  en: 50a1341e6e3f4035
+  zh: 6887b204cc7be7bd
 /tool-schema-catalog/deepseek-ai-dsh-plugin-manager:
   en: e0143916bb634762
   zh: e0143916bb634762
@@ -201,8 +201,23 @@
   en: 32982123b1f0e5bc
   zh: 32982123b1f0e5bc
 /tool-schema-catalog/deepseek-ai-dsh-tool-lsp/lsp:
-  en: 877f1dc0f69e2038
-  zh: 5dda8001fb614315
+  en: f27208b36e233792
+  zh: 56f2503d5c9fee0d
+/tool-schema-catalog/deepseek-ai-dsh-tool-debug:
+  en: b8b3475fc1a5b75c
+  zh: b8b3475fc1a5b75c
+/tool-schema-catalog/deepseek-ai-dsh-tool-debug/debug-breakpoints:
+  en: 77a6254af09e47dc
+  zh: 3863e2c23816d8e4
+/tool-schema-catalog/deepseek-ai-dsh-tool-debug/debug-execution:
+  en: 576533dfbf1c1647
+  zh: b84276b228488ba4
+/tool-schema-catalog/deepseek-ai-dsh-tool-debug/debug-inspect:
+  en: c4bfdd5fc7c1efa4
+  zh: 50565413a005b39f
+/tool-schema-catalog/deepseek-ai-dsh-tool-debug/debug-session:
+  en: eb97329ea688c183
+  zh: 422e575bf89d3c13
 /tool-schema-catalog/deepseek-ai-dsh-tool-ralph:
   en: 45bd083870e2c92d
   zh: 45bd083870e2c92d

@@ -40,6 +40,7 @@
 | `@deepseek-ai/dsh-tool-goal` | `create_goal`、`get_goal`、`update_goal` | `ctx.tools`、`ctx.agents`、`ctx.goals`、`ctx.systemPrompt`、`a calling Agent in an authorized open turn` | `tool/call`、`goal/change for mutations`、`tool/result` | - | create、edit、pause 和 resume 要求直接来自人类的根权限；complete 和 blocked 也接受确切的当前 Goal Round。blocked 的默认下限是 3 个获准的 Round。 |
 | `@deepseek-ai/dsh-tool-schedule` | `schedule_create`、`schedule_delete`、`schedule_list`、`schedule_update` | `ctx.tools`、`ctx.schedule` | `tool/call`、Schedule storage domain 创建、更新或删除、`tool/result` | - | preset 或 Agent scope 挂载本包；由 preset 决定哪些 agent 获得这四个管理工具。每次调用都作用于调用方 Agent 的 Session。接受 after_seconds、显式绝对 at、有界固定速率 every_seconds、带显式 IANA 时区的每日与每周本地时间，以及作为五字段表达式的 cron。管理使用宿主 storage domain；到期消息会恢复原 Session。 |
 | `@deepseek-ai/dsh-tool-lsp` | `lsp` | `ctx.workingDirectory`、`ctx.tools`、`ctx.lsp`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，因此其模型可见 schema 在更换提供方时保持稳定。运行时要求已注册提供方，例如 `@deepseek-ai/dsh-lsp-stdio`；如果没有提供方，查询会返回结构化 `LSP_UNAVAILABLE` 错误，而不会改变 schema。 |
+| `@deepseek-ai/dsh-tool-debug` | `debug_breakpoints`、`debug_execution`、`debug_inspect`、`debug_session` | `ctx.tools`、`ctx.debug`、`ctx.systemPrompt` | `tool/call`、`tool/result` | - | 这 4 个调试工具将适配器选择、DAP 和会话状态置于 ctx.debug 之后，因此其模型可见 schema 在更换提供方时保持稳定。操作联合类型是封闭的；未知操作会返回结构化 `DEBUG_UNKNOWN_OPERATION` 错误，而不会改变 schema。 |
 | `@deepseek-ai/dsh-tool-ralph` | `ralph` | `ctx.tools`、`ctx.workflowEngine`、`ctx.subagents`、`ctx.systemPrompt`、`a calling Agent (exec.agent parents every fresh round)` | `tool/call`、`tool/result`、`workflow and child session events during execution` | - | 固定的前台工作流会在每个 Round 启动一个全新的结构化子级；模型只能选择不可变目标和可选的 Round 上限。 |
 | `@deepseek-ai/dsh-tool-skill` | `skill` | `ctx.workingDirectory`、`ctx.tools`、`ctx.agents`、`ctx.skills` | `tool/call`、`tool/result`、`user/message replacement catalogs via agent.inject()` | - | - |
 | `@deepseek-ai/dsh-tool-session-query` | `session_event_read`、`session_event_search`、`session_event_trace`、`session_search`、`session_trace` | `ctx.tools`、`ctx.systemPrompt`、`ctx.sessionQuery`、`a calling Agent for workspace authority` | `tool/call`、`tool/result` | - | 这 5 个只读工具会隐藏提供方游标，并根据不可变的调用 agent 会话为每个结果授权。该包需要选择启用；需要强制截止时间或限制行内输出的组合还会挂载通用超时或 spill 策略。 |
@@ -1821,6 +1822,243 @@ preset 或 Agent scope 挂载本包；由 preset 决定哪些 agent 获得这四
 来源：[`packages/lsp/tool-lsp/src/index.ts`](../packages/lsp/tool-lsp/src/index.ts)
 
 lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，因此其模型可见 schema 在更换提供方时保持稳定。运行时要求已注册提供方，例如 `@deepseek-ai/dsh-lsp-stdio`；如果没有提供方，查询会返回结构化 `LSP_UNAVAILABLE` 错误，而不会改变 schema。
+
+<a id="deepseek-aidsh-tool-debug"></a>
+
+## `@deepseek-ai/dsh-tool-debug`
+
+### `debug_breakpoints`
+
+管理断点。operation 可取 set_file、set_function、set_exception、set_data、set_instruction、list、clear。工作区作用域的操作会替换持久化的断点集合并应用到每个匹配的活跃会话；会话作用域的操作需要 sessionId。set_file 会替换该文件的完整断点集合；空列表表示清空。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "description": "The breakpoint operation to run.",
+      "enum": [
+        "set_file",
+        "set_function",
+        "set_exception",
+        "set_data",
+        "set_instruction",
+        "list",
+        "clear"
+      ]
+    },
+    "workspaceId": {
+      "type": "string",
+      "description": "Workspace owning the persisted breakpoint sets."
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Scope the operation to one live debug session."
+    },
+    "file": {
+      "type": "string",
+      "description": "Workspace-relative file path for file breakpoints."
+    },
+    "breakpoints": {
+      "type": "array",
+      "description": "Complete replacement set for set_file; omit with clear.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "line": {
+            "type": "number"
+          },
+          "condition": {
+            "type": "string"
+          },
+          "hitCondition": {
+            "type": "string"
+          },
+          "logMessage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "line"
+        ]
+      }
+    }
+  },
+  "required": [
+    "operation",
+    "workspaceId"
+  ]
+}
+```
+
+来源：[`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/src/index.ts)
+
+### `debug_execution`
+
+控制调试会话。operation 可取 continue、pause、step_over、step_in、step_out、step_back、restart、restart_frame、wait_for_stop。大多数操作需要会话 id；continue 和各 step 操作会等待下一次停止。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "description": "The execution operation to run.",
+      "enum": [
+        "continue",
+        "pause",
+        "step_over",
+        "step_in",
+        "step_out",
+        "step_back",
+        "restart",
+        "restart_frame",
+        "wait_for_stop"
+      ]
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Debug session id, serialized debug-<hex> form."
+    }
+  },
+  "required": [
+    "operation",
+    "sessionId"
+  ]
+}
+```
+
+来源：[`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/src/index.ts)
+
+### `debug_inspect`
+
+检查处于停止状态的调试会话。operation 可取 threads、stack_trace、scopes、variables、evaluate、set_variable、set_expression、completions、exception_info、modules、loaded_sources、source、disassemble、read_memory、write_memory、console。结果有界；variables 每次调用展开一层。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "description": "The inspection operation to run.",
+      "enum": [
+        "threads",
+        "stack_trace",
+        "scopes",
+        "variables",
+        "evaluate",
+        "set_variable",
+        "set_expression",
+        "completions",
+        "exception_info",
+        "modules",
+        "loaded_sources",
+        "source",
+        "disassemble",
+        "read_memory",
+        "write_memory",
+        "console"
+      ]
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Debug session id, serialized debug-<hex> form."
+    },
+    "threadId": {
+      "type": "string",
+      "description": "Thread id for stack traces and stepping."
+    },
+    "frameId": {
+      "type": "string",
+      "description": "Frame id for scopes and evaluation."
+    },
+    "variablesReference": {
+      "type": "number",
+      "description": "Child container reference for variables."
+    },
+    "expression": {
+      "type": "string",
+      "description": "Expression for evaluate and set_expression."
+    }
+  },
+  "required": [
+    "operation",
+    "sessionId"
+  ]
+}
+```
+
+来源：[`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/src/index.ts)
+
+### `debug_session`
+
+管理调试会话。operation 可取 launch、attach、launch_compound、list、list_compounds、get、get_compound、terminate、terminate_compound、disconnect、attach_targets。launch 和 attach 需要提供方和工作区根目录；调试会话归调用方 Session 所有。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "description": "The session operation to run.",
+      "enum": [
+        "launch",
+        "attach",
+        "launch_compound",
+        "list",
+        "list_compounds",
+        "get",
+        "get_compound",
+        "terminate",
+        "terminate_compound",
+        "disconnect",
+        "attach_targets"
+      ]
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Debug session id, serialized debug-<hex> form; required by get, terminate, and disconnect."
+    },
+    "workspaceId": {
+      "type": "string",
+      "description": "Workspace scope for list."
+    },
+    "providerId": {
+      "type": "string",
+      "description": "Provider id for launch and attach, e.g. node, python, go, native."
+    },
+    "program": {
+      "type": "string",
+      "description": "Program path for launch, workspace-relative or absolute."
+    },
+    "module": {
+      "type": "string",
+      "description": "Module or package name for launch."
+    },
+    "cwd": {
+      "type": "string",
+      "description": "Working directory for the debug session."
+    },
+    "processId": {
+      "type": "number",
+      "description": "Process id for attach."
+    },
+    "port": {
+      "type": "number",
+      "description": "Inspector or debug port for attach."
+    }
+  },
+  "required": [
+    "operation"
+  ]
+}
+```
+
+来源：[`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/src/index.ts)
+
+这 4 个调试工具将适配器选择、DAP 和会话状态置于 ctx.debug 之后，因此其模型可见 schema 在更换提供方时保持稳定。操作联合类型是封闭的；未知操作会返回结构化 `DEBUG_UNKNOWN_OPERATION` 错误，而不会改变 schema。
 
 <a id="deepseek-aidsh-experimental-tool-ralph"></a>
 
