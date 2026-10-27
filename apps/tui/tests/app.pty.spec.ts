@@ -65,19 +65,23 @@ describe('dsh tui PTY', () => {
       const output = (): string => seen.join('')
       const booted = await waitFor(() => output().includes('input >'), 60_000)
       expect(booted, `tui never rendered the input line; output was: ${JSON.stringify(output().slice(-2000))}`).toBe(true)
-      // Keys arrive as separate stdin chunks the way a terminal sends them;
-      // one combined write would print "\r" as part of the line instead of
-      // decoding Return.
+      // Each key waits for the previous one to render before it is written:
+      // consecutive writes can coalesce into one stdin chunk, and Ink hands a
+      // multi-key chunk to the app with no Return flag, printing "\r" as text
+      // instead of submitting.
       child.write('hello')
-      child.write('\r')
       const echoed = await waitFor(() => output().includes('hello'), 10_000)
       expect(echoed, `typed prompt never appeared; output was: ${JSON.stringify(output().slice(-2000))}`).toBe(true)
+      child.write('\r')
       // `:expand` routes through the runner into the transcript; on the empty
       // transcript the missing id surfaces as a visible error, not silence.
       child.write(':expand 9')
+      const typed = await waitFor(() => output().includes(':expand 9'), 10_000)
+      expect(typed, `:expand never echoed; output was: ${JSON.stringify(output().slice(-2000))}`).toBe(true)
       child.write('\r')
       const expandError = await waitFor(() => output().includes('no stored output 9'), 10_000)
-      expect(expandError, `:expand never reported the missing stored output; output was: ${JSON.stringify(output().slice(-2000))}`).toBe(true)
+      const expandTail = `:expand never reported the missing stored output; output was: ${JSON.stringify(output().slice(-2000))}`
+      expect(expandError, expandTail).toBe(true)
     } finally {
       child.kill()
     }
