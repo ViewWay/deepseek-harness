@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import Debug, { DebugBreakpointId, DebugSessionId } from '@deepseek-ai/dsh-debug'
-import { DebugProviderId, fixtureDebugSessionId } from '@deepseek-ai/dsh-debug-fixture'
+import Debug, { DebugBreakpointId, DebugProviderId, DebugSessionId } from '@deepseek-ai/dsh-debug'
+import { fixtureDebugSessionId } from '@deepseek-ai/dsh-debug-fixture'
 import { apply, createTuiDebugPaneSource, inject, name, openEditorNotice } from '../src/index.ts'
 import type { TuiEditorLaunch } from '../src/index.ts'
 
