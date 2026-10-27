@@ -4,11 +4,11 @@
  */
 
 import { describe, expect, it, vi } from 'vitest'
-import type { DebugApprovalFace } from '../src/approval.ts'
+import { DebugError } from '@deepseek-ai/dsh-debug'
 import { grantControl, requestDebugApproval } from '../src/approval.ts'
 
 /** Build one approval face double resolving the given outcome. */
-function approvalDouble(outcome: 'allowed-once' | 'rejected' | 'cancelled' | 'unavailable'): DebugApprovalFace {
+function approvalDouble(outcome: 'allowed-once' | 'rejected' | 'cancelled' | 'unavailable') {
   return { request: vi.fn(async () => outcome) }
 }
 
@@ -29,12 +29,19 @@ describe('debug approval', () => {
 
   it('distinguishes an active rejection from a missing answerer in the detail', async () => {
     const rejected = approvalDouble('rejected')
-    const error = await requestDebugApproval(rejected, {
-      kind: 'write_memory', toolName: 'debug_inspect', reason: 'write 4 bytes', agent: {},
-    }).catch((failure: unknown) => failure as { code: string; detail: string })
-    expect(error.code).toBe('DEBUG_APPROVAL_DENIED')
-    expect(error.detail).toContain('rejected')
-    expect(error.detail).not.toContain('unavailable')
+    let code = ''
+    let detail = ''
+    try {
+      await requestDebugApproval(rejected, {
+        kind: 'write_memory', toolName: 'debug_inspect', reason: 'write 4 bytes', agent: {},
+      })
+    } catch (failure) {
+      if (failure instanceof DebugError) { code = failure.code; detail = failure.detail ?? '' }
+      else { code = 'UNKNOWN'; detail = String(failure) }
+    }
+    expect(code).toBe('DEBUG_APPROVAL_DENIED')
+    expect(detail).toContain('rejected')
+    expect(detail).not.toContain('unavailable')
   })
 
   it('grants control to the owning agent without approval and via approval for cross-owner', async () => {
