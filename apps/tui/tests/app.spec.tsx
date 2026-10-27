@@ -5,11 +5,14 @@ import { render } from 'ink-testing-library'
 import { TuiApp } from '../src/app.tsx'
 import type { TuiTranscriptSource } from '../src/app.tsx'
 import { createTuiApprovalQueue } from '../src/approval.ts'
-import { appendTranscript, createTranscript } from '../src/transcript.ts'
-import type { TuiTranscript, TuiTranscriptEntry } from '../src/transcript.ts'
+import { appendTranscript, createTranscript, expandTranscript } from '../src/transcript.ts'
+import type { TuiTranscript, TuiTranscriptInput } from '../src/transcript.ts'
 
-/** A controllable transcript source the tests push entries through. */
-function makeSource(): TuiTranscriptSource & { push(entry: TuiTranscriptEntry): void } {
+/** A controllable transcript source the tests push entries and expand commands through. */
+function makeSource(): TuiTranscriptSource & {
+  push(entry: TuiTranscriptInput): void
+  expand(args: readonly string[]): void
+} {
   let transcript: TuiTranscript = createTranscript()
   const listeners = new Set<(transcript: TuiTranscript) => void>()
   return {
@@ -20,6 +23,12 @@ function makeSource(): TuiTranscriptSource & { push(entry: TuiTranscriptEntry): 
     },
     push(entry): void {
       transcript = appendTranscript(transcript, entry)
+      for (const listener of listeners) listener(transcript)
+    },
+    expand(args): void {
+      const result = expandTranscript(transcript, args)
+      if (!result.ok) return
+      transcript = result.transcript
       for (const listener of listeners) listener(transcript)
     },
   }
@@ -135,6 +144,18 @@ describe('TUI Ink app', () => {
     const { lastFrame, unmount } = render(<TuiApp {...calls} transcriptSource={source} />)
     source.push({ kind: 'assistant', text: 'Done.' })
     await vi.waitFor(() => { expect(lastFrame()).toContain('Done.') })
+    unmount()
+  })
+
+  it('hints :expand on truncated tool entries and shows the stored output after expansion', async () => {
+    const source = makeSource()
+    const calls = callbacks()
+    const { lastFrame, unmount } = render(<TuiApp {...calls} transcriptSource={source} />)
+    source.push({ kind: 'tool', name: 'debug_execution', summary: 'stopped at src/a.ts:4…', fullText: 'stopped at src/a.ts:4\nframe 0' })
+    await vi.waitFor(() => { expect(lastFrame()).toContain('(:expand 1)') })
+    source.expand(['1'])
+    await vi.waitFor(() => { expect(lastFrame()).toContain('frame 0') })
+    expect(lastFrame()).not.toContain('(:expand 1)')
     unmount()
   })
 })

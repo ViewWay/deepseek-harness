@@ -26,6 +26,7 @@ import type { TuiSession } from './session.ts'
 /** The built-in help the `:help` command renders. */
 const HELP_LINES: readonly string[] = [
   ':chat · :split · :debug   switch layout (F6 debug, F7 split)',
+  ':expand <n>                open a truncated tool output in full',
   ':q                         quit (confirms while debug sessions run)',
   'debug commands run through the composed tui-debug pane',
 ]
@@ -147,6 +148,11 @@ export function mountTuiApp(ctx: Context): Promise<void> {
         onCommand: (name: string, args: readonly string[]): void => {
           if (name === 'help') {
             for (const line of HELP_LINES) notice(line)
+            return
+          }
+          if (name === 'expand') {
+            const result = session.expand(args)
+            if (!result.ok) notice(result.message)
             return
           }
           // Non-app-owned `:` lines go to the debug pane first; false falls

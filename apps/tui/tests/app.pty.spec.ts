@@ -1,10 +1,10 @@
 /**
- * PTY smoke: the shipped `tui` profile boots, renders the input line, and
- * echoes a typed prompt. Consumes `apps/cli/lib/bin.js` under the tsx source
- * launch — the dev machine's shipped entry for source-main apps (apps are
- * outside the library artifact set; packaged entries land with Task 26) — and
- * self-skips on a clean tree. Skips only when the platform cannot allocate a
- * PTY or node-pty is absent.
+ * PTY smoke: the shipped `tui` profile boots, renders the input line, echoes a
+ * typed prompt, and routes `:expand` errors into the transcript. Consumes
+ * `apps/cli/lib/bin.js` under the tsx source launch — the dev machine's
+ * shipped entry for source-main apps (apps are outside the library artifact
+ * set; packaged entries land with Task 26) — and self-skips on a clean tree.
+ * Skips only when the platform cannot allocate a PTY or node-pty is absent.
  */
 
 import { existsSync } from 'node:fs'
@@ -26,7 +26,7 @@ async function waitFor(predicate: () => boolean, deadlineMs: number): Promise<bo
 }
 
 describe('dsh tui PTY', () => {
-  it('boots, renders the input line, and accepts a prompt', { timeout: 90_000 }, async (context) => {
+  it('boots, renders the input line, accepts a prompt, and routes :expand errors', { timeout: 90_000 }, async (context) => {
     if (!existsSync(binPath)) {
       context.skip()
       return
@@ -65,9 +65,19 @@ describe('dsh tui PTY', () => {
       const output = (): string => seen.join('')
       const booted = await waitFor(() => output().includes('input >'), 60_000)
       expect(booted, `tui never rendered the input line; output was: ${JSON.stringify(output().slice(-2000))}`).toBe(true)
-      child.write('hello\r')
+      // Keys arrive as separate stdin chunks the way a terminal sends them;
+      // one combined write would print "\r" as part of the line instead of
+      // decoding Return.
+      child.write('hello')
+      child.write('\r')
       const echoed = await waitFor(() => output().includes('hello'), 10_000)
       expect(echoed, `typed prompt never appeared; output was: ${JSON.stringify(output().slice(-2000))}`).toBe(true)
+      // `:expand` routes through the runner into the transcript; on the empty
+      // transcript the missing id surfaces as a visible error, not silence.
+      child.write(':expand 9')
+      child.write('\r')
+      const expandError = await waitFor(() => output().includes('no stored output 9'), 10_000)
+      expect(expandError, `:expand never reported the missing stored output; output was: ${JSON.stringify(output().slice(-2000))}`).toBe(true)
     } finally {
       child.kill()
     }

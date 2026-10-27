@@ -99,10 +99,17 @@ interface TuiInkKey {
 }
 
 /** One rendered transcript line. */
-function TranscriptLine({ entry }: { entry: TuiTranscriptEntry }): React.ReactElement {
+function TranscriptLine(
+  { entry, stored }: { entry: TuiTranscriptEntry; stored: ReadonlyMap<number, string> },
+): React.ReactElement {
   if (entry.kind === 'user') return <Text color="cyan">&gt; {entry.text}</Text>
   if (entry.kind === 'assistant') return <Text color="green">{entry.text}</Text>
-  return <Text color="yellow" dimColor>[{entry.name}] {entry.summary}</Text>
+  if (entry.expanded === true && entry.expandId !== undefined) {
+    const fullText = stored.get(entry.expandId)
+    if (fullText !== undefined) return <Text color="yellow">[{entry.name}] {fullText}</Text>
+  }
+  const hint = entry.expandId === undefined || entry.expanded === true ? '' : ` (:expand ${entry.expandId})`
+  return <Text color="yellow" dimColor>[{entry.name}] {entry.summary}{hint}</Text>
 }
 
 /** The transcript column shared by the Chat and Split layouts. */
@@ -110,7 +117,7 @@ function TranscriptColumn({ transcript }: { transcript: TuiTranscript }): React.
   return (
     <Box flexDirection="column" marginBottom={1}>
       {transcript.entries.map((entry, index) => (
-        <TranscriptLine key={index} entry={entry} />
+        <TranscriptLine key={index} entry={entry} stored={transcript.stored} />
       ))}
     </Box>
   )

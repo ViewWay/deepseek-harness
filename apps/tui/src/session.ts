@@ -5,8 +5,8 @@
  * @module @deepseek-ai/dsh-tui/session
  */
 
-import { appendTranscript, createTranscript } from './transcript.ts'
-import type { TuiTranscript, TuiTranscriptEntry } from './transcript.ts'
+import { appendTranscript, createTranscript, expandTranscript } from './transcript.ts'
+import type { TuiExpandResult, TuiTranscript, TuiTranscriptInput } from './transcript.ts'
 
 /** The face the TUI session submits prompts through. */
 export interface TuiSessionDeps {
@@ -18,10 +18,16 @@ export interface TuiSessionDeps {
 export interface TuiSession {
   readonly sessionId: string
   submit(text: string): Promise<void>
-  receive(entry: TuiTranscriptEntry): void
+  receive(entry: TuiTranscriptInput): void
   transcript(): TuiTranscript
   /** Notify on transcript changes; returns the unsubscribe function. */
   subscribe(callback: (transcript: TuiTranscript) => void): () => void
+  /**
+   * Open the stored output one `:expand` command names.
+   * @param args - the raw `:expand` command arguments.
+   * @returns the expand outcome; a failure changes nothing and notifies nobody.
+   */
+  expand(args: readonly string[]): TuiExpandResult
 }
 
 /**
@@ -42,9 +48,16 @@ export function createTuiSession(deps: TuiSessionDeps): TuiSession {
       notify()
       await deps.send(text)
     },
-    receive(entry: TuiTranscriptEntry): void {
+    receive(entry: TuiTranscriptInput): void {
       transcript = appendTranscript(transcript, entry)
       notify()
+    },
+    expand(args: readonly string[]): TuiExpandResult {
+      const result = expandTranscript(transcript, args)
+      if (!result.ok) return result
+      transcript = result.transcript
+      notify()
+      return result
     },
     transcript(): TuiTranscript {
       return transcript

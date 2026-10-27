@@ -41,11 +41,15 @@ describe('TUI transcript feed', () => {
     expect(feed.push(stepEnd())).toEqual([])
   })
 
-  it('pairs tool results with their called names and bounds summaries', () => {
+  it('pairs tool results with their called names, bounds summaries, and keeps truncated outputs expandable', () => {
     const feed = createTuiTranscriptFeed({ maxSummaryLength: 10 })
     expect(feed.push(toolCall('call-1', 'debug_execution'))).toEqual([])
     expect(feed.push(toolResult('call-1', '0123456789ABC'))).toEqual([
-      { kind: 'tool', name: 'debug_execution', summary: '012345678…' },
+      { kind: 'tool', name: 'debug_execution', summary: '012345678…', fullText: '0123456789ABC' },
+    ])
+    // A summary that lost no text stays summary-only.
+    expect(feed.push(toolResult('call-1', 'short'))).toEqual([
+      { kind: 'tool', name: 'debug_execution', summary: 'short' },
     ])
   })
 

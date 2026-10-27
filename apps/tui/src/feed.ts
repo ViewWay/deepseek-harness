@@ -6,7 +6,7 @@
  * @module @deepseek-ai/dsh-tui/feed
  */
 
-import type { TuiTranscriptEntry } from './transcript.ts'
+import type { TuiTranscriptInput } from './transcript.ts'
 
 /** A content block as the feed reads it; real message content assigns to it. */
 export interface TuiFeedBlock {
@@ -37,7 +37,7 @@ export interface TuiTranscriptFeedOptions {
 /** The feed face the runner pushes events through. */
 export interface TuiTranscriptFeed {
   /** Fold one committed Session event and return the entries it derived (possibly none). */
-  push(event: TuiFeedEvent): readonly TuiTranscriptEntry[]
+  push(event: TuiFeedEvent): readonly TuiTranscriptInput[]
 }
 
 /** Content-block reader shape kept for the helper below. */
@@ -64,10 +64,10 @@ export function createTuiTranscriptFeed(options: TuiTranscriptFeedOptions = {}):
       .join('')
 
   return {
-    push(event): readonly TuiTranscriptEntry[] {
+    push(event): readonly TuiTranscriptInput[] {
       // The `in` checks drop the generic arm; a bare `type` comparison cannot.
       if (event.type === 'assistant/message' && 'data' in event) {
-        const entries: TuiTranscriptEntry[] = []
+        const entries: TuiTranscriptInput[] = []
         for (const block of event.data.message.content) {
           if (block.type === 'text' && typeof block.text === 'string' && block.text !== '') {
             entries.push({ kind: 'assistant', text: block.text })
@@ -85,10 +85,12 @@ export function createTuiTranscriptFeed(options: TuiTranscriptFeedOptions = {}):
         if (event.surfaceOp !== 'append') return []
         const message = event.data.message
         const name = toolNames.get(message.toolCallId) ?? message.toolCallId
-        const summary = message.isError === true
-          ? `error: ${bound(textOf(message.content))}`
-          : bound(textOf(message.content))
-        return [{ kind: 'tool', name, summary }]
+        const text = message.isError === true ? `error: ${textOf(message.content)}` : textOf(message.content)
+        const summary = bound(text)
+        // A summary that lost text keeps the full output expandable downstream.
+        return summary === text
+          ? [{ kind: 'tool', name, summary }]
+          : [{ kind: 'tool', name, summary, fullText: text }]
       }
       return []
     },

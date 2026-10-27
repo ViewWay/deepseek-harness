@@ -36,4 +36,31 @@ describe('TUI session', () => {
     expect(seen).toEqual([1, 2])
     expect(session.transcript().entries).toHaveLength(3)
   })
+
+  it('receives a truncated tool output, stores it behind an expand id, and opens it on :expand', () => {
+    const send = vi.fn(async () => {})
+    const session = createTuiSession({ send, sessionId: 'session-1' })
+    session.receive({ kind: 'tool', name: 'debug_execution', summary: 'stopped…', fullText: 'stopped at src/a.ts:4' })
+    expect(session.transcript().entries[0]).toMatchObject({ expandId: 1 })
+    expect(session.transcript().stored.get(1)).toBe('stopped at src/a.ts:4')
+    const seen: number[] = []
+    session.subscribe(() => { seen.push(session.transcript().entries.length) })
+    const result = session.expand(['1'])
+    expect(result.ok).toBe(true)
+    expect(session.transcript().entries[0]).toMatchObject({ expandId: 1, expanded: true })
+    expect(seen).toEqual([1])
+  })
+
+  it('returns the expand error without changing the transcript or notifying', () => {
+    const send = vi.fn(async () => {})
+    const session = createTuiSession({ send, sessionId: 'session-1' })
+    const before = session.transcript()
+    const seen: number[] = []
+    session.subscribe(() => { seen.push(1) })
+    const result = session.expand(['9'])
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.message).toContain('no stored output 9')
+    expect(session.transcript()).toBe(before)
+    expect(seen).toEqual([])
+  })
 })
