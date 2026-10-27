@@ -15,18 +15,21 @@ import { GO_ADAPTER_MANIFEST, apply, goDebugProvider, inject, name } from '../sr
 
 const environment = fixtureDebugEnvironment({ resolvedCommand: ['dlv', 'dap'], resolvedVersion: '1.27.2' })
 
-function launchRequest(init: { [K in keyof DebugLaunchRequest]?: DebugLaunchRequest[K] | undefined } = {}): DebugLaunchRequest {
+function launchRequest(init: Partial<DebugLaunchRequest> & { program?: string | undefined } = {}): DebugLaunchRequest {
+  const { program: overrideProgram, ...rest } = init
   return {
     providerId: DebugProviderId('go'),
     workspaceRoot: '/ws',
     workspaceId: 'ws-1',
     cwd: '/ws',
-    program: './cmd/app',
-    args: ['--flag'],
-    env: { GOFLAGS: '-mod=mod' },
-    caller: { kind: 'user', sessionId: fixtureSessionId(1) },
-    providerOptions: { mode: 'debug', buildFlags: ['-tags', 'dev'] },
-    ...init,
+    ...(overrideProgram !== undefined
+      ? { program: overrideProgram }
+      : 'program' in init ? {} : { program: './cmd/app' }),
+    ...(rest.args !== undefined ? { args: rest.args } : { args: ['--flag'] }),
+    ...(rest.env !== undefined ? { env: rest.env } : { env: { GOFLAGS: '-mod=mod' } }),
+    ...(rest.caller !== undefined ? { caller: rest.caller } : { caller: { kind: 'user', sessionId: fixtureSessionId(1) } }),
+    ...(rest.providerOptions !== undefined ? { providerOptions: rest.providerOptions } : { providerOptions: { mode: 'debug', buildFlags: ['-tags', 'dev'] } }),
+    ...(rest.module !== undefined ? { module: rest.module } : {}),
   }
 }
 
