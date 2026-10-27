@@ -22,7 +22,7 @@ function mountFake(script: Parameters<typeof createFakeDebugAdapter>[0] = {}, wo
 }
 
 interface ExchangeStep {
-  readonly response?: { readonly [key: string]: JsonValue }
+  readonly response?: JsonValue
   readonly event?: { readonly name: string; readonly body?: { readonly [key: string]: JsonValue } }
   readonly reverseRequest?: { readonly command: string }
 }

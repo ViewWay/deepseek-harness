@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { fixtureDebugEnvironment } from '@deepseek-ai/dsh-debug-fixture'
 import { probeDebugEnvironment } from '../src/environment.ts'
 
-function subprocessDouble(overrides: Record<string, unknown> = {}) {
+function subprocessDouble(overrides: { terminalEnvironment?: unknown } = {}) {
   return {
     resolveExecutable: vi.fn(async (command: string) => `/usr/bin/${command}`),
     terminalEnvironment: vi.fn(async () => ({ platform: 'posix' as const, defaultShell: '/bin/sh' })),
@@ -17,7 +17,7 @@ function subprocessDouble(overrides: Record<string, unknown> = {}) {
   }
 }
 
-function probeInit(overrides: Record<string, unknown> = {}) {
+function probeInit(overrides: { subprocess?: unknown; platformKey?: string } = {}) {
   return {
     subprocess: subprocessDouble(),
     fs: fixtureDebugEnvironment().fs,

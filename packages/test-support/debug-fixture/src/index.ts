@@ -16,6 +16,8 @@ import type { Mock } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import { DebugCompoundId, DebugSessionId, DebugThreadId } from '@deepseek-ai/dsh-debug'
 import type {
+  JsonSchema,
+  JsonValue,
   DebugCompoundId as DebugCompoundIdValue,
   DebugEnvironment,
   DebugProviderId as DebugProviderIdValue,
@@ -249,7 +251,7 @@ export function fixtureDebugEnvironment(init: FixtureDebugEnvironmentInit = {}):
 /** Overrides for the launch-plan fixture. */
 export interface FixtureLaunchPlanInit {
   readonly command?: readonly string[]
-  readonly dapRequest?: Readonly<Record<string, unknown>>
+  readonly dapRequest?: Readonly<Record<string, JsonValue>>
 }
 
 /** Default shape of {@link fixtureLaunchPlan}. */
@@ -260,7 +262,7 @@ export interface FixtureLaunchPlan {
     readonly env: Readonly<Record<string, string>>
     readonly cwd: string
   }
-  readonly dapRequest: Readonly<Record<string, unknown>>
+  readonly dapRequest: Readonly<Record<string, JsonValue>>
   readonly target: {
     readonly executable: string
     readonly args: readonly string[]
@@ -291,7 +293,7 @@ export function fixtureLaunchPlan(init: FixtureLaunchPlanInit = {}): FixtureLaun
 /** A launch-orchestration backend double: start, setBreakpoints, dispose. */
 export interface FixtureBackend {
   readonly start: Mock<
-    (options: { launch: Readonly<Record<string, unknown>>; timeoutMs: number }) =>
+    (options: { launch: Readonly<Record<string, JsonValue>>; timeoutMs: number }) =>
     Promise<{ terminated: boolean; stop?: { reason: string; threadId: string; source: string; line: number } }>
   >
   readonly setBreakpoints: Mock<
@@ -308,7 +310,7 @@ export interface FixtureBackend {
  */
 export function fixtureBackend(init: { terminated?: boolean } = {}): FixtureBackend {
   return {
-    start: vi.fn(async () => init.terminated === true
+    start: vi.fn(async (_options: { launch: Readonly<Record<string, JsonValue>>; timeoutMs: number }) => init.terminated === true
       ? { terminated: true }
       : { terminated: false, stop: { reason: 'breakpoint', threadId: '1', source: 'src/a.ts', line: 4 } }),
     setBreakpoints: vi.fn(async () => ({ applied: [], rejected: [] })),
@@ -327,7 +329,7 @@ export function fixtureProvider(id: string, resolveLaunch: () => Promise<Fixture
   displayName: string
   extensions: readonly string[]
   adapter: { kind: 'managed' }
-  configSchema: Readonly<Record<string, unknown>>
+  configSchema: JsonSchema
   resolveLaunch: Mock<() => Promise<FixtureLaunchPlan>>
   resolveAttach: Mock<() => Promise<never>>
 } {
@@ -402,4 +404,13 @@ export function fixtureLaunchEnvironment(
  */
 export function fixtureFsVersion(text: string): FsVersionValue {
   return FsVersion(text)
+}
+
+/**
+ * Build one resolved attach plan double.
+ * @param init - adapter command and DAP request overrides.
+ * @returns The typed attach plan double.
+ */
+export function fixtureAttachPlan(init: FixtureLaunchPlanInit = {}): FixtureLaunchPlan {
+  return fixtureLaunchPlan(init)
 }

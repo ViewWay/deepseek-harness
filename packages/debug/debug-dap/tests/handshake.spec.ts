@@ -186,11 +186,11 @@ describe('DAP handshake', () => {
   it('skips non-matching events and rejects non-object stop bodies', async () => {
     const scripted = createScriptedTransport({
       initialize: [
-        { response: { capabilities: {} } },
-        { event: { name: 'output', body: { output: 'noise' } } },
-        { event: { name: 'initialized' } },
+        responseFrame(1, 'initialize', true, { capabilities: {} }),
+        eventFrame('output', { output: 'noise' }),
+        eventFrame('initialized'),
       ],
-      launch: [{ response: {} }, { event: { name: 'stopped', body: ['not', 'an', 'object'] } }],
+      launch: [responseFrame(2, 'launch', true, {}), eventFrame('stopped', ['not', 'an', 'object'])],
     })
     const client = new DapClient(scripted.transport)
     await expect(initializeDebugAdapter(client, {

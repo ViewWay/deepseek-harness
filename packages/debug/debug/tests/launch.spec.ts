@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fixtureBackend, fixtureLaunchEnvironment, fixtureLaunchPlan, fixtureProvider } from '@deepseek-ai/dsh-debug-fixture'
+import { fixtureAttachPlan, fixtureBackend, fixtureLaunchEnvironment, fixtureLaunchPlan, fixtureProvider } from '@deepseek-ai/dsh-debug-fixture'
 import { fixtureSessionId } from '@deepseek-ai/dsh-debug-fixture'
 import { DebugSessionRegistry } from '../src/registry.ts'
 import { attachDebugSession, launchDebugSession } from '../src/launch.ts'
@@ -73,7 +73,7 @@ describe('launchDebugSession', () => {
       },
       provider: {
         ...fixtureProvider('node', async () => fixtureLaunchPlan()),
-        resolveAttach: vi.fn(async () => fixtureLaunchPlan()),
+        resolveAttach: vi.fn(async () => fixtureAttachPlan()),
       },
       environment: fixtureLaunchEnvironment(),
       registry: new DebugSessionRegistry(),

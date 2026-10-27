@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import { SessionProjectionRegistry } from '@deepseek-ai/dsh-session-projection'
 import { fixtureDebugSessionId } from '@deepseek-ai/dsh-debug-fixture'
+import { DebugBreakpointId } from '@deepseek-ai/dsh-debug'
 import Debug from '../src/index.ts'
 import { BreakpointRegistry, MemoryBreakpointStore } from '../src/breakpoints.ts'
 import type { DebugBreakpointInput } from '@deepseek-ai/dsh-debug'
@@ -61,8 +62,8 @@ describe('BreakpointRegistry', () => {
     await ctx.plugin(Debug, { maxBreakpointsPerFile: 1 })
     const debug = ctx.debug
     const seen: string[] = []
-    debug.events.subscribe({ kind: 'breakpoint/changed' }, (event) => {
-      seen.push(event.kind)
+    debug.events.subscribe({}, (event) => {
+      if (event.kind === 'breakpoint/changed') seen.push(event.kind)
     })
     const apply = vi.fn(async () => ({ applied: [], rejected: [] }))
     debug.breakpoints.bindSession(sessionRecord({ id: fixtureDebugSessionId(3), workspaceId: 'ws-9' }), apply)
@@ -76,9 +77,10 @@ describe('BreakpointRegistry', () => {
   it('records adapter-verified results per session', async () => {
     const registry = new BreakpointRegistry(new MemoryBreakpointStore())
     const inputs: readonly DebugBreakpointInput[] = [{ line: 4 }, { line: 7 }]
+    const source = { workspaceRelativePath: 'a.ts', absolutePath: '/ws/a.ts' }
     const apply = vi.fn(async () => ({
-      applied: [{ id: 'debug-0000000000000001', requestedLine: 4, verified: true, actualLine: 5 }],
-      rejected: [{ id: 'debug-0000000000000002', requestedLine: 7, verified: false }],
+      applied: [{ id: DebugBreakpointId('debug-0000000000000001'), source, requestedLine: 4, verified: true, actualLine: 5 }],
+      rejected: [{ id: DebugBreakpointId('debug-0000000000000002'), source, requestedLine: 7, verified: false }],
     }))
     registry.bindSession(sessionRecord({ id: fixtureDebugSessionId(1), workspaceId: 'ws-1' }), apply)
     const results = await registry.setFile('ws-1', 'a.ts', inputs)
