@@ -114,7 +114,7 @@ describe('nodeDebugProvider registration', () => {
     const manifest = parseAdapterManifest(NODE_ADAPTER_MANIFEST)
     expect(manifest.version).toBe('1.140.0')
     expect(manifest.source).toMatchObject({ kind: 'archive' })
-    expect(manifest.platforms['linux-x64']).toMatchObject({ sizeBytes: 1249709 })
+    expect(manifest.platforms?.['linux-x64']).toMatchObject({ sizeBytes: 1249709 })
   })
 
   it('registers the provider and manifest through apply and releases on dispose', async () => {

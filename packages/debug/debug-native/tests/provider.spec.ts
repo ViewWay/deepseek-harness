@@ -16,18 +16,21 @@ import { NATIVE_ADAPTER_MANIFEST } from '../src/index.ts'
 
 const environment = fixtureDebugEnvironment({ resolvedCommand: ['lldb-dap'], resolvedVersion: '23.1.4' })
 
-function launchRequest(init: Partial<DebugLaunchRequest> = {}): DebugLaunchRequest {
+function launchRequest(init: Partial<DebugLaunchRequest> & { program?: string | undefined } = {}): DebugLaunchRequest {
+  const { program: overrideProgram, ...rest } = init
   return {
     providerId: DebugProviderId('native'),
     workspaceRoot: '/ws',
     workspaceId: 'ws-1',
     cwd: '/ws',
-    program: 'target/debug/app',
-    args: ['--flag'],
-    env: { RUST_BACKTRACE: '1' },
-    stopOnEntry: true,
-    caller: { kind: 'user', sessionId: fixtureSessionId(1) },
-    ...init,
+    ...(overrideProgram !== undefined
+      ? { program: overrideProgram }
+      : 'program' in init ? {} : { program: 'target/debug/app' }),
+    ...(rest.args !== undefined ? { args: rest.args } : { args: ['--flag'] }),
+    ...(rest.env !== undefined ? { env: rest.env } : { env: { RUST_BACKTRACE: '1' } }),
+    ...(rest.stopOnEntry !== undefined ? { stopOnEntry: rest.stopOnEntry } : { stopOnEntry: true }),
+    ...(rest.caller !== undefined ? { caller: rest.caller } : { caller: { kind: 'user', sessionId: fixtureSessionId(1) } }),
+    ...(rest.providerOptions !== undefined ? { providerOptions: rest.providerOptions } : {}),
   }
 }
 
