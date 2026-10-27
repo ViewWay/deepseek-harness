@@ -381,6 +381,41 @@ function asRecord(value: JsonValue | undefined): Readonly<Record<string, JsonVal
  * @throws {@link DebugError} `DEBUG_LAUNCH_FAILED` when the announcement does
  *   not arrive within {@link SOCKET_ANNOUNCE_TIMEOUT_MS} or the stream fails first.
  */
+/**
+ * Narrows the launch face's stdio to real Node streams.
+ *
+ * The local subprocess runtime always spawns pipe-backed Node streams; the
+ * guard keeps the harness honest if a future world hands the minimal face to
+ * a local launch, failing typed instead of mis-wiring the transport.
+ * @param stdio - the backend factory's stdio face.
+ * @param sessionId - the session being launched, for the typed failure.
+ * @returns the same streams, narrowed to Node `Readable`/`Writable`.
+ * @throws DebugError(`DEBUG_LAUNCH_FAILED`) when either stream is not a Node stream.
+ */
+function nodePipesOf(
+  stdio: { readonly stdin: unknown; readonly stdout: unknown },
+  sessionId: DebugSessionId,
+): { stdin: Writable; stdout: Readable } {
+  const { stdin, stdout } = stdio
+  if (!isNodeWritable(stdin) || !isNodeReadable(stdout)) {
+    throw new DebugError('local debug e2e requires Node stream stdio from the local subprocess world', 'DEBUG_LAUNCH_FAILED', { sessionId })
+  }
+  return { stdin, stdout }
+}
+
+function isNodeReadable(value: unknown): value is Readable {
+  return typeof value === 'object' && value !== null
+    && typeof (value as { readable?: unknown }).readable === 'boolean'
+    && typeof (value as { read?: unknown }).read === 'function'
+    && typeof (value as { resume?: unknown }).resume === 'function'
+}
+
+function isNodeWritable(value: unknown): value is Writable {
+  return typeof value === 'object' && value !== null
+    && typeof (value as { writable?: unknown }).writable === 'boolean'
+    && typeof (value as { write?: unknown }).write === 'function'
+}
+
 function announcedEndpoint(stdout: Readable): Promise<DebugTunnelEndpoint> {
   return new Promise<DebugTunnelEndpoint>((resolveEndpoint, rejectEndpoint) => {
     let received = ''
@@ -839,13 +874,14 @@ export async function launchFixture(language: DebugE2eLanguage, options: { reado
       durableEvents.push({ type, ...payload })
     },
     createBackend: async (stdio) => {
+      const pipes = nodePipesOf(stdio, sessionId)
       if (matrix.transport === 'socket') {
-        const endpoint = await announcedEndpoint(stdio.stdout)
+        const endpoint = await announcedEndpoint(pipes.stdout)
         // Keep draining the adapter's stdout so later log lines can never fill the pipe.
-        stdio.stdout.resume()
-        return socketLaunchBackendOf(endpoint, stdio, sessionId, capture, backendHolder)
+        pipes.stdout.resume()
+        return socketLaunchBackendOf(endpoint, pipes, sessionId, capture, backendHolder)
       }
-      const client = new DapClient(createStdioTransport(stdio))
+      const client = new DapClient(createStdioTransport(pipes))
       const dap = new DapDebugBackend(client, {
         sessionId,
         workspaceRoot: PACKAGE_ROOT,
@@ -855,7 +891,7 @@ export async function launchFixture(language: DebugE2eLanguage, options: { reado
       })
       observeFirstStop(client, capture)
       backendHolder.current = dap
-      return stdioLaunchBackendOf(dap, client, stdio, capture)
+      return stdioLaunchBackendOf(dap, client, pipes, capture)
     },
     breakpoints: debug.breakpoints,
     requestTimeoutMs: REQUEST_TIMEOUT_MS,

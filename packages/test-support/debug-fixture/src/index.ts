@@ -16,6 +16,7 @@ import type { Mock } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import { DebugCompoundId, DebugSessionId, DebugThreadId } from '@deepseek-ai/dsh-debug'
 import type {
+  DebugBreakpointResult,
   JsonSchema,
   JsonValue,
   DebugCompoundId as DebugCompoundIdValue,
@@ -298,7 +299,7 @@ export interface FixtureBackend {
   >
   readonly setBreakpoints: Mock<
     (request: { source: string; breakpoints: readonly unknown[] }) =>
-    Promise<{ applied: readonly unknown[]; rejected: readonly unknown[] }>
+    Promise<DebugBreakpointResult>
   >
   readonly dispose: Mock<() => Promise<void>>
 }
