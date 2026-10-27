@@ -16,7 +16,7 @@ const environment = fixtureDebugEnvironment({
   resolvedCommand: ['/venv/bin/python', '-m', 'debugpy.adapter'],
 })
 
-type PythonLaunchOverrides = Partial<DebugLaunchRequest> & { module?: string | undefined; program?: string | undefined }
+type PythonLaunchOverrides = Partial<Omit<DebugLaunchRequest, 'module' | 'program'>> & { module?: string | undefined; program?: string | undefined }
 
 function launchRequest(init: PythonLaunchOverrides = {}): DebugLaunchRequest {
   const { module: overrideModule, program: overrideProgram, ...rest } = init

@@ -15,7 +15,7 @@ import { GO_ADAPTER_MANIFEST, apply, goDebugProvider, inject, name } from '../sr
 
 const environment = fixtureDebugEnvironment({ resolvedCommand: ['dlv', 'dap'], resolvedVersion: '1.27.2' })
 
-function launchRequest(init: Partial<DebugLaunchRequest> & { program?: string | undefined } = {}): DebugLaunchRequest {
+function launchRequest(init: Partial<Omit<DebugLaunchRequest, 'program'>> & { program?: string | undefined } = {}): DebugLaunchRequest {
   const { program: overrideProgram, ...rest } = init
   return {
     providerId: DebugProviderId('go'),
