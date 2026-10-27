@@ -120,7 +120,7 @@ describe('TUI debug pane reducer', () => {
     })
     expect(state.console.at(-1)?.text).toContain(id)
     const before = state
-    state = foldDebugEvent(state, { kind: 'capabilities/changed', sessionId: id, workspaceId: 'ws-1', capabilities: {} })
+    state = foldDebugEvent(state, { kind: 'capabilities/changed', sessionId: id, workspaceId: 'ws-1', capabilities: { supportsConditionalBreakpoints: false, supportsHitConditionalBreakpoints: false, supportsLogPoints: false, supportsFunctionBreakpoints: false, supportsDataBreakpoints: false, supportsInstructionBreakpoints: false, supportsExceptionFilterOptions: false, supportsStepBack: false, supportsRestartFrame: false, supportsSetVariable: false, supportsSetExpression: false, supportsCompletionsRequest: false, supportsModulesRequest: false, supportsLoadedSourcesRequest: false, supportsDisassembleRequest: false, supportsReadMemoryRequest: false, supportsWriteMemoryRequest: false, supportsTerminateRequest: false, supportsRestartRequest: false, supportsDelayedStackTraceLoading: false, supportsValueFormattingOptions: false, supportsEvaluateForHovers: false, supportsExceptionInfoRequest: false, supportsCancelRequest: false, supportsANSIStyling: false, supportsProgressReporting: false, supportsRunInTerminalRequest: false, supportsStartDebuggingRequest: false } })
     expect(state).toEqual(before)
   })
 
