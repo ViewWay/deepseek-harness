@@ -1,7 +1,8 @@
 /**
- * The tui profile's composition bundle: re-exports the TUI app plugin so the
- * profile's patch layer can stack it over dsh-base.
+ * The tui profile's composition bundle. The bundle's `cordis.patch.yml`
+ * stacks `@deepseek-ai/dsh-tui` over dsh-base by package name, so this
+ * module only marks the package as a composition member — re-exporting the
+ * app plugin here would pull `apps/tui` sources across the project rootDir
+ * boundary into this package's compilation.
  * @module @deepseek-ai/dsh-tui-app
  */
-
-export { name, apply, inject } from '@deepseek-ai/dsh-tui'
