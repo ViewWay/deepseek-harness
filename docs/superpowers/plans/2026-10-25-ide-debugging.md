@@ -2135,6 +2135,7 @@ git commit -m "feat(debug): add stop notices approvals and audit"
 **Interfaces:**
 - Consumes: `ctx.debug`, Typert Remote declarations, `remote-access`.
 - Produces: unary debug methods, `events(sessionId, after)` stream, `get` snapshot with `eventSeq`, `debug/event-cursor-expired`.
+- 回放环 payload = 耐久事件载荷形状：`debug/session-started`、`debug/stopped`（reason/threadId/相对 source/line/column，无 frameId）、`debug/session-ended`、`debug/control` 的 Session 事件字段，由 `DebugDurablePayload` 封闭联合钉死在 `types.ts`，编排提交点经 `durableRecorder` 写环。
 
 - [x] **Step 1: Write the failing controller test**
 
