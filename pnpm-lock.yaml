@@ -334,6 +334,9 @@ importers:
       '@deepseek-ai/dsh-cua-bundle':
         specifier: workspace:*
         version: link:../../packages/experimental/cua-bundle
+      '@deepseek-ai/dsh-debug-bundle':
+        specifier: workspace:*
+        version: link:../../packages/bundle/debug
       '@deepseek-ai/dsh-experimental-agent-team-profile':
         specifier: workspace:*
         version: link:../../packages/experimental/agent-team-profile
@@ -2724,6 +2727,49 @@ importers:
       '@deepseek-ai/dsh-working-directory':
         specifier: workspace:*
         version: link:../../session/working-directory
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/bundle/debug:
+    dependencies:
+      '@deepseek-ai/dsh-api-debug-controller':
+        specifier: workspace:*
+        version: link:../../api/debug-controller
+      '@deepseek-ai/dsh-client-ui-code-editor':
+        specifier: workspace:*
+        version: link:../../client/ui-code-editor
+      '@deepseek-ai/dsh-client-ui-debug':
+        specifier: workspace:*
+        version: link:../../client/ui-debug
+      '@deepseek-ai/dsh-client-ui-workbench':
+        specifier: workspace:*
+        version: link:../../client/ui-workbench
+      '@deepseek-ai/dsh-debug':
+        specifier: workspace:*
+        version: link:../../debug/debug
+      '@deepseek-ai/dsh-debug-adapter-manager':
+        specifier: workspace:*
+        version: link:../../debug/debug-adapter-manager
+      '@deepseek-ai/dsh-debug-dap':
+        specifier: workspace:*
+        version: link:../../debug/debug-dap
+      '@deepseek-ai/dsh-debug-go':
+        specifier: workspace:*
+        version: link:../../debug/debug-go
+      '@deepseek-ai/dsh-debug-native':
+        specifier: workspace:*
+        version: link:../../debug/debug-native
+      '@deepseek-ai/dsh-debug-node':
+        specifier: workspace:*
+        version: link:../../debug/debug-node
+      '@deepseek-ai/dsh-debug-python':
+        specifier: workspace:*
+        version: link:../../debug/debug-python
+      '@deepseek-ai/dsh-tool-debug':
+        specifier: workspace:*
+        version: link:../../debug/tool-debug
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:~
@@ -13701,6 +13747,9 @@ importers:
       '@deepseek-ai/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-debug-fixture':
+        specifier: workspace:*
+        version: link:../../test-support/debug-fixture
       '@deepseek-ai/dsh-experimental-translator':
         specifier: workspace:*
         version: link:../../experimental/translator
