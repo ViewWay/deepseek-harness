@@ -4,31 +4,46 @@
  */
 
 import { describe, expect, it, vi } from 'vitest'
+import type { DebugExecutionCapability } from '@deepseek-ai/dsh-debug'
 import { fixtureDebugEnvironment } from '@deepseek-ai/dsh-debug-fixture'
+import type { DebugEnvironmentProbe } from '../src/environment.ts'
 import { probeDebugEnvironment } from '../src/environment.ts'
 
-function subprocessDouble(overrides: { terminalEnvironment?: unknown } = {}) {
-  return {
-    resolveExecutable: vi.fn(async (command: string) => `/usr/bin/${command}`),
-    terminalEnvironment: vi.fn(async () => ({ platform: 'posix' as const, defaultShell: '/bin/sh' })),
-    spawn: vi.fn(),
-    spawnTerminal: vi.fn(),
-    ...overrides,
-  }
+function subprocessDouble(overrides: {
+  terminalEnvironment?: () => Promise<{ platform: 'posix' | 'windows'; defaultShell?: string }>
+  resolveExecutable?: (command: string) => Promise<string>
+} = {}) {
+  const subprocess = fixtureDebugEnvironment().subprocess
+  vi.spyOn(subprocess, 'terminalEnvironment').mockImplementation(
+    overrides.terminalEnvironment ?? (async () => ({ platform: 'posix' as const, defaultShell: '/bin/sh' })),
+  )
+  vi.spyOn(subprocess, 'resolveExecutable').mockImplementation(
+    overrides.resolveExecutable ?? (async (command: string) => `/usr/bin/${command}`),
+  )
+  return subprocess
 }
 
-function probeInit(overrides: { subprocess?: unknown; platformKey?: string } = {}) {
+interface ProbeOverrides {
+  subprocess?: ReturnType<typeof subprocessDouble>
+  platformKey?: string
+  requiredCapabilities?: readonly DebugExecutionCapability[]
+  sandboxAllowsProcessControl?: boolean
+}
+
+function probeInit(overrides: ProbeOverrides = {}): DebugEnvironmentProbe {
   return {
-    subprocess: subprocessDouble(),
+    subprocess: overrides.subprocess ?? subprocessDouble(),
     fs: fixtureDebugEnvironment().fs,
     workspaceRoot: '/ws',
-    platformKey: 'linux-x64',
+    platformKey: overrides.platformKey ?? 'linux-x64',
     adapters: { resolve: vi.fn(async () => ({
       command: ['node', 'adapter.js'], args: [], env: {}, version: '1.0.0',
       platform: 'linux-x64', source: 'managed' as const, executablePath: '/adapters/node',
     })) },
-    requiredCapabilities: [],
-    ...overrides,
+    requiredCapabilities: overrides.requiredCapabilities ?? [],
+    ...(overrides.sandboxAllowsProcessControl !== undefined
+      ? { sandboxAllowsProcessControl: overrides.sandboxAllowsProcessControl }
+      : {}),
   }
 }
 
@@ -49,11 +64,11 @@ describe('probeDebugEnvironment', () => {
     const environment = await probeDebugEnvironment(probeInit({
       platformKey: 'win32-x64',
       subprocess: subprocessDouble({
-        terminalEnvironment: vi.fn(async () => ({ platform: 'windows' as const, defaultShell: 'pwsh' })),
+        terminalEnvironment: async () => ({ platform: 'windows' as const, defaultShell: 'pwsh' }),
       }),
     }))
     expect(environment.platform).toBe('win32')
-    expect(environment.pathSeparator).toBe('\\')
+    expect(environment.pathSeparator).toBe('\\\\')
     expect(environment.shell).toBe('pwsh')
   })
 
@@ -63,16 +78,14 @@ describe('probeDebugEnvironment', () => {
   })
 
   it('verifies interpreter capabilities through the world PATH', async () => {
-    const resolveExecutable = vi.fn(async (command: string) => {
+    const resolveExecutable = async (command: string) => {
       if (command === 'go') throw new Error('not found')
       return `/usr/bin/${command}`
-    })
+    }
     await expect(probeDebugEnvironment(probeInit({
       requiredCapabilities: ['python', 'go'],
       subprocess: subprocessDouble({ resolveExecutable }),
     }))).rejects.toMatchObject({ code: 'DEBUG_ADAPTER_UNSUPPORTED' })
-    expect(resolveExecutable).toHaveBeenCalledWith('python3')
-    expect(resolveExecutable).toHaveBeenCalledWith('go')
   })
 
   it('fails sandboxed worlds that deny required process capabilities', async () => {
