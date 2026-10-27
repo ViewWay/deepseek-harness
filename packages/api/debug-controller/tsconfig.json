@@ -1,27 +1,11 @@
 {
-  "extends": "../../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "lib/types"
-  },
-  "include": [
-    "src"
-  ],
+  "files": [],
   "references": [
     {
-      "path": "../../../vendor/cosmokit"
+      "path": "./tsconfig.host.json"
     },
     {
-      "path": "../../../vendor/cordis"
-    },
-    {
-      "path": "../../debug/debug"
-    },
-    {
-      "path": "../../core/session"
-    },
-    {
-      "path": "../../sandbox/sandbox-policy"
+      "path": "./tsconfig.client.json"
     }
   ]
 }

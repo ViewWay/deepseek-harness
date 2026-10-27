@@ -1,0 +1,25 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types",
+    "tsBuildInfoFile": "lib/tsconfig.host.tsbuildinfo"
+  },
+  "files": [
+    "src/index.ts",
+    "src/types.ts",
+    "src/ring.ts",
+    "src/editor-write.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../vendor/cordis"
+    },
+    { "path": "../../core/session" },
+    { "path": "../../debug/debug" },
+    { "path": "../../fs/fs" },
+    { "path": "../../sandbox/sandbox-policy" },
+    { "path": "../../session/session-projection" },
+    { "path": "../../typert/protocol" }
+  ]
+}

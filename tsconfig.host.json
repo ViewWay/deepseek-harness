@@ -477,7 +477,7 @@
     { "path": "./packages/debug/debug-native" },
     { "path": "./packages/debug/tool-debug" },
     { "path": "./packages/tui/tui-debug" },
-    { "path": "./packages/api/debug-controller" },
+    { "path": "./packages/api/debug-controller/tsconfig.host.json" },
     { "path": "./apps/tui" },
     { "path": "./packages/bundle/tui-app" },
     { "path": "./packages/fs/fs" },
