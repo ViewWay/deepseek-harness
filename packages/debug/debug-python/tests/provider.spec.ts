@@ -16,7 +16,7 @@ const environment = fixtureDebugEnvironment({
   resolvedCommand: ['/venv/bin/python', '-m', 'debugpy.adapter'],
 })
 
-function launchRequest(init: Partial<DebugLaunchRequest> = {}): DebugLaunchRequest {
+function launchRequest(init: { [K in keyof DebugLaunchRequest]?: DebugLaunchRequest[K] | undefined } = {}): DebugLaunchRequest {
   return {
     providerId: DebugProviderId('python'),
     workspaceRoot: '/ws',
