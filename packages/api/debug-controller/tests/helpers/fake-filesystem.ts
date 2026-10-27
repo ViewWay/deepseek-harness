@@ -41,7 +41,7 @@ export function fakeFileSystem(files: Readonly<Record<string, string>>): FakeFil
       const existed = state.has(target.displayPath)
       const version = 'v' + (double.writeCount + 1)
       state.set(target.displayPath, version)
-      return { operation: existed ? 'update' : 'create', version: version as never, before: null }
+      return { operation: existed ? 'update' : 'create', version: version as never, before: null, after: content }
     },
   }
   return double as unknown as FakeFileSystem
