@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import Debug, { DebugBreakpointId, DebugSessionId } from '@deepseek-ai/dsh-debug'
-import { fixtureDebugSessionId } from '@deepseek-ai/dsh-debug-fixture'
+import { DebugProviderId, fixtureDebugSessionId } from '@deepseek-ai/dsh-debug-fixture'
 import { apply, createTuiDebugPaneSource, inject, name, openEditorNotice } from '../src/index.ts'
 import type { TuiEditorLaunch } from '../src/index.ts'
 
@@ -14,7 +14,7 @@ function makeDebug(): Debug {
 function addSession(debug: Debug, id: ReturnType<typeof fixtureDebugSessionId>): void {
   debug.sessions.add({
     id,
-    providerId: 'node',
+    providerId: DebugProviderId('node'),
     workspaceId: 'ws-1',
     state: 'stopped',
     setState() {},
@@ -26,8 +26,8 @@ describe('TUI debug pane source', () => {
   it('folds live debug events into the rendered lines', () => {
     const debug = makeDebug()
     const handle = createTuiDebugPaneSource(debug, { resolveEditor: () => undefined })
-    const seen: readonly string[][] = []
-    const stop = handle.pane.subscribe(lines => seen.push(lines))
+    const seen: string[][] = []
+    const stop = handle.pane.subscribe((lines) => { seen.push(lines) })
     const id = fixtureDebugSessionId(1)
     debug.sessions.publish({ kind: 'session/starting', sessionId: id, workspaceId: 'ws-1' })
     expect(handle.pane.current()).toContain(`debug · ${id} · ws-1 · starting (active)`)
@@ -108,7 +108,7 @@ describe('TUI debug pane source', () => {
     const id = fixtureDebugSessionId(4)
     debug.sessions.add({
       id,
-      providerId: 'node',
+      providerId: DebugProviderId('node'),
       workspaceId: 'ws-1',
       state: 'stopped',
       setState() {},

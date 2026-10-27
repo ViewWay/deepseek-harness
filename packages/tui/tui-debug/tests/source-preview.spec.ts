@@ -64,7 +64,7 @@ describe('TUI source preview', () => {
   it('carries the cancellation signal into resolve and the stream', async () => {
     const seen: (AbortSignal | undefined)[] = []
     const reader: TuiSourceReader = {
-      resolve: (path, opts) => {
+      resolve: (_path, opts) => {
         seen.push(opts?.signal)
         return Promise.resolve({ targetKey: 'key-signal' })
       },
