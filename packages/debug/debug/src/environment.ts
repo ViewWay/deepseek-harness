@@ -30,7 +30,7 @@ export interface DebugEnvironmentProbe {
 }
 
 /** Platform keys the seam understands, with their facts. */
-const PLATFORM_FACTS: Readonly<Record<string, { readonly platform: NodeJS.Platform; readonly arch: string; readonly separator: '/' | '\\' }>> = {
+const PLATFORM_FACTS: Readonly<Record<string, { readonly platform: string; readonly arch: string; readonly separator: '/' | '\\' }>> = {
   'darwin-x64': { platform: 'darwin', arch: 'x64', separator: '/' },
   'darwin-arm64': { platform: 'darwin', arch: 'arm64', separator: '/' },
   'linux-x64': { platform: 'linux', arch: 'x64', separator: '/' },
