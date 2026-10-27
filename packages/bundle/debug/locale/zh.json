@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "调试器",
+    "description": "加载调试工作台：为 Node.js、Python、Go 与 Rust/C/C++ 提供断点、单步与变量查看，覆盖本机、SSH 与沙箱执行世界，同时服务 Agent 会话与 Web/Desktop 工作台。"
+  }
+}

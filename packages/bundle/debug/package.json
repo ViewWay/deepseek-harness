@@ -1,0 +1,64 @@
+{
+  "name": "@deepseek-ai/dsh-debug-bundle",
+  "description": "Optional debug composition: the ctx.debug seam, DAP support, four language providers, agent tools, Remote controller, and the Web/Desktop workbench",
+  "version": "0.2.1-rc.3",
+  "icon": "./icon.svg",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/bundle/debug"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./debug-controller": {
+      "types": "./lib/types/debug-controller.d.ts",
+      "default": "./lib/types/debug-controller.js"
+    },
+    "./locale/*.json": "./locale/*.json",
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "icon.svg",
+    "locale/*.json",
+    "lib/index.js",
+    "cordis.patch.yml",
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-api-debug-controller": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-code-editor": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-debug": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-workbench": "workspace:*",
+    "@deepseek-ai/dsh-debug": "workspace:*",
+    "@deepseek-ai/dsh-debug-adapter-manager": "workspace:*",
+    "@deepseek-ai/dsh-debug-dap": "workspace:*",
+    "@deepseek-ai/dsh-debug-go": "workspace:*",
+    "@deepseek-ai/dsh-debug-native": "workspace:*",
+    "@deepseek-ai/dsh-debug-node": "workspace:*",
+    "@deepseek-ai/dsh-debug-python": "workspace:*",
+    "@deepseek-ai/dsh-tool-debug": "workspace:*"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~"
+  }
+}

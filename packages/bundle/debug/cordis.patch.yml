@@ -1,0 +1,50 @@
+# The dsh-debug-bundle patch: the optional debug composition over any
+# dsh-base profile. Rows stack the ctx.debug seam, the adapter-manager
+# service, the four language providers, the model-facing debug tools, the
+# Remote debug controller, and the Web/Desktop workbench plugins.
+#
+# UI rows stay switched off outside the web and desktop profiles: headless,
+# SDK, and ACP deployments that enable this bundle load only the model side
+# (design 3.3). Adapter binaries are not installed with the bundle; the
+# adapter manager resolves and installs on first use, and launch/attach fail
+# closed when the deployment composes no approval answerer.
+
+- insert:
+    - id: debug
+      name: '@deepseek-ai/dsh-debug'
+
+    - id: debug-adapters
+      name: '@deepseek-ai/dsh-debug-adapter-manager'
+
+    - id: debug-provider-node
+      name: '@deepseek-ai/dsh-debug-node'
+
+    - id: debug-provider-python
+      name: '@deepseek-ai/dsh-debug-python'
+
+    - id: debug-provider-go
+      name: '@deepseek-ai/dsh-debug-go'
+
+    - id: debug-provider-native
+      name: '@deepseek-ai/dsh-debug-native'
+
+    - id: tool-debug
+      name: '@deepseek-ai/dsh-tool-debug'
+
+    # The controller is a Typert Remote service; the bundle re-exports it as a
+    # default plugin because the controller package itself exports only named
+    # classes (packages/api/debug-controller/src/index.ts).
+    - id: debug-controller
+      name: '@deepseek-ai/dsh-debug-bundle/debug-controller'
+
+    - id: ui-code-editor
+      name: '@deepseek-ai/dsh-client-ui-code-editor'
+      disabled: !!js "!['web', 'desktop'].includes(ctx.get('profileContext')?.name ?? '')"
+
+    - id: ui-debug
+      name: '@deepseek-ai/dsh-client-ui-debug'
+      disabled: !!js "!['web', 'desktop'].includes(ctx.get('profileContext')?.name ?? '')"
+
+    - id: ui-workbench
+      name: '@deepseek-ai/dsh-client-ui-workbench'
+      disabled: !!js "!['web', 'desktop'].includes(ctx.get('profileContext')?.name ?? '')"

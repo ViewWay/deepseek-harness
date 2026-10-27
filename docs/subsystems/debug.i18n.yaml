@@ -1,0 +1,34 @@
+# Bilingual-pair consistency record for debug.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/subsystems/debug.md
+/ide-debug-sessions:
+  en: fba492aaf56b9203
+  zh: 4c4adfac923bfa85
+/ide-debug-sessions/capability-seam:
+  en: f8e58c54a078da96
+  zh: f2cd686b8504228f
+/ide-debug-sessions/session-state-machine:
+  en: a251972fbadc2a75
+  zh: 6caf63a38fc9a4f7
+/ide-debug-sessions/providers-and-adapters:
+  en: aa62f4de81d16d1c
+  zh: 09f382ce53d78066
+/ide-debug-sessions/execution-worlds:
+  en: 1a35be030bf4ec07
+  zh: 47d16b54146833e0
+/ide-debug-sessions/ownership-and-workspace-isolation:
+  en: 4eb714c05827cf17
+  zh: c1f4dd92e536a56c
+/ide-debug-sessions/durable-events-and-projection:
+  en: 95b006a3fe428f8d
+  zh: e35281d724fe6e19
+/ide-debug-sessions/bounds:
+  en: cf8f5fba47be5938
+  zh: b4f64a27bc7c8c3a
+/ide-debug-sessions/surfaces:
+  en: c593395810d56de4
+  zh: ec5009fee8c2288d
+/ide-debug-sessions/explicit-limitations:
+  en: 399cafcf2ead6046
+  zh: 4841e4efec381ec4

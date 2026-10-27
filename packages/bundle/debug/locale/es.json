@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Depurador",
+    "description": "Carga el banco de trabajo de depuración: puntos de interrupción, ejecución paso a paso e inspección de variables para Node.js, Python, Go y Rust/C/C++ en los entornos de ejecución local, SSH y sandbox, tanto para sesiones de agente como para el banco de trabajo Web/Desktop."
+  }
+}

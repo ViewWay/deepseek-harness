@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Debugger",
+    "description": "Lädt die Debug-Workbench: Haltepunkte, schrittweise Ausführung und Variableninspektion für Node.js, Python, Go und Rust/C/C++ in lokalen, SSH- und Sandbox-Ausführungsumgebungen, sowohl für Agentensitzungen als auch für die Web/Desktop-Workbench."
+  }
+}

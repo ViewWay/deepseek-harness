@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Debugger",
+    "description": "Loads the debug workbench: breakpoints, stepping, and variable inspection for Node.js, Python, Go, and Rust/C/C++ in local, SSH, and sandbox execution worlds, for both agent sessions and the Web/Desktop workbench."
+  }
+}

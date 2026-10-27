@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Débogueur",
+    "description": "Charge l'atelier de débogage : points d'arrêt, exécution pas à pas et inspection des variables pour Node.js, Python, Go et Rust/C/C++ dans les mondes d'exécution local, SSH et bac à sable, pour les sessions d'agent comme pour l'atelier Web/Desktop."
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Depurador",
+    "description": "Carrega a bancada de depuração: pontos de interrupção, execução passo a passo e inspeção de variáveis para Node.js, Python, Go e Rust/C/C++ nos mundos de execução local, SSH e sandbox, tanto para sessões de agente quanto para a bancada Web/Desktop."
+  }
+}

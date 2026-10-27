@@ -1,0 +1,49 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/bundle/debug/README.md
+/:
+  en: da990a23b0ea5b47
+  zh: b0c8d3236ac401f0
+/deepseek-ai-dsh-debug-bundle:
+  en: 4d58ef148dc28eae
+  zh: 3815bd60ef9dbeff
+/deepseek-ai-dsh-debug-bundle/summary:
+  en: 19e7e863630c2c4b
+  zh: 64c7109404256983
+/deepseek-ai-dsh-debug-bundle/table-of-contents:
+  en: 3460b3e585e0c020
+  zh: 7f26badc8c290813
+/deepseek-ai-dsh-debug-bundle/use-this-package:
+  en: f66abfc05db5f40f
+  zh: 51e19a2277c00914
+/deepseek-ai-dsh-debug-bundle/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee4615a04fa6503d
+/deepseek-ai-dsh-debug-bundle/understand-the-implementation/patch-surface-over-base:
+  en: e05a3771b4f71f4c
+  zh: 0d9c1c9f3761d996
+/deepseek-ai-dsh-debug-bundle/understand-the-implementation/source-map:
+  en: fe9481400763692d
+  zh: 2ef061400397c85c
+/deepseek-ai-dsh-debug-bundle/dev-note:
+  en: 7962db7519297aa9
+  zh: a4b7b4ff4da6f1dc
+/deepseek-ai-dsh-debug-bundle/model-experience:
+  en: 215e7ba838619b7b
+  zh: 215e7ba838619b7b
+/deepseek-ai-dsh-debug-bundle/model-experience/debug-tools:
+  en: 7248d182da804bb4
+  zh: 4dd64d8107a39fad
+/deepseek-ai-dsh-debug-bundle/model-experience/debug-tools/what-the-model-sees:
+  en: edde4ebdd943b37e
+  zh: 65691719a9650397
+/deepseek-ai-dsh-debug-bundle/model-experience/debug-tools/token-effect:
+  en: 693966f21f78e9ed
+  zh: 2381a60784cc28c8
+/deepseek-ai-dsh-debug-bundle/model-experience/debug-tools/kv-cache-effect:
+  en: 7bbd8d98fbc7147e
+  zh: 7eb30af8b6825cee
+/deepseek-ai-dsh-debug-bundle/known-limitations-and-deferred-work:
+  en: 5a6bf419c15d0d64
+  zh: 3692ea9238555a5c
