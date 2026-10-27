@@ -9,14 +9,29 @@
  * values, or DAP frames.
  * @module @deepseek-ai/dsh-debug/launch
  */
-import { randomUUID } from 'node:crypto'
-import type { Readable, Writable } from 'node:stream'
 import { DebugError } from './error.ts'
 import { DebugSessionId } from './brand.ts'
 import type { DebugAttachRequest, DebugBreakpointResult, DebugEnvironment, DebugLaunchRequest, DebugProvider, JsonValue } from './types.ts'
 import type { DebugSessionRegistry } from './registry.ts'
 import type { DebugSessionRecord } from './session.ts'
 import type { BreakpointRegistry } from './breakpoints.ts'
+
+/** Minimal readable byte stream face the backend factory receives. */
+interface StreamReadable {
+  readonly readable: boolean
+}
+
+/** Minimal writable byte stream face the backend factory receives. */
+interface StreamWritable {
+  readonly writable: boolean
+}
+
+/** Generate a debug session id suffix; predictability is fine (authorization rides workspace boundaries, not secrecy). */
+function sessionHex(): string {
+  let hex = ''
+  for (let index = 0; index < 16; index += 1) hex += (Math.floor(Math.random() * 16)).toString(16)
+  return hex
+}
 
 /** The backend slice orchestration drives; compositions inject the DAP one. */
 export interface LaunchBackend {
@@ -53,7 +68,7 @@ export interface LaunchDependencies {
   readonly registry: DebugSessionRegistry
   readonly append: DebugDurableAppend
   /** Builds the session backend over the spawned adapter's stdio. */
-  readonly createBackend: (stdio: { readonly stdin: Writable; readonly stdout: Readable }) => Promise<LaunchBackend>
+  readonly createBackend: (stdio: { readonly stdin: StreamWritable; readonly stdout: StreamReadable }) => Promise<LaunchBackend>
   /** Breakpoint registry to bind the session into; optional in tests. */
   readonly breakpoints?: BreakpointRegistry
   /** Handshake timeout in milliseconds; defaults to 30 seconds. */
@@ -77,13 +92,13 @@ interface OrchestrationBase extends Omit<LaunchDependencies, 'request' | 'provid
 }
 
 function allocateSessionId(): DebugSessionId {
-  return DebugSessionId('debug-' + randomUUID().replaceAll('-', '').slice(0, 16))
+  return DebugSessionId('debug-' + sessionHex())
 }
 
 function spawnAdapter(
   base: OrchestrationBase,
   plan: AnyPlan,
-): { readonly stdin: Writable; readonly stdout: Readable } {
+): { readonly stdin: StreamWritable; readonly stdout: StreamReadable } {
   const handle = base.environment.subprocess.spawn({
     argv: [...plan.adapter.command, ...plan.adapter.args],
     cwd: plan.adapter.cwd,
