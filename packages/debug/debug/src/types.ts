@@ -133,7 +133,7 @@ export interface DebugTargetPlan {
 export interface DebugEnvironment {
   readonly workspaceRoot: string
   readonly cwd: string
-  readonly platform: NodeJS.Platform
+  readonly platform: string
   readonly arch: string
   readonly pathSeparator: '/' | '\\'
   readonly shell?: string
