@@ -28,7 +28,7 @@ const manifest = {
 describe('adapter manifest', () => {
   it('accepts a complete platform entry', () => {
     expect(parseAdapterManifest(manifest).providerId).toBe('node')
-    expect(parseAdapterManifest(manifest).platforms['linux-x64']).toMatchObject({
+    expect(parseAdapterManifest(manifest).platforms?.['linux-x64']).toMatchObject({
       archive: 'node.tgz',
       executable: 'bin/node',
       sizeBytes: 10,
@@ -36,7 +36,7 @@ describe('adapter manifest', () => {
   })
 
   it('omits platforms that are not published instead of emulating them', () => {
-    expect(parseAdapterManifest(manifest).platforms['win32-x64']).toBeUndefined()
+    expect(parseAdapterManifest(manifest).platforms?.['win32-x64']).toBeUndefined()
     expect(() => resolveAdapterPlatform(parseAdapterManifest(manifest), 'win32-x64'))
       .toThrow(expect.objectContaining({ code: 'DEBUG_ADAPTER_UNSUPPORTED' }))
   })
