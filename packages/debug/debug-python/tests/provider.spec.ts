@@ -16,18 +16,23 @@ const environment = fixtureDebugEnvironment({
   resolvedCommand: ['/venv/bin/python', '-m', 'debugpy.adapter'],
 })
 
-function launchRequest(init: { [K in keyof DebugLaunchRequest]?: DebugLaunchRequest[K] | undefined } = {}): DebugLaunchRequest {
+type PythonLaunchOverrides = Partial<DebugLaunchRequest> & { module?: string | undefined; program?: string | undefined }
+
+function launchRequest(init: PythonLaunchOverrides = {}): DebugLaunchRequest {
+  const { module: overrideModule, program: overrideProgram, ...rest } = init
   return {
     providerId: DebugProviderId('python'),
     workspaceRoot: '/ws',
     workspaceId: 'ws-1',
     cwd: '/ws',
-    module: 'app',
-    args: ['--serve'],
-    env: { APP_ENV: 'test' },
-    caller: { kind: 'user', sessionId: fixtureSessionId(1) },
-    providerOptions: { python: '/usr/bin/python3', justMyCode: true, subProcess: false },
-    ...init,
+    ...(overrideModule !== undefined
+      ? { module: overrideModule }
+      : 'module' in init ? {} : { module: 'app' }),
+    ...(overrideProgram !== undefined ? { program: overrideProgram } : {}),
+    ...(rest.args !== undefined ? { args: rest.args } : { args: ['--serve'] }),
+    ...(rest.env !== undefined ? { env: rest.env } : { env: { APP_ENV: 'test' } }),
+    ...(rest.caller !== undefined ? { caller: rest.caller } : { caller: { kind: 'user', sessionId: fixtureSessionId(1) } }),
+    ...(rest.providerOptions !== undefined ? { providerOptions: rest.providerOptions } : { providerOptions: { python: '/usr/bin/python3', justMyCode: true, subProcess: false } }),
   }
 }
 
