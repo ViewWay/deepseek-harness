@@ -1,0 +1,34 @@
+# Bilingual-pair consistency record for debugging.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/user/guide/debugging.md
+/debug-sessions-in-the-web-and-desktop-workbench:
+  en: c6d27b8ba5f5d618
+  zh: f5f7a2c5491bd7db
+/debug-sessions-in-the-web-and-desktop-workbench/summary:
+  en: 11fa1a7930b598cc
+  zh: b91540ec38b4e78f
+/debug-sessions-in-the-web-and-desktop-workbench/table-of-contents:
+  en: 7e4d474e3bd36870
+  zh: 73ca4920cfdd35c4
+/debug-sessions-in-the-web-and-desktop-workbench/enable-the-bundle:
+  en: 6220011d28e172a4
+  zh: 18e3383b29e93eac
+/debug-sessions-in-the-web-and-desktop-workbench/set-up-an-adapter:
+  en: 5962bd9eb424943c
+  zh: e1e5199a4752a795
+/debug-sessions-in-the-web-and-desktop-workbench/start-a-debug-session:
+  en: ff33a88e2f7d3598
+  zh: 352aa81b3d131bf7
+/debug-sessions-in-the-web-and-desktop-workbench/work-the-panels:
+  en: 02e066eda728ebfd
+  zh: 3e851f056aac4410
+/debug-sessions-in-the-web-and-desktop-workbench/edit-files-while-debugging:
+  en: 45496720c87a82f6
+  zh: 18efb1db39ec4126
+/debug-sessions-in-the-web-and-desktop-workbench/when-something-fails:
+  en: 415ff4a128367940
+  zh: 632362c2da4420ae
+/debug-sessions-in-the-web-and-desktop-workbench/further-exploration:
+  en: bee21440e66b61cd
+  zh: 26f8285099881826

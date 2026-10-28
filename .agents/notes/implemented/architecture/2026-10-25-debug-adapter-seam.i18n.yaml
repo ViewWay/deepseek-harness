@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-10-25-debug-adapter-seam.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-25-debug-adapter-seam.md
+/agent-note-debug-adapter-seam-dap-execution-worlds-and-per-session-control:
+  en: f6eee1fb53861b0e
+  zh: 4d4eb3aeeed7657c
+/agent-note-debug-adapter-seam-dap-execution-worlds-and-per-session-control/problem:
+  en: e08e1ef92f7018c3
+  zh: 2775eee398ea559f
+/agent-note-debug-adapter-seam-dap-execution-worlds-and-per-session-control/decision:
+  en: 2d71edf241944acb
+  zh: f6aa68e71348e380
+/agent-note-debug-adapter-seam-dap-execution-worlds-and-per-session-control/compatibility:
+  en: cbb8c2e8246b7edc
+  zh: ef117a1ef64e9fe1
+/agent-note-debug-adapter-seam-dap-execution-worlds-and-per-session-control/alternatives-considered:
+  en: c340e0a49400153f
+  zh: c43ef62000387bc2
+/agent-note-debug-adapter-seam-dap-execution-worlds-and-per-session-control/consequences:
+  en: e67b9ee5d908471b
+  zh: d40100afe065ec25

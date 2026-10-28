@@ -1,0 +1,34 @@
+# Bilingual-pair consistency record for debugging-cli.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/user/guide/debugging-cli.md
+/debugging-in-the-terminal-tui-and-headless:
+  en: 5137b48602e13da7
+  zh: 6ece048b7e332bd7
+/debugging-in-the-terminal-tui-and-headless/summary:
+  en: 5790e13d404e9934
+  zh: 308be5d1148287e3
+/debugging-in-the-terminal-tui-and-headless/table-of-contents:
+  en: 0f2b8cdcc5ce8c61
+  zh: d733c903b2164a70
+/debugging-in-the-terminal-tui-and-headless/start-the-tui:
+  en: 61f4041d9179b4f8
+  zh: b07138907d182e43
+/debugging-in-the-terminal-tui-and-headless/the-debug-layout:
+  en: ca567e1089b7e741
+  zh: 8ed622903ca175cc
+/debugging-in-the-terminal-tui-and-headless/commands-and-keys:
+  en: 1439e775ebc19b60
+  zh: 2cd7ed9ffb8e19ca
+/debugging-in-the-terminal-tui-and-headless/source-preview-and-editor:
+  en: 65b69237d6f32d8e
+  zh: 7e4258650f1c5941
+/debugging-in-the-terminal-tui-and-headless/debugging-headless-runs:
+  en: 7affb59469547410
+  zh: 7cdc5f88080efc4e
+/debugging-in-the-terminal-tui-and-headless/ci-adapter-setup:
+  en: f4a145459f4b3f83
+  zh: b56b75ef8a907e2a
+/debugging-in-the-terminal-tui-and-headless/further-exploration:
+  en: e46896048499565b
+  zh: a5c71db38c7fe92e

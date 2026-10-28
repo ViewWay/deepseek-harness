@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/tui/README.md
+/:
+  en: 967d3f96326b4669
+  zh: db371af212c45a22
+/tui-terminal-debugging:
+  en: 9e807b37e5c69283
+  zh: a6cb21d6840d3944
+/tui-terminal-debugging/summary:
+  en: 3f6d7e108d18214d
+  zh: d7f838469586f840
+/tui-terminal-debugging/table-of-contents:
+  en: ecc05c7b811ae5ae
+  zh: d4c9442f100e8ea8
+/tui-terminal-debugging/packages:
+  en: 4fff03724e89a577
+  zh: 9656143ab715d031
+/tui-terminal-debugging/dev-note:
+  en: 5de1d6304e00c58f
+  zh: 8d8225361cfa29e5
