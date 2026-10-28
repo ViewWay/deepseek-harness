@@ -16,6 +16,11 @@ import parseSpdx from 'spdx-expression-parse'
 import primaryRuntimeLock from './primary-runtime/lock.json' with { type: 'json' }
 import { browserBundledExternals } from './browser-bundled-externals.ts'
 import { DEVTOOLS_NPM_VERSION, DEVTOOLS_SOURCE_REVISION } from '../packages/experimental/inspector/scripts/devtools/source.ts'
+import { NODE_ADAPTER_MANIFEST } from '../packages/debug/debug-node/src/index.ts'
+import { PY_ADAPTER_MANIFEST } from '../packages/debug/debug-python/src/index.ts'
+import { GO_ADAPTER_MANIFEST } from '../packages/debug/debug-go/src/index.ts'
+import { NATIVE_ADAPTER_MANIFEST } from '../packages/debug/debug-native/src/index.ts'
+import type { DebugAdapterSource } from '../packages/debug/debug-adapter-manager/src/manifest.ts'
 
 const root = resolve(import.meta.dirname, '..')
 const OUT = 'THIRD_PARTY_NOTICES.md'
@@ -297,6 +302,49 @@ export function virtualManifest(
 }
 
 const workspaceLinkedManifestCache = new Map<string, VirtualManifest | undefined>()
+
+/**
+ * Managed debug adapters the debug seam downloads on demand, pinned by each
+ * provider's verified manifest. Facts never live here: version, license, and
+ * source come from the manifests, so a re-pin regenerates this table.
+ */
+const DEBUG_ADAPTERS = [
+  { label: 'js-debug', manifest: NODE_ADAPTER_MANIFEST },
+  { label: 'debugpy', manifest: PY_ADAPTER_MANIFEST },
+  { label: 'Delve', manifest: GO_ADAPTER_MANIFEST },
+  { label: 'lldb-dap', manifest: NATIVE_ADAPTER_MANIFEST },
+] as const
+
+/**
+ * Resolve the upstream project page of one adapter source: a GitHub release
+ * archive narrows to its repository root, a PyPI source links the package page.
+ * @param source - the manifest's verified download source.
+ * @returns the browsable upstream page.
+ */
+function debugAdapterUpstream(source: DebugAdapterSource): string {
+  if (source.kind === 'pypi') return `https://pypi.org/project/${source.package}`
+  return /^[^/]+\/\/[^/]+\/[^/]+\/[^/]+/u.exec(source.url)?.[0] ?? source.url
+}
+
+/**
+ * Render the managed-debug-adapter disclosure table.
+ * @returns the complete section, or an empty string when no adapter is declared.
+ */
+function renderDebugAdapters(): string {
+  if (DEBUG_ADAPTERS.length === 0) return ''
+  const rows = DEBUG_ADAPTERS.map(({ label, manifest }) =>
+    `| [\`${label}\`](${debugAdapterUpstream(manifest.source)}) | ${manifest.version} | ${manifest.license} |`,
+  )
+  return `
+## Managed debug adapters
+
+The debug seam downloads these third-party debug adapters on demand into the managed adapter cache; they are never bundled into DeepSeek Harness artifacts. Versions, licenses, and sources come from each provider's verified manifest, and archive downloads are checked against the manifest's SHA-256 before extraction.
+
+| Adapter | Version | License |
+| --- | --- | --- |
+${rows.join('\n')}
+`
+}
 
 /**
  * Resolve the package version selected for a declaring workspace instead of an
@@ -815,6 +863,7 @@ ${patchedLines.join('\n')}
 
 The optional experimental Inspector distributes a locally compiled copy of [chrome-devtools-frontend ${DEVTOOLS_NPM_VERSION}](https://www.npmjs.com/package/chrome-devtools-frontend/v/${DEVTOOLS_NPM_VERSION}), from upstream revision [${DEVTOOLS_SOURCE_REVISION}](https://chromium.googlesource.com/devtools/devtools-frontend/+/${DEVTOOLS_SOURCE_REVISION}). The build includes the Chromium [BSD-3-Clause license](packages/experimental/inspector/assets/devtools/LICENSE) and the third-party license and notice files supplied by the npm source. The Chromium root license does not replace those dependencies' licenses.
 
+${renderDebugAdapters()}
 ${renderClaudeDistribution(claudeDistribution)}
 ${kitRuntime ? `
 ## LibreOffice conversion kit

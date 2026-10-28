@@ -98,6 +98,7 @@ External packages installed for runtime use or embedded in distributed Host or b
 | [`got`](https://github.com/sindresorhus/got) | MIT |
 | [`hosted-git-info`](https://github.com/npm/hosted-git-info) | ISC |
 | [`immer`](https://github.com/immerjs/immer) | MIT |
+| [`ink`](https://github.com/vadimdemedes/ink) | MIT |
 | [`ipaddr.js`](https://github.com/whitequark/ipaddr.js) | MIT |
 | [`js-yaml`](https://github.com/nodeca/js-yaml) | MIT |
 | [`katex`](https://github.com/KaTeX/KaTeX) | MIT |
@@ -168,6 +169,18 @@ pnpm applies local patches to the following packages at install time, so shipped
 The optional experimental Inspector distributes a locally compiled copy of [chrome-devtools-frontend 1.0.1638082](https://www.npmjs.com/package/chrome-devtools-frontend/v/1.0.1638082), from upstream revision [0e1186138ed519d9659c1874bf6375eca4483c72](https://chromium.googlesource.com/devtools/devtools-frontend/+/0e1186138ed519d9659c1874bf6375eca4483c72). The build includes the Chromium [BSD-3-Clause license](packages/experimental/inspector/assets/devtools/LICENSE) and the third-party license and notice files supplied by the npm source. The Chromium root license does not replace those dependencies' licenses.
 
 
+## Managed debug adapters
+
+The debug seam downloads these third-party debug adapters on demand into the managed adapter cache; they are never bundled into DeepSeek Harness artifacts. Versions, licenses, and sources come from each provider's verified manifest, and archive downloads are checked against the manifest's SHA-256 before extraction.
+
+| Adapter | Version | License |
+| --- | --- | --- |
+| [`js-debug`](https://github.com/microsoft/vscode-js-debug) | 1.140.0 | MIT |
+| [`debugpy`](https://pypi.org/project/debugpy) | 1.8.22 | MIT |
+| [`Delve`](https://github.com/go-delve/delve) | 1.27.2 | MIT |
+| [`lldb-dap`](https://github.com/llvm/llvm-project) | 23.1.4 | Apache-2.0 WITH LLVM-exception |
+
+
 ## Official Claude Code platform payloads
 
 The project owner authorizes distribution of every version of the official `@anthropic-ai/claude-agent-sdk` package and the official Claude Code CLI/platform payloads that each version declares through `optionalDependencies`. This identity-scoped authorization does not classify their declared terms as permissive and does not cover any unrelated runtime package; version, declared-license, and payload-set changes still require the ordinary dependency, lockfile, compatibility, terms, and notices review.
@@ -200,6 +213,16 @@ External packages **directly declared** for development, tests, types, or toolin
 | Package | License |
 | --- | --- |
 | [`@braintree/sanitize-url`](https://github.com/braintree/sanitize-url) | MIT |
+| [`@codemirror/commands`](https://code.haverbeke.berlin/codemirror/commands) | MIT |
+| [`@codemirror/lang-cpp`](https://github.com/codemirror/lang-cpp) | MIT |
+| [`@codemirror/lang-go`](https://github.com/codemirror/lang-go) | MIT |
+| [`@codemirror/lang-javascript`](https://github.com/codemirror/lang-javascript) | MIT |
+| [`@codemirror/lang-python`](https://github.com/codemirror/lang-python) | MIT |
+| [`@codemirror/lang-rust`](https://github.com/codemirror/lang-rust) | MIT |
+| [`@codemirror/language`](https://code.haverbeke.berlin/codemirror/language) | MIT |
+| [`@codemirror/search`](https://code.haverbeke.berlin/codemirror/search) | MIT |
+| [`@codemirror/state`](https://code.haverbeke.berlin/codemirror/state) | MIT |
+| [`@codemirror/view`](https://code.haverbeke.berlin/codemirror/view) | MIT |
 | [`@electron/get`](https://github.com/electron/get) | MIT |
 | [`@electron/notarize`](https://github.com/electron/notarize) | MIT |
 | [`@lexical/headless`](https://github.com/facebook/lexical) | MIT |
@@ -250,6 +273,7 @@ External packages **directly declared** for development, tests, types, or toolin
 | [`extract-zip`](https://github.com/maxogden/extract-zip) | BSD-2-Clause |
 | [`fast-check`](https://github.com/dubzzz/fast-check) | MIT |
 | [`http-server`](https://github.com/http-party/http-server) | MIT |
+| [`ink-testing-library`](https://github.com/vadimdemedes/ink-testing-library) | MIT |
 | [`istanbul-lib-report`](https://github.com/istanbuljs/istanbuljs) | BSD-3-Clause |
 | [`jscpd`](https://github.com/kucherenko/jscpd) | MIT |
 | [`jsdom`](https://github.com/jsdom/jsdom) | MIT |
