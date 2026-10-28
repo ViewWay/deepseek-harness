@@ -68,7 +68,7 @@ describe('probeDebugEnvironment', () => {
       }),
     }))
     expect(environment.platform).toBe('win32')
-    expect(environment.pathSeparator).toBe('\\\\')
+    expect(environment.pathSeparator).toBe('\\')
     expect(environment.shell).toBe('pwsh')
   })
 

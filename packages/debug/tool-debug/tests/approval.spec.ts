@@ -1,6 +1,9 @@
 /**
  * Debug approvals: fail-closed when the answerer is unavailable, grant on
  * allowed-once, and deny with the distinction between rejection and absence.
+ * Control authorization covers all three grant sources plus the
+ * `DEBUG_CONTROL_NOT_GRANTED` denial when a user-owned session has neither
+ * the switch nor an offered single approval.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -53,5 +56,23 @@ describe('debug approval', () => {
       owner: 'user', caller: 'agent', toolName: 'debug_execution', reason: 'continue',
       sessionGrant: false, agent: {},
     })).resolves.toMatchObject({ source: 'single-approval' })
+  })
+
+  it('denies control of a user-owned session when the switch is off and no single approval is offered', async () => {
+    const approval = approvalDouble('allowed-once')
+    await expect(grantControl(approval, {
+      owner: 'user', caller: 'agent', toolName: 'debug_execution', reason: 'continue',
+      sessionGrant: false,
+    })).rejects.toMatchObject({ code: 'DEBUG_CONTROL_NOT_GRANTED' })
+    expect(approval.request).not.toHaveBeenCalled()
+  })
+
+  it('grants cross-owner control through the session switch without asking again', async () => {
+    const approval = approvalDouble('allowed-once')
+    await expect(grantControl(approval, {
+      owner: 'user', caller: 'agent', toolName: 'debug_execution', reason: 'continue',
+      sessionGrant: true, agent: {},
+    })).resolves.toMatchObject({ source: 'session-grant' })
+    expect(approval.request).not.toHaveBeenCalled()
   })
 })

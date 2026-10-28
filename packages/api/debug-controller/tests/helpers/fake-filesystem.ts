@@ -7,6 +7,8 @@ export interface FakeFileSystem extends FileSystem {
   lastWriteIntent: FsWriteIntent | undefined
   /** How many writes reached the backend. */
   writeCount: number
+  /** Absolute path of the last resolve call, when one happened. */
+  lastResolvedPath: string | undefined
 }
 
 /**
@@ -19,8 +21,10 @@ export function fakeFileSystem(files: Readonly<Record<string, string>>): FakeFil
   const state = new Map(Object.entries(files))
   const double = {
     lastWriteIntent: undefined as FsWriteIntent | undefined,
+    lastResolvedPath: undefined as string | undefined,
     writeCount: 0,
     async resolve(path: string): Promise<FsTarget> {
+      double.lastResolvedPath = path
       return { targetKey: path as never, displayPath: path }
     },
     async stat(target: FsTarget): Promise<FsInfo | undefined> {
