@@ -3265,11 +3265,11 @@ Landed in `packages/test-support/debug-e2e/src/index.ts`: `skipWithoutAdapter` r
 
 Add minimal fixtures with a known breakpoint line and a step target for Node, Python, Go, and C. The SSH and sandbox tests use the repository's existing profile patches and fixtures; assert launch and breakpoint behavior, and assert `DEBUG_ATTACH_UNSUPPORTED` or `DEBUG_SANDBOX_DENIED` where the world cannot grant the capability.
 
-- [ ] **Step 4: Add Python, Go, native, SSH, and sandbox tests**
+- [x] **Step 4: Add Python, Go, native, SSH, and sandbox tests**
 
 Each language test follows the same shape with its provider and fixture. The SSH test runs a stdio launch and a tunneled attach when supported; otherwise it asserts the explicit unsupported code. The sandbox test asserts launch under the configured sandbox and the ptrace denial path.
 
-Landed: Python (real launch with the missing-adapter skip fallback), Go and native (explicit skips with recorded reasons and a skip-record assertion), and SSH (the explicit `DEBUG_ATTACH_UNSUPPORTED` path through the fixture stub). Open: no `tests/sandbox.spec.ts` was created, so the sandbox lane from the file list stays uncovered here; `DEBUG_SANDBOX_DENIED` coverage remains in `packages/debug/debug/tests/environment.spec.ts`.
+Landed: Python (real launch with the missing-adapter skip fallback), Go and native (explicit skips with recorded reasons and a skip-record assertion), SSH (the explicit `DEBUG_ATTACH_UNSUPPORTED` path through the fixture stub), and sandbox (the published world-capability gate `probeDebugEnvironment` through a stub world: a granted sandbox probes through to the launch environment, a denying sandbox rejects `DEBUG_SANDBOX_DENIED` for both process-control flavors, and a world that cannot host ptrace rejects `DEBUG_ADAPTER_UNSUPPORTED`; real confinement under `sandbox-exec` belongs to the CI platform matrix).
 
 - [x] **Step 5: Run the matrix**
 
