@@ -35,6 +35,7 @@
     "@deepseek-ai/dsh-debug": "workspace:*",
     "@deepseek-ai/dsh-debug-adapter-manager": "workspace:*",
     "@deepseek-ai/dsh-debug-dap": "workspace:*",
+    "@deepseek-ai/dsh-debug-fixture": "workspace:*",
     "@deepseek-ai/dsh-debug-go": "workspace:*",
     "@deepseek-ai/dsh-debug-native": "workspace:*",
     "@deepseek-ai/dsh-debug-node": "workspace:*",

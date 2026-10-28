@@ -3,17 +3,17 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/test-support/debug-e2e/README.md
 /:
-  en: 85c3f4609e9a31b3
-  zh: 5562616dede49055
+  en: 918755c73e7e414d
+  zh: c46e1d5ba2409cea
 /deepseek-ai-dsh-debug-e2e:
   en: 27c4a706b3c90277
   zh: 4373ee53379d9f30
 /deepseek-ai-dsh-debug-e2e/summary:
-  en: 10a95d98459c9dc7
-  zh: d8bf0c4083a45da1
+  en: 1e96a12d2ace7d26
+  zh: 162d3d49460b1211
 /deepseek-ai-dsh-debug-e2e/adapter-provisioning:
   en: 025ddecf9c119a13
   zh: 4c09ee5db9b3fe8f
 /deepseek-ai-dsh-debug-e2e/known-limitations-and-deferred-work:
-  en: 3af82a641ce581ac
-  zh: e225fd3437db624a
+  en: 5159ef1d9fa1cb3f
+  zh: 4d3344bea95de4cd

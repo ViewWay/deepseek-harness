@@ -16609,6 +16609,9 @@ importers:
       '@deepseek-ai/dsh-debug-dap':
         specifier: workspace:*
         version: link:../../debug/debug-dap
+      '@deepseek-ai/dsh-debug-fixture':
+        specifier: workspace:*
+        version: link:../debug-fixture
       '@deepseek-ai/dsh-debug-go':
         specifier: workspace:*
         version: link:../../debug/debug-go
