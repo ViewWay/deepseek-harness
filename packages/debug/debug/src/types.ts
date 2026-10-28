@@ -106,7 +106,7 @@ export interface DebugAttachTarget {
   readonly url?: string
 }
 
-/** A resolved adapter ready to spawn: command, provenance, and identity. */
+/** A resolved adapter ready to spawn: command, origin, and identity. */
 export interface ResolvedDebugAdapter {
   readonly command: readonly string[]
   readonly args: readonly string[]

@@ -43,6 +43,7 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
 export class DebugEventCursorExpiredError extends Error {
   /** The stable flow-control code clients route on. */
   override readonly name = 'DebugEventCursorExpiredError'
+  /** Stable error code the Remote client routes on for replay recovery. */
   readonly code = 'debug/event-cursor-expired'
 
   /**
@@ -88,7 +89,12 @@ export class DebugController extends TypertRemoteService {
     })
   }
 
-  /** Record one live debug event into the replay ring. */
+  /**
+   * Record one live debug event into the replay ring.
+   * @param sessionId - Session whose debug surface produced the event.
+   * @param payload - The normalized event payload.
+   * @returns The event's ring sequence number.
+   */
   recordEvent(sessionId: string, payload: JsonValue): number {
     return this.ring.append(sessionId, payload)
   }

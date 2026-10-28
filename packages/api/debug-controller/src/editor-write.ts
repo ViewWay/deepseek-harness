@@ -99,7 +99,11 @@ function joinPath(root: string, relative: string): string {
   return trimmed + '/' + relative
 }
 
-/** Re-exported so the Remote layer can brand wire-side version strings once. */
+/**
+ * Re-exported so the Remote layer can brand wire-side version strings once.
+ * @param wire - Wire-side version text to brand.
+ * @returns The branded filesystem version.
+ */
 export function editorVersion(wire: string): FsVersionValue {
   return FsVersion(wire)
 }

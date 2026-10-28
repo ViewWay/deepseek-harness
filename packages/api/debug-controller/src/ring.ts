@@ -72,11 +72,20 @@ export class DebugEventRing {
    * @returns The retained slice, expiry flag, and the session's newest
    *   sequence (the cursor itself when the session has no retained events).
    */
-  /** All retained records in append order; test-facing read of the ring. */
+  /**
+   * All retained records in append order; test-facing read of the ring.
+   * @returns Every retained record, oldest first.
+   */
   replayAll(): readonly DebugEventRecord[] {
     return [...this.records]
   }
 
+  /**
+   * Replay one session's retained events after a cursor.
+   * @param sessionId - Session whose events to replay.
+   * @param after - The caller's last seen sequence; 0 replays from the start.
+   * @returns The retained slice, expiry flag, and the session's newest sequence.
+   */
   replay(sessionId: string, after: number): DebugEventReplay {
     const scoped = this.records.filter(record => record.sessionId === sessionId)
     if (scoped.length === 0) {

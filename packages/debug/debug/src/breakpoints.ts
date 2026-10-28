@@ -122,7 +122,11 @@ export class BreakpointRegistry {
   }
 }
 
-/** Lexically normalizes a workspace-relative path (`./` and `..` segments). */
+/**
+ * Lexically normalizes a workspace-relative path (`./` and `..` segments).
+ * @param path - Workspace-relative path to normalize.
+ * @returns The lexically normalized path.
+ */
 export function normalizeWorkspacePath(path: string): string {
   const segments: string[] = []
   for (const segment of path.split('/')) {

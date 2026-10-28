@@ -55,7 +55,11 @@ export function mapCapabilities(capabilities: JsonValue | undefined): DebugCapab
   }
 }
 
-/** Whether the value is a JSON object record (not an array or primitive). */
+/**
+ * Whether the value is a JSON object record (not an array or primitive).
+ * @param value - Candidate JSON value from an adapter response.
+ * @returns Whether the value is a string-keyed record.
+ */
 export function isJsonObject(value: JsonValue | undefined): value is { readonly [key: string]: JsonValue } {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

@@ -38,6 +38,7 @@ const CLOSED = Symbol('dap-client-closed')
  * the matching terminal failure.
  */
 export class DapClient {
+  /** The transport this client reads events from and writes requests to. */
   readonly transport: Transport
   private readonly closed: Promise<void>
   private readonly resolveClosed: () => void
@@ -67,7 +68,7 @@ export class DapClient {
    * Sends one request and resolves with the adapter's response.
    *
    * @param command DAP command name.
-   * @param arguments Command-specific arguments, when the command takes any.
+   * @param arguments_ Command-specific arguments, when the command takes any.
    * @param signal Aborts the request with `DEBUG_TIMEOUT`; callers build it
    *   from their configured timeouts (for example `AbortSignal.timeout`).
    * @returns The adapter's response, including `success: false` responses.
