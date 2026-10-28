@@ -48,6 +48,7 @@ harness 由 `packages/` 下的 npm 包组装而成，按能力系列分组：会
 | [`deliverables/`](deliverables/README.zh.md) | 轮次交付物：显式文件交付与记录的工作区改动 |
 | [`fs/`](fs/README.zh.md) | 文件系统能力系列：seam、本地实现、面向模型的文件工具、发现工具 |
 | [`lsp/`](lsp/README.zh.md) | LSP 能力系列：seam、通用 stdio 提供方和 `lsp` 工具 |
+| [`debug/`](debug/README.zh.md) | 调试能力系列：`ctx.debug` seam、语言提供方、托管 DAP 适配器、面向模型的调试工具 |
 | [`skill/`](skill/README.zh.md) | skill（技能）能力系列：提供方注册表、本地提供方、面向模型的目录／loader |
 | [`compaction/`](compaction/README.zh.md) | 压缩（compaction）能力系列：Service Definition + 基础提供方 + 命令 Consumer |
 | [`context/`](context/README.zh.md) | 模型可见请求上下文：workspace 指令、时间上下文、引用 |
@@ -78,6 +79,7 @@ harness 由 `packages/` 下的 npm 包组装而成，按能力系列分组：会
 | [`boot/`](boot/README.zh.md) | 共享的 app bin 启动粘合层 |
 | [`host/`](host/README.zh.md) | Web GUI 宿主服务、目录选择、应用启动、插件清单和产品遥测 |
 | [`client/`](client/README.zh.md) | web GUI 浏览器半侧：shell、协议层、对象服务、slot、`ui-*` 插件 |
+| [`tui/`](tui/README.zh.md) | `tui` profile 的终端调试面板：命令、按键、有界面板、源码预览、`$EDITOR` 交接 |
 | [`test-support/`](test-support/README.zh.md) | 测试基础设施（testkit、回放、Loader 冒烟测试） |
 | [`util/`](util/README.zh.md) | 组间共享的低层工具与纯数据包列表（`Branded<B>`、home／路径辅助函数、超时、留存、官方组合包列表） |
 

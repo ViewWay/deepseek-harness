@@ -143,6 +143,8 @@ seam 正是替换一个提供方就能改变整个产品的原因。文件系统
 
 [实验性 Agent Teams](subsystems/agent-team.zh.md) 通过显式启用的 `ctx.agentTeams`，在可继续 subagent 之上提供持久 roster、任务状态和直接 inbox 消息协作。
 
+[调试能力缝](subsystems/debug.zh.md) 暴露 `ctx.debug`：语言 provider 解析 launch 与 attach 计划，托管的第三方 DAP 适配器保持在 seam 之后，能力检查由各执行世界承载——无法授予进程控制或 tracing 的世界以类型化错误失败，而不是降级传输。`dsh-tool-debug`、Remote 调试控制器与 Web/Desktop/TUI 调试界面是它的 Consumer。
+
 ## 新行为的归属位置
 
 新行为附加到已有文档记录的扩展点。改动循环本身时，本映射随之更新。
@@ -154,6 +156,7 @@ seam 正是替换一个提供方就能改变整个产品的原因。文件系统
 | 让某个会话拥有不同的能力集合 | 组装一个 agent preset；其中的服务行需要 `isolate` realm |
 | 添加 shell 执行 | 注册 `ctx.shell` 后端；本地后端通过 `ctx.subprocess` spawn 进程 |
 | 添加持久化终端执行 | 注册 `ctx.terminals` 后端和 `dsh-tool-terminal` |
+| 添加调试适配器 | 在 `ctx.debug` 上注册 provider 及其 manifest；DAP 保持在 `dsh-debug-dap` 之内 |
 | 添加用户命令 | 在 `ctx.commands` 上注册；它无需模型轮次即可分派 |
 | 管理后台任务 | 在 `ctx.jobs` 上注册；`job_*` 工具读取或停止任务 |
 | 从外部 webhook 启动 Session | 在 `ctx.webhookRuntime` 上注册可信规则，并挂载提供方适配器 |

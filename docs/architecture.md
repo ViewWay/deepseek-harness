@@ -139,6 +139,8 @@ Seams are why one provider swap changes the whole product. Filesystem and subpro
 
 [Experimental Agent Teams](subsystems/agent-team.md) exposes opt-in `ctx.agentTeams` coordination with durable roster and task state plus direct inbox messaging over continuable subagents.
 
+The [debug seam](subsystems/debug.md) exposes `ctx.debug`: language providers resolve launch and attach plans, the managed third-party DAP adapters stay behind the seam, and each execution world carries the capability checks — a world that cannot grant process control or tracing fails typed instead of degrading the transport. `dsh-tool-debug`, the Remote debug controller, and the Web/Desktop/TUI debug surfaces are its Consumers.
+
 ## Where new behavior goes
 
 New behavior attaches to a documented extension point. Changing the loop itself updates this map.
@@ -150,6 +152,7 @@ New behavior attaches to a documented extension point. Changing the loop itself 
 | Give one session a different capability set | compose an agent preset; a service row there needs an `isolate` realm |
 | Add shell execution | register a `ctx.shell` backend; the local one spawns through `ctx.subprocess` |
 | Add persistent terminal execution | register a `ctx.terminals` backend plus `dsh-tool-terminal` |
+| Add a debug adapter | register a provider and its manifest on `ctx.debug`; DAP stays inside `dsh-debug-dap` |
 | Add a human command | register on `ctx.commands`; it dispatches without a model turn |
 | Manage background jobs | register on `ctx.jobs`; `job_*` tools read or stop jobs |
 | Start a Session from an external webhook | register a trusted rule on `ctx.webhookRuntime` and mount a provider adapter |

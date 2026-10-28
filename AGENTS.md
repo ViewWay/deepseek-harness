@@ -30,6 +30,7 @@ packages/    @deepseek-ai/dsh-<pkg> workspaces at packages/<group>/<pkg>/
   deliverables/         turn deliverables
   fs/                   filesystem access
   lsp/                  language servers
+  debug/                IDE-level debugging (ctx.debug seam)
   skill/                skill loading
   web/                  search/fetch tools
   computer-use/         computer interaction
@@ -63,6 +64,7 @@ packages/    @deepseek-ai/dsh-<pkg> workspaces at packages/<group>/<pkg>/
   sdk/                  JSON-RPC SDK
   host/                 GUI host
   client/               GUI client
+  tui/                  terminal debug surface (tui profile)
   mcp/                  external tools
   experimental/         evaluated capabilities without a product-support commitment
   test-support/         test infrastructure
