@@ -3136,7 +3136,7 @@ git commit -m "feat(headless): project durable debug events to NDJSON"
 - Consumes: fake adapter scenarios, `ctx.debug`, headless projection, TUI transcript, Web/Desktop normalized view state.
 - Produces: shared `debugScenario` fixtures; normalized event stream; snapshot cases; updated TS/Python SDK expectations.
 
-- [ ] **Step 1: Write the failing consistency test**
+- [x] **Step 1: Write the failing consistency test**
 
 Create `packages/test-support/debug-scenarios/tests/consistency.spec.ts`:
 
@@ -3162,11 +3162,11 @@ Run: `pnpm exec vitest run packages/test-support/debug-scenarios/tests/consisten
 
 Expected: FAIL because the scenario package does not exist.
 
-- [ ] **Step 3: Implement shared scenarios and normalization**
+- [x] **Step 3: Implement shared scenarios and normalization**
 
 `debugScenario(name, options)` returns a deterministic adapter script with breakpoints, steps, variables, exception, and terminate. `runScenario(surface, scenario)` drives the appropriate surface harness: Web/Desktop use the Remote controller and store, TUI uses the transcript/panel reducer, and headless uses `projectJsonRun`. `normalizeSurfaceEvents` removes presentation-only fields and keeps session id, state, stop reason, relative location, breakpoint verification, error code, and control actor.
 
-- [ ] **Step 4: Add recorded-session snapshots**
+- [ ] **Step 4: Add recorded-session snapshots**（阻塞：本机无 `DEEPSEEK_API_KEY`，场景声明 `recording: live`，等待 live 录制；回放适配器按设计保持 skip）
 
 Create the two scenario patches under `snapshots/ide-debugging/`, using the fake adapter from Task 4 and the shipped `web`/`tui` profiles. `snapshot.yml` declares the scenario and workspace seed; `cordis.yml` mounts the fake provider. Record with:
 
@@ -3178,7 +3178,7 @@ Then replay without writes:
 
 Expected: PASS. The recorded `session.jsonl` files are the committed replay input; do not hand-write expected JSONL.
 
-- [ ] **Step 5: Add SDK debug-event projections**
+- [x] **Step 5: Add SDK debug-event projections**
 
 Add `packages/sdk/client/tests/debug-events.spec.ts` modeled on `cot-translation-projection.spec.ts`: feed a fake runtime the four `debug/*` events and compare the projected event list with `expected/debug-events.json`. Add the Python counterpart in `python/sdk/tests/test_debug_events_snapshot.py` with `python/sdk/tests/expected/debug-events.json`. Run:
 
@@ -3188,7 +3188,7 @@ Add `packages/sdk/client/tests/debug-events.spec.ts` modeled on `cot-translation
 
 Expected: PASS.
 
-- [ ] **Step 6: Run focused verification**
+- [x] **Step 6: Run focused verification**
 
 Run:
 
