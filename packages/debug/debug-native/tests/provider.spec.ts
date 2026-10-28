@@ -16,7 +16,7 @@ import { NATIVE_ADAPTER_MANIFEST } from '../src/index.ts'
 
 const environment = fixtureDebugEnvironment({ resolvedCommand: ['lldb-dap'], resolvedVersion: '23.1.4' })
 
-function launchRequest(init: Partial<DebugLaunchRequest> & { program?: string | undefined } = {}): DebugLaunchRequest {
+function launchRequest(init: Partial<Omit<DebugLaunchRequest, 'program'>> & { program?: string | undefined } = {}): DebugLaunchRequest {
   const { program: overrideProgram, ...rest } = init
   return {
     providerId: DebugProviderId('native'),
