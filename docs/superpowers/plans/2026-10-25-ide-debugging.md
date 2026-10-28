@@ -1566,7 +1566,7 @@ git commit -m "feat(debug): load named launch configurations"
 
 **Scope:** `source.kind` 收敛为 `'archive' | 'pypi'`（Review Resolutions 第 15 条）：`parseAdapterManifest` 对 pypi 源免 platforms、校验 package 名与版本固定（无 latest）；`installAdapter` 增加 pypi 分支——目标解释器创建隔离 venv、pip 安装固定版本、PyPI 官方 digest 校验后安装、自检失败回滚目录；系统安装情形不在本任务（由用户覆盖配置承载）。TDD + 独立 commit（feat(debug): support pypi adapter sources with venv install）。
 
-- [x] 完成：abf0ed7aa4（feat(debug): add pypi adapter source with venv install，25/25 测试）
+- [x] 完成：feat(debug) 提交「add pypi adapter source with venv install」（25/25 测试），提交号见分支历史
 
 ---
 
@@ -3320,23 +3320,31 @@ git commit -m "test(debug): add real adapter and execution-world matrix"
 - Consumes: all implemented packages and generated catalogs.
 - Produces: current-state documentation, generated reference freshness, Agent Note, and third-party notices.
 
-- [ ] **Step 1: Write the subsystem page**
+- [x] **Step 1: Write the subsystem page**
 
 Document the capability seam, state machine, provider roles, execution worlds, ownership, durable events, bounds, and explicit limitations. Link package READMEs rather than restating their JSDoc. Add the Chinese pair.
 
-- [ ] **Step 2: Write the user guides**
+Landed as `docs/subsystems/debug.md` and `debug.zh.md`; both sides of the folder README index the page.
+
+- [x] **Step 2: Write the user guides**
 
 `debugging.md` covers Web/Desktop: workbench, launch configuration, breakpoints, panels, adapter install, save conflicts, and common failures. `debugging-cli.md` covers `dsh tui` Chat/Split/Debug layouts, commands, keys, `$EDITOR`, headless NDJSON, and CI adapter setup. Both get Chinese pairs.
 
-- [ ] **Step 3: Update architecture and package maps**
+All four pages landed with their i18n sidecars alongside the tui group README and the adapter-seam Agent Note.
+
+- [x] **Step 3: Update architecture and package maps**
 
 Add the `debug/` and `tui/` groups, the `dsh-debug` seam, the three consumers, the `tui` profile in the application-launch list, and “Add a debug adapter” in *Where new behavior goes*. Update `packages/README.md` and bundle maps.
 
-- [ ] **Step 3b: Wire bundles and profiles**
+Both language sides of `docs/architecture.md` and `packages/README.md` carry the groups, the seam row, the consumer list, and the `tui` profile; the doc-budget ceilings moved with them.
+
+- [x] **Step 3b: Wire bundles and profiles**
 
 Create `packages/bundle/debug` with a patch that stacks the debug service, DAP client, adapter manager, four providers, `tool-debug`, `api/debug-controller`, `ui-code-editor`, `ui-debug`, and `ui-workbench`. 组合归属（进 `dsh-base` 还是进 `OPTIONAL_BUNDLES`）按设计文档第 3.3 节是待裁决项，本步骤不替它决定；先按可选 bundle 落地，裁决进 `dsh-base` 时把行移到 base patch 并补升级说明。 Add the model-side rows to `dsh-base`, the full debug bundle to `web-app` and the Desktop profile, the headless NDJSON row where needed, and the `tui` profile to the shipped profile list. Keep headless/SDK/ACP model-only; they must not load browser or TUI UI.
 
-- [ ] **Step 4: Regenerate catalogs and CLI help**
+Landed as `packages/bundle/debug` and `packages/bundle/tui-app` with both README pairs; the shipped profile list includes `tui`, and headless/SDK/ACP stayed model-only.
+
+- [x] **Step 4: Regenerate catalogs and CLI help**
 
 Run the repository generators rather than hand-editing generated regions:
 
@@ -3355,9 +3363,13 @@ pnpm run gen-third-party-notices
 
 Do not edit generated files by hand.
 
-- [ ] **Step 5: Write the Agent Note and third-party notices**
+The generators ran with their debug entries (service-page routing, link map, capability-seams and module-graph service roles, client slot and tool API rows); a first catalog pass had already landed with the earlier composition tasks, so this step only refreshed the remaining regions and the SSH `connectTcpStream` catalog row. `gen-cli-help` needed no rerun: the CLI surface is unchanged since the earlier catalog pass.
+
+- [x] **Step 5: Write the Agent Note and third-party notices**
 
 The Agent Note records why DAP, managed adapters, execution-world mapping, three-surface split, stop wake-up, and the full-control/workspace-isolation boundary. Add adapter licenses and any new libraries (CodeMirror, Ink) to `THIRD_PARTY_NOTICES.md`.
+
+Landed: the implemented adapter-seam Agent Note with its bilingual pair, the managed-adapter rows in `THIRD_PARTY_NOTICES.md` (js-debug 1.140.0, debugpy 1.8.22, Delve 1.27.2, lldb-dap 23.1.4, versions pinned from each provider manifest), and the `2026-10-25-debug-events` persistence acknowledgement.
 
 - [ ] **Step 6: Run documentation gates**
 
@@ -3370,6 +3382,8 @@ Run:
 `pnpm run website:build`
 
 Expected: PASS. Fix generated-file drift and link errors, not the gates.
+
+2026-10-28 status: every debug-owned gate is green — md-wrap, md-links, doc-standard, subsystem pages, export JSDoc, README summaries/limitations/model-experience, doc-site checks, translation pairing (debug pairs), persistence catalog, and the persistence type history with the debug acknowledgement record. Remaining doc-sync reds are outside this task: `doc-typecheck` fails at the branch head on the `ISessions`/`SessionStore` seam drift (pre-dates Task 26, needs the session-store alignment work), translation pairing still sees the untracked `scratch-plugin` workspace, and the persistence type-history parser rejects the untracked prompt-optimizer WIP record. `website:build` was not rerun in this task.
 
 - [x] **Step 7: Commit**
 

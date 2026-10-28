@@ -62,7 +62,7 @@
 
 ### 共享基础设施登记协议（新 workspace 包）
 
-新增 workspace 包的登记面是全局共享文件，由团队 lead 单写：`tsconfig.base.json` 生成区（`pnpm run gen-tsconfig-paths`）、`tsconfig.host.json`/`tsconfig.client.json` references、`vitest.config.ts` coverage lane、release/doc 清单、`pnpm-lock.yaml`（先例：27ff469ea5）。包骨架与内容就位后，向 lead 报包名与子路径导出清单；lead 执行登记、复核 diff 并回传登记文件清单；你的任务 commit 用精确 `git add` 包含自己的包目录、lead 回传的登记文件与 `pnpm-lock.yaml`，不添加其他根文件。
+新增 workspace 包的登记面是全局共享文件，由团队 lead 单写：`tsconfig.base.json` 生成区（`pnpm run gen-tsconfig-paths`）、`tsconfig.host.json`/`tsconfig.client.json` references、`vitest.config.ts` coverage lane、release/doc 清单、`pnpm-lock.yaml`（先例见分支历史中 lead 登记的先例提交）。包骨架与内容就位后，向 lead 报包名与子路径导出清单；lead 执行登记、复核 diff 并回传登记文件清单；你的任务 commit 用精确 `git add` 包含自己的包目录、lead 回传的登记文件与 `pnpm-lock.yaml`，不添加其他根文件。
 
 ### 验证口径与波收口
 
