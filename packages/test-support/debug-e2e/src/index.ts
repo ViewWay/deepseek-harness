@@ -430,7 +430,10 @@ function announcedEndpoint(stdout: Readable): Promise<DebugTunnelEndpoint> {
     }, SOCKET_ANNOUNCE_TIMEOUT_MS)
     const onData = (chunk: string | Buffer): void => {
       received += String(chunk)
-      const [, host, portText] = /listening at ([\d.]+):(\d+)/u.exec(received) ?? []
+      // The announcement's host may be an IPv6 loopback literal (`::1`) whose
+      // colons share the line with the port; the greedy host segment leaves
+      // only the trailing port to the capture.
+      const [, host, portText] = /listening at (.+):(\d+)/u.exec(received) ?? []
       if (host === undefined || portText === undefined) return
       detach()
       resolveEndpoint({ host, port: Number(portText) })
