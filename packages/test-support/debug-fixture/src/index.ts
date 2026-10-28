@@ -14,8 +14,9 @@ import { PassThrough } from 'node:stream'
 import { vi } from 'vitest'
 import type { Mock } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import { DebugCompoundId, DebugSessionId, DebugThreadId } from '@deepseek-ai/dsh-debug'
+import { DebugBreakpointId, DebugCompoundId, DebugSessionId, DebugThreadId } from '@deepseek-ai/dsh-debug'
 import type {
+  DebugBreakpointId as DebugBreakpointIdValue,
   DebugBreakpointResult,
   JsonSchema,
   JsonValue,
@@ -76,6 +77,16 @@ export function fixtureSessionId(seed: number): SessionId {
  */
 export function fixtureDebugCompoundId(seed: number): DebugCompoundIdValue {
   return DebugCompoundId(`debug-compound-${fixtureHex(seed)}`)
+}
+
+/**
+ * Build one deterministic debug breakpoint id from a seed.
+ * @param seed - non-negative safe integer identifying the breakpoint.
+ * @returns a branded id in the `bp-` + 16 lowercase hex digits format.
+ * @throws RangeError when the seed is negative or not a safe integer.
+ */
+export function fixtureDebugBreakpointId(seed: number): DebugBreakpointIdValue {
+  return DebugBreakpointId(`bp-${fixtureHex(seed)}`)
 }
 
 /**

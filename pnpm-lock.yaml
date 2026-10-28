@@ -16647,6 +16647,36 @@ importers:
         specifier: workspace:*
         version: link:../../core/session
 
+  packages/test-support/debug-scenarios:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-agent-loop-testkit':
+        specifier: workspace:*
+        version: link:../agent-loop-testkit
+      '@deepseek-ai/dsh-client-ui-debug':
+        specifier: workspace:*
+        version: link:../../client/ui-debug
+      '@deepseek-ai/dsh-debug':
+        specifier: workspace:*
+        version: link:../../debug/debug
+      '@deepseek-ai/dsh-debug-fixture':
+        specifier: workspace:*
+        version: link:../debug-fixture
+      '@deepseek-ai/dsh-headless':
+        specifier: workspace:*
+        version: link:../../bundle/headless
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-tui-debug':
+        specifier: workspace:*
+        version: link:../../tui/tui-debug
+
   packages/test-support/fake-debug-adapter: {}
 
   packages/test-support/llm-mock-server:

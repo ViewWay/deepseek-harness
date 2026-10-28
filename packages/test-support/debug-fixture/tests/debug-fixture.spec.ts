@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { DebugProviderId } from '@deepseek-ai/dsh-debug'
-import { fixtureDebugEnvironment, fixtureDebugSessionId } from '../src/index.ts'
+import { fixtureDebugBreakpointId, fixtureDebugEnvironment, fixtureDebugSessionId } from '../src/index.ts'
 
 describe('debug fixture factories', () => {
   it('derives session ids in the debug-<16 lowercase hex> format from seeds', () => {
@@ -13,6 +13,11 @@ describe('debug fixture factories', () => {
     expect(fixtureDebugSessionId(1)).toBe('debug-0000000000000001')
     expect(fixtureDebugSessionId(0xdeadbeef)).toBe('debug-00000000deadbeef')
     expect(fixtureDebugSessionId(Number.MAX_SAFE_INTEGER)).toBe('debug-001fffffffffffff')
+  })
+
+  it('derives breakpoint ids in the bp-<16 lowercase hex> format from seeds', () => {
+    expect(fixtureDebugBreakpointId(1)).toBe('bp-0000000000000001')
+    expect(() => fixtureDebugBreakpointId(-1)).toThrow(RangeError)
   })
 
   it('rejects negative and non-safe-integer seeds', () => {

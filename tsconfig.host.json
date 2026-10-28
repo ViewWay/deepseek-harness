@@ -507,6 +507,7 @@
     { "path": "./packages/test-support/debug-fixture" },
     { "path": "./packages/test-support/fake-debug-adapter" },
     { "path": "./packages/test-support/debug-e2e" },
+    { "path": "./packages/test-support/debug-scenarios" },
     { "path": "./packages/test-support/tool-testkit" },
     { "path": "./packages/acp/acp" },
     { "path": "./packages/bundle/acp-app" },
