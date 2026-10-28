@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-25-debug-session-throughput-benchmark.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/testing/2026-10-25-debug-session-throughput-benchmark.md
+/agent-note-debug-session-throughput-benchmark-why-timing-owns-the-bench-and-bounds-own-the-package-tests:
+  en: 6919edfeaa0313e2
+  zh: a1c7ae72fd863b11
+/agent-note-debug-session-throughput-benchmark-why-timing-owns-the-bench-and-bounds-own-the-package-tests/problem:
+  en: feafccb28a9766ac
+  zh: ad9ae696d99fc3aa
+/agent-note-debug-session-throughput-benchmark-why-timing-owns-the-bench-and-bounds-own-the-package-tests/decision:
+  en: 851396fcecc548d2
+  zh: 33cb0ba57004edd2
+/agent-note-debug-session-throughput-benchmark-why-timing-owns-the-bench-and-bounds-own-the-package-tests/alternatives-considered:
+  en: c593acca3664b159
+  zh: 9d7f3592d3ea255d
+/agent-note-debug-session-throughput-benchmark-why-timing-owns-the-bench-and-bounds-own-the-package-tests/consequences:
+  en: e9375c2c3d9d9218
+  zh: f4488d7eff8a1db5

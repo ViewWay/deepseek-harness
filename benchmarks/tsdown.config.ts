@@ -73,4 +73,11 @@ export default defineConfig([
     clean: true,
     tsconfig: 'tsconfig.client.json',
   },
+  {
+    ...shared,
+    entry: { 'session-throughput.worker': 'debug/session-throughput.worker.ts' },
+    outDir: '.dsh-build/debug',
+    clean: true,
+    tsconfig: 'tsconfig.host.json',
+  },
 ])

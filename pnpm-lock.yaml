@@ -1165,6 +1165,12 @@ importers:
       '@deepseek-ai/dsh-client-ui-conversation':
         specifier: workspace:*
         version: link:../packages/client/ui-conversation
+      '@deepseek-ai/dsh-debug':
+        specifier: workspace:*
+        version: link:../packages/debug/debug
+      '@deepseek-ai/dsh-debug-dap':
+        specifier: workspace:*
+        version: link:../packages/debug/debug-dap
       '@deepseek-ai/dsh-deque':
         specifier: workspace:*
         version: link:../packages/util/deque
