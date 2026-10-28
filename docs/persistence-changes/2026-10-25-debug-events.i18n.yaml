@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-10-25-debug-events.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-10-25-debug-events.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-10-25-debug-events:
+  en: 0c246df5a3860679
+  zh: 66ce0d0581788efb
+/2026-10-25-debug-events/summary:
+  en: a374948a8a7f2abd
+  zh: afa7fa4cf10b51b4
+/2026-10-25-debug-events/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-10-25-debug-events/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-10-25-debug-events/compatibility:
+  en: f7fc8b7e3bc67c7b
+  zh: fb781a1907b95910
+/2026-10-25-debug-events/verification:
+  en: bb31d745b4c94229
+  zh: f1543dee91b11ba6
+/2026-10-25-debug-events/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269
