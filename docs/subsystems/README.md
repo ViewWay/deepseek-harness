@@ -40,6 +40,7 @@ One page per subsystem of the DeepSeek Harness: what it is, the data structures 
 | [terminal.md](terminal.md) | persistent terminal ids, backend/session contracts, send readiness, bounded reads, and owner-visible snapshots |
 | [sandbox.md](sandbox.md) | per-session policy resolution and the process-confinement seam: file-effect modes, execution/provider policies, `ConfinedArgv`, enforcement and fail-closed errors |
 | [ptc-runtime.md](ptc-runtime.md) | the PTC execution seam: `PtcRunRequest`/`Result`, binding namespaces, captured logs, the `PtcRunFailure` taxonomy |
+| [debug.md](debug.md) | the debug seam: `ctx.debug` sessions and providers, managed DAP adapters behind the seam, the durable `debug/*` events, execution-world capability gates |
 | [computer-use.md](computer-use.md) | exclusive named computer-use provider registration and Cua Driver integration choices |
 | [browser-use.md](browser-use.md) | exclusive named browser-use registration, provider choices, and per-Session browser ownership |
 | [extensions.md](extensions.md) | versioned dynamic Cordis Plugins and Packages, Host/Client activation, approval, runtime inspection, and lifecycle teardown |

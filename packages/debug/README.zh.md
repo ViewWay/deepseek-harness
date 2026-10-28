@@ -9,7 +9,7 @@ kind: "package-group"
 
 ## 概述
 
-debug 组通过唯一的 `ctx.debug` 能力缝为 agent（智能体）与人提供 IDE 级调试：在本机、SSH 与沙箱执行世界中 launch/attach Node.js/TypeScript、Python、Go、Rust/C/C++ 会话，含断点、调用栈、变量与有界输出。共享的 `debug` 包拥有 seam 词汇、会话状态机、provider 注册表与 Session 事件；其余包提供调试适配器、语言 provider、工具与 Web/Desktop/CLI 界面。Debug Adapter Protocol 保持在 seam 之后，客户端不直接消费。
+debug 组通过唯一的 `ctx.debug` 能力缝为 agent（智能体）与人提供 IDE 级调试（子系统契约见 [docs/subsystems/debug.zh.md](../../docs/subsystems/debug.zh.md)）：在本机、SSH 与沙箱执行世界中 launch/attach Node.js/TypeScript、Python、Go、Rust/C/C++ 会话，含断点、调用栈、变量与有界输出。共享的 `debug` 包拥有 seam 词汇、会话状态机、provider 注册表与 Session 事件；其余包提供适配器、语言 provider、工具与 Web/Desktop/CLI 界面。Debug Adapter Protocol 保持在 seam 之后。
 
 ## 目录
 

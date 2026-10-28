@@ -9,7 +9,7 @@ kind: "package-library"
 
 ## 概述
 
-使用 `dsh-debug-scenarios` 证明调试三端一致。`debugScenario` 构造一条确定性事实时间线——生命周期、断点、停住、控制操作与结束结果——`runScenario` 把同一条时间线驱动进每端真实的 harness：web 端在客户端平面事件流上折叠视图 store，TUI 端在 live `DebugEvent` 联合上折叠面板 reducer，headless 端在持久 `debug/*` 会话事件上走 `projectJsonRun` 的 NDJSON 投影。`normalizeSurfaceEvents` 剥离表现层字段，按各端通道实际保留的内容分组，一致性测试因此可以在三端间比较生命周期事实，并在共享该通道的端对之间比较停住、断点验证、控制与失败等更丰富的事实。id 全部来自 `dsh-debug-fixture`；没有任何断言绕过类型契约。本包仅用于测试：不注册任何内容，不进入产品组合。
+使用 `dsh-debug-scenarios` 证明调试三端一致。`debugScenario` 构造一条确定性事实时间线，`runScenario` 把它驱动进每端真实的 harness：web 视图 store、live `DebugEvent` 联合上的 TUI 面板 reducer，以及 `projectJsonRun` 的 headless NDJSON 投影。`normalizeSurfaceEvents` 剥离表现层字段，按各端通道实际保留的内容分组，一个测试即可在三端间比较生命周期事实，并在共享该通道的端对之间比较更丰富的事实。id 全部来自 `dsh-debug-fixture`；仅测试支持，不注册任何内容。
 
 ## 目录
 

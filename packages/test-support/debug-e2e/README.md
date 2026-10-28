@@ -9,7 +9,15 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-debug-e2e` owns the real-adapter debug matrix. `launchFixture(language, { file })` composes the shipped launch orchestration (`launchDebugSession`) with the real language provider, a real adapter, and the real `DapDebugBackend` — no mocks on any protocol path — registers the session backend through `ctx.debug.registerBackend`, and returns a handle (`setBreakpoints`/`continue`/`step`/`terminate`) over the live session. Node composes the managed js-debug DAP server over a loopback socket bridge (root connection, the reverse `startDebugging` handoff, and the second `__pendingTargetId` connection that carries the session); Python composes the debugpy adapter over stdio in its launch-first order, with the target interpreter owning the debugpy venv. `skipWithoutAdapter` decides availability without launching anything and returns a recorded skip reason — Go and Native are explicit skips this wave; the SSH spec pins the tunnel transport's attach-unsupported behavior, and the sandbox spec pins the world-capability gate's sandbox-denied behavior.
+`dsh-debug-e2e` owns the real-adapter debug matrix. `launchFixture(language, { file })` composes the shipped launch orchestration (`launchDebugSession`) with the real language provider, a real adapter, and the real `DapDebugBackend` — no mocks on any protocol path — registers the backend through `ctx.debug.registerBackend`, and returns a live-session handle (`setBreakpoints`/`continue`/`step`/`terminate`). Node bridges the managed js-debug server over a loopback socket; Python runs the debugpy adapter over stdio with the target interpreter owning the venv. `skipWithoutAdapter` decides availability without launching anything and returns a recorded skip reason; Go and Native stay explicit skips.
+
+## Table of Contents
+
+- [Adapter provisioning](#adapter-provisioning)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+-----
 
 ## Adapter provisioning
 
@@ -28,3 +36,15 @@ These limits define where the harness needs care. They are current package const
 - **SSH world is a stub** — the tunnel path asserts `DEBUG_ATTACH_UNSUPPORTED` without a reachable ssh service; the stdio-over-ssh fixture arrives with the ssh-world task.
 - **Python runs without installed capabilities** — debugpy's launch-first order bypasses `DapDebugBackend.start`, so capability-gated operations fall back (terminate degrades to disconnect) until the handshake grows an early-launch order.
 - **Sandbox world is a stub** — the spec drives the published world-capability gate (`DEBUG_SANDBOX_DENIED`, the ptrace platform denial) without a confined world; launch inside a real sandbox profile belongs to the CI platform matrix.
+
+-----
+
+<a id="dev-note"></a>
+## Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>

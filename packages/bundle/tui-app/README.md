@@ -14,6 +14,8 @@ English | [中文](README.zh.md)
 ## Table of Contents
 
 - [Use this package](#use-this-package)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
 - [Dev Note](#dev-note)
 
 -----
@@ -37,18 +39,6 @@ Ordinary text is a prompt; a leading `:` starts a command (`:help` for the list)
 
 -----
 
-<a id="dev-note"></a>
-## Dev Note
-
-<details>
-<summary>Working context for maintainers — click to expand</summary>
-
-The Ink interactive loop, approval answerer, and debug panels land in later batches on this branch.
-
-</details>
-
------
-
 ## Model Experience
 
 None, as the composition bundle carries no model-facing content of its own; the stacked plugins own every model-visible surface.
@@ -56,3 +46,20 @@ None, as the composition bundle carries no model-facing content of its own; the 
 #### KV Cache effect
 
 The bundle adds nothing to the request prefix; the stacked plugins own any prompt-section or schema changes.
+
+## Known Limitations and Deferred Work
+
+<a id="known-limitations-and-deferred-work"></a>
+
+- The TUI hosts one interactive session per process: there is no browser or Remote layer, no multi-session tab set, and no extra ports.
+- The Debug layout's launch and attach commands answer `DEBUG_UNAVAILABLE` until the DAP session face lands; `tui-debug` owns that notice.
+
+<a id="dev-note"></a>
+### Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>

@@ -9,8 +9,23 @@
   en: 3be9e51fda82cf31
   zh: 9c242e4cc0030bdd
 /deepseek-ai-dsh-client-ui-workbench/summary:
-  en: abb11427e2f5b8b3
-  zh: 53173f8405a4fec2
+  en: c2f7eef84efe445f
+  zh: 180f530a52246a51
+/deepseek-ai-dsh-client-ui-workbench/table-of-contents:
+  en: 4c57235c4bdcd011
+  zh: e1882ebb8288f6bc
 /deepseek-ai-dsh-client-ui-workbench/use-this-package:
-  en: 3977225a6d414a77
-  zh: d3b017098a0f72f7
+  en: 97351da89e052559
+  zh: dccfbfbcbf3dbafa
+/deepseek-ai-dsh-client-ui-workbench/dev-note:
+  en: 5de1d6304e00c58f
+  zh: a8fae449670a2564
+/deepseek-ai-dsh-client-ui-workbench/model-experience:
+  en: 4e7e20695a0c3387
+  zh: 4828472cd0fa719a
+/deepseek-ai-dsh-client-ui-workbench/model-experience/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: 13d2ab786b1d3aaa
+/deepseek-ai-dsh-client-ui-workbench/known-limitations-and-deferred-work:
+  en: f2cdddf53179421a
+  zh: e497af091c9368da

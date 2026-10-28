@@ -11,6 +11,16 @@ English | [中文](README.zh.md)
 
 `dsh-client-ui-debug` is the debug workbench's view layer: the capability-gated toolbar, the client-side fold of live debug events, the stack/variables/watch/breakpoints/console/modules/loaded-sources/disassembly/memory/exception-filter panels, the adapter settings panel, and the four debug tools' conversation cards. Every piece is a pure presentation of its inputs — state, rows, and capability flags arrive as props, and every gesture leaves through a callback for the workbench wiring to route over the Remote.
 
+## Table of Contents
+
+- [Use this package](#use-this-package)
+- [Understand the implementation](#understand-the-implementation)
+- [Dev Note](#dev-note)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+
+-----
+
 ## Use this package
 
 ### Folding live events
@@ -34,6 +44,18 @@ Panels in `panels.tsx` are individually exported: stack, variables, watch, break
 - `store.ts` keeps client-plane values — plain ids and paths as the debug controller's event ring carries them; branded seam ids never cross the Remote, so no conversion lives here.
 - Panels and the toolbar never await Remote calls; the workbench layout package (which owns panel registration) fetches through the Remote and folds outcomes into props.
 - All copy lives in the typed `debug` locale dictionaries across the eight shipped languages; no product string is hardcoded.
+
+-----
+
+<a id="dev-note"></a>
+## Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>
 
 ## Model Experience
 

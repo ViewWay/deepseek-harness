@@ -15,6 +15,7 @@ English | [中文](README.zh.md)
 
 - [Use this package](#use-this-package)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
 -----
 
@@ -58,3 +59,15 @@ These limits define when the fake needs special care. They are current package c
 - **Fixture data is fixed** — threads, scopes, variables, and evaluate results are constants; a consumer needing scripted inspection data should extend `FakeDebugAdapterScript` rather than assert around the fixtures.
 - **In-memory only** — there is no stdio process mode yet; execution-world e2e coverage will add a launcher when it consumes this package.
 - **Reverse requests are fire-and-forget** — the adapter records the client's `runInTerminal` response but does not gate the launch flow on it.
+
+-----
+
+<a id="dev-note"></a>
+## Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>

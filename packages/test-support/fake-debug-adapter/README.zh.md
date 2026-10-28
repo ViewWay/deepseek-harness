@@ -15,6 +15,7 @@ kind: "package-library"
 
 - [使用本包](#use-this-package)
 - [已知限制与延期工作](#known-limitations-and-deferred-work)
+- [开发备注](#dev-note)
 
 -----
 
@@ -59,3 +60,15 @@ await adapter.read() // stopped event at the first scripted stop
 - **fixture 数据固定** — threads、scopes、variables 与 evaluate 结果是常量；需要脚本化检查数据的消费方应扩展 `FakeDebugAdapterScript`，而不是绕着 fixture 写断言。
 - **仅内存模式** — 尚无 stdio 进程模式；执行世界 e2e 覆盖将在消费本包时补启动器。
 - **反向请求即发即忘** — 适配器记录客户端的 `runInTerminal` 响应，但 launch 流程不等待它。
+
+-----
+
+<a id="dev-note"></a>
+## 开发备注
+
+<details>
+<summary>维护者的工作上下文——点击展开</summary>
+
+无。
+
+</details>

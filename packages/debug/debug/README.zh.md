@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-使用 `dsh-debug` 为 harness 提供唯一的调试能力缝。本包拥有所有调试界面共享的冻结契约：品牌化 id（`DebugSessionId`、`DebugProviderId` 等）、请求/provider/计划词汇、带稳定错误码的类型化 `DebugError` 分类、五状态会话状态机、原子保留 provider id 与文件扩展名的语言 provider 注册表、带 live 事件与幂等拆除的工作区作用域会话注册表、带 stop-all 策略的复合配置、耐久 `debug/*` Session 事件与 `debug` 消息来源，以及注册到 `ctx.sessionProjections` 的 `debugSessions` 投影。launch 与 attach 在 DAP 后端落地前以 `DEBUG_UNAVAILABLE` 拒绝；耐久事件的写入随后端落地。
+使用 `dsh-debug` 为 harness 提供唯一的调试能力缝。本包拥有所有调试界面共享的冻结契约：品牌化 id（`DebugSessionId`、`DebugProviderId` 等）、请求/provider/计划词汇、带稳定错误码的类型化 `DebugError` 分类、五状态会话状态机、原子保留 provider id 与文件扩展名的语言 provider 注册表、带 live 事件与幂等拆除的工作区作用域会话注册表、带 stop-all 策略的复合配置、耐久 `debug/*` Session 事件与 `debug` 消息来源，以及 `ctx.sessionProjections` 上的 `debugSessions` 投影。launch 与 attach 在 DAP 后端落地前以 `DEBUG_UNAVAILABLE` 拒绝。
 
 ## 目录
 

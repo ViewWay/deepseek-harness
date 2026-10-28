@@ -15,6 +15,7 @@ English | [中文](README.zh.md)
 
 - [Use this package](#use-this-package)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
 -----
 
@@ -54,3 +55,15 @@ These limits define where the library needs care. They are current package const
 - **No request serialization** — the client sends concurrently; the per-session serial queue from the debug seam design belongs to the session backend, not the wire client.
 - **No reverse-request capability gating** — the client dispatches every adapter-initiated request it can parse; permission checks live in the backend layer.
 - **No adapter stderr channel** — stdio transports carry only the frame pipes; adapter stderr collection is owned by the launch orchestration.
+
+-----
+
+<a id="dev-note"></a>
+## Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>

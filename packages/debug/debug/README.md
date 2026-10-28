@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Use `dsh-debug` to give the harness one debug capability seam. The package owns the frozen contracts every debug surface shares: branded ids (`DebugSessionId`, `DebugProviderId`, …), the request/provider/plan vocabulary, the typed `DebugError` taxonomy with stable codes, the five-state session state machine, the language-provider registry that reserves provider ids and file extensions atomically, the workspace-scoped session registry with live events and idempotent teardown, compound configurations with a stop-all policy, the durable `debug/*` session events with the `debug` message source, and the `debugSessions` projection registered on `ctx.sessionProjections`. Launch and attach reject with `DEBUG_UNAVAILABLE` until the DAP backend lands; writers for the durable events arrive with it.
+Use `dsh-debug` to give the harness one debug capability seam. The package owns the frozen contracts every debug surface shares: branded ids (`DebugSessionId`, `DebugProviderId`, …), the request/provider/plan vocabulary, the typed `DebugError` taxonomy with stable codes, the five-state session state machine, the language-provider registry that reserves provider ids and file extensions atomically, the workspace-scoped session registry with live events and idempotent teardown, compound configurations with a stop-all policy, the durable `debug/*` session events with the `debug` message source, and the `debugSessions` projection on `ctx.sessionProjections`. Launch and attach reject with `DEBUG_UNAVAILABLE` until the DAP backend lands.
 
 ## Table of Contents
 

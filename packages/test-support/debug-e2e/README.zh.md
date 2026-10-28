@@ -9,8 +9,17 @@ kind: "package-library"
 
 ## 概述
 
-`dsh-debug-e2e` 承载真实适配器调试矩阵。`launchFixture(language, { file })` 将既有启动编排（`launchDebugSession`）与真实语言 provider、真实适配器、真实 `DapDebugBackend` 组合——任何协议路径上都无 mock——并通过 `ctx.debug.registerBackend` 注册会话后端，返回活会话上的操作句柄（`setBreakpoints`/`continue`/`step`/`terminate`）。Node 组合托管 js-debug DAP 服务器，经回环 socket 桥接（根连接、反向 `startDebugging` 交接、承载会话的第二条 `__pendingTargetId` 连接）；Python 以 launch-first 顺序组合 stdio 上的 debugpy 适配器，目标解释器即持有 debugpy venv 的解释器。`skipWithoutAdapter` 不启动任何进程即判定可用性并返回被记录的跳过原因——Go 与 Native 本波显式跳过；SSH 用例固定隧道传输的 attach-unsupported 行为，沙箱用例固定世界能力门的 sandbox-denied 行为。
+`dsh-debug-e2e` 承载真实适配器调试矩阵。`launchFixture(language, { file })` 将既有启动编排（`launchDebugSession`）与真实语言 provider、真实适配器、真实 `DapDebugBackend` 组合——任何协议路径上都无 mock——通过 `ctx.debug.registerBackend` 注册后端，返回活会话上的操作句柄（`setBreakpoints`/`continue`/`step`/`terminate`）。Node 经回环 socket 桥接托管 js-debug 服务器；Python 在 stdio 上运行 debugpy 适配器，目标解释器即持有 venv 的解释器。`skipWithoutAdapter` 不启动任何进程即判定可用性并返回被记录的跳过原因；Go 与 Native 保持显式跳过。
 
+## 目录
+
+- [适配器供给](#adapter-provisioning)
+- [已知限制与延期工作](#known-limitations-and-deferred-work)
+- [开发备注](#dev-note)
+
+-----
+
+<a id="adapter-provisioning"></a>
 ## 适配器供给
 
 供给在终端侧完成；本工具自身不做下载。适配器按适配器管理器的安装布局存放在 `$DSH_E2E_ADAPTER_ROOT`（默认 `~/.cache/dsh/debug-adapters`）下，`$DSH_E2E_<LANGUAGE>_ADAPTER` 按语言覆盖解析出的入口。
@@ -20,6 +29,7 @@ kind: "package-library"
 
 设置 `DSH_E2E_TRACE=1` 可将适配器的每个 DAP 事件镜像到测试日志。
 
+<a id="known-limitations-and-deferred-work"></a>
 ## 已知限制与延期工作
 
 这些限制界定了本工具需要谨慎使用的场景，是当前包约束，不是任务清单。
@@ -28,3 +38,15 @@ kind: "package-library"
 - **SSH 世界是桩** — 隧道路径在无可达 ssh 服务时断言 `DEBUG_ATTACH_UNSUPPORTED`；基于 ssh 的 stdio fixture 随 ssh 世界任务落地。
 - **Python 运行时能力未安装** — debugpy 的 launch-first 顺序绕过 `DapDebugBackend.start`，能力门控操作回退（terminate 降级为 disconnect），直至握手支持 early-launch 顺序。
 - **沙箱世界是桩** — 用例经已发布的世界能力门断言（`DEBUG_SANDBOX_DENIED` 与 ptrace 平台拒绝），不含受禁锢世界；真实沙箱 profile 内的启动归 CI 平台矩阵。
+
+-----
+
+<a id="dev-note"></a>
+## 开发备注
+
+<details>
+<summary>维护者的工作上下文——点击展开</summary>
+
+无。
+
+</details>

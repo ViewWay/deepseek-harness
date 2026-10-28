@@ -12,17 +12,20 @@
   en: c9c07402d7a79037
   zh: e8fee58b0db9ba7b
 /deepseek-ai-dsh-tui-app/table-of-contents:
-  en: e8c781a5a376a74f
-  zh: 9e4dee38e4596808
+  en: 4e53164159b5ce41
+  zh: 89582dc0294d0776
 /deepseek-ai-dsh-tui-app/use-this-package:
-  en: 8beaa1c8f3ec6951
-  zh: 8ffec13298d2da45
-/deepseek-ai-dsh-tui-app/dev-note:
-  en: 802b65bdb5b8fffd
-  zh: f80478029bc0970f
+  en: 19ba896dfca480f3
+  zh: 22182f0a85e35ad0
 /deepseek-ai-dsh-tui-app/model-experience:
   en: 22355ceec7f2de1c
-  zh: 22355ceec7f2de1c
+  zh: 73dd0ebb35ed4bc2
 /deepseek-ai-dsh-tui-app/model-experience/kv-cache-effect:
   en: db3a9c783a0aec46
-  zh: db3a9c783a0aec46
+  zh: e5e76f9750c23415
+/deepseek-ai-dsh-tui-app/known-limitations-and-deferred-work:
+  en: 311fb5a29eddd257
+  zh: c1f5bf4014d0c3eb
+/deepseek-ai-dsh-tui-app/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

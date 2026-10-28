@@ -15,6 +15,7 @@ kind: "package-library"
 
 - [使用本包](#use-this-package)
 - [已知限制与延期工作](#known-limitations-and-deferred-work)
+- [开发备注](#dev-note)
 
 -----
 
@@ -55,3 +56,15 @@ await client.dispose()
 - **不做请求串行化** — 客户端并发发送；调试能力缝设计中的每会话串行队列属于会话后端，不属于 wire 客户端。
 - **不对反向请求做能力门控** — 客户端分发所有可解析的适配器发起请求；权限检查在后端层。
 - **没有适配器 stderr 通道** — stdio 传输只承载帧管道；适配器 stderr 的收集归 launch 编排所有。
+
+-----
+
+<a id="dev-note"></a>
+## 开发备注
+
+<details>
+<summary>维护者的工作上下文——点击展开</summary>
+
+无。
+
+</details>

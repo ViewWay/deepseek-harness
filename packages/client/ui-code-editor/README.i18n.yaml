@@ -11,6 +11,9 @@
 /deepseek-ai-dsh-client-ui-code-editor/summary:
   en: 309560fb12cf1e6f
   zh: 339b4093429d9239
+/deepseek-ai-dsh-client-ui-code-editor/table-of-contents:
+  en: df363b0766a19598
+  zh: b4a2a0e132e8ddf8
 /deepseek-ai-dsh-client-ui-code-editor/use-this-package:
   en: bbff250eba0f1b89
   zh: 0a618f05cc88ee2b
@@ -25,7 +28,7 @@
   zh: c4b24b6503e8ccdd
 /deepseek-ai-dsh-client-ui-code-editor/use-this-package/keeping-drafts:
   en: 6c9d7d9f5cf6b945
-  zh: a651ef5ccf284de6
+  zh: a5427ebbcdac1d37
 /deepseek-ai-dsh-client-ui-code-editor/understand-the-implementation:
   en: 9e8872737a4a04e5
   zh: 454728dc830ddca0
@@ -34,7 +37,10 @@
   zh: 149d6ab21ec2f093
 /deepseek-ai-dsh-client-ui-code-editor/model-experience/kv-cache-effect:
   en: fd86b45aac0ae67c
-  zh: 3f0e2dcd4cca97aa
+  zh: c6b59850d2c600ac
 /deepseek-ai-dsh-client-ui-code-editor/known-limitations-and-deferred-work:
-  en: 436f60551539b23b
-  zh: 1206e2d0df278327
+  en: 2dde7b0bc26208f8
+  zh: 2cc6be2deb9af5ad
+/deepseek-ai-dsh-client-ui-code-editor/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

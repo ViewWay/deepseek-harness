@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Use `dsh-debug-scenarios` to prove the debug surfaces agree. `debugScenario` builds one deterministic fact timeline — lifecycle, breakpoints, stops, controls, and the ending outcome — and `runScenario` drives that same timeline through each surface's real harness: the web view store over the client-plane event stream, the TUI pane reducer over the live `DebugEvent` union, and the headless `projectJsonRun` NDJSON projection over the durable `debug/*` session events. `normalizeSurfaceEvents` strips presentation-only fields and groups what each surface's channel retained, so a consistency test compares lifecycle facts across all three surfaces and the richer stop, breakpoint-verification, control, and failure facts on the pairs of surfaces whose channels carry them. Ids come from `dsh-debug-fixture`; no cast bypasses the typed contracts. This package is test support only: it registers nothing and mounts into no product composition.
+Use `dsh-debug-scenarios` to prove the debug surfaces agree. `debugScenario` builds one deterministic fact timeline, and `runScenario` drives it through each surface's real harness: the web view store, the TUI pane reducer over the live `DebugEvent` union, and the headless `projectJsonRun` NDJSON projection. `normalizeSurfaceEvents` strips presentation-only fields and groups what each surface's channel retained, so one test compares lifecycle facts across all three surfaces and the richer facts on the pairs whose channels carry them. Ids come from `dsh-debug-fixture`; test support only, registering nothing.
 
 ## Table of Contents
 

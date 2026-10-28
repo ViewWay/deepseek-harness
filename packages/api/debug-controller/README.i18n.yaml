@@ -11,12 +11,18 @@
 /deepseek-ai-dsh-api-debug-controller/summary:
   en: 59fd2a9d8fcb4412
   zh: 1f6f80a85315e9a8
+/deepseek-ai-dsh-api-debug-controller/table-of-contents:
+  en: f198f5aa88fa3c17
+  zh: 705ecbe0b6cabec6
 /deepseek-ai-dsh-api-debug-controller/model-experience:
   en: 92c281a459e3d3db
   zh: 522649e054b690ab
 /deepseek-ai-dsh-api-debug-controller/model-experience/kv-cache-effect:
   en: 3f18671fa3c0b9d0
-  zh: 4adf0f208047de44
+  zh: f61e82dda41f9fce
 /deepseek-ai-dsh-api-debug-controller/known-limitations-and-deferred-work:
-  en: 1ccfe4fcf76093a3
-  zh: 20f0252c3ffd2986
+  en: 0433ad05252ab042
+  zh: 5405e6738a0f870b
+/deepseek-ai-dsh-api-debug-controller/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

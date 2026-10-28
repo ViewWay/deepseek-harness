@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The debug group gives agents and humans IDE-level debugging over one `ctx.debug` capability seam: launch and attach sessions for Node.js/TypeScript, Python, Go, and Rust/C/C++ across local, SSH, and sandbox execution worlds, with breakpoints, stacks, variables, and bounded output. The shared `debug` package owns the seam vocabulary, the session state machine, the provider registry, and session events; the other packages provide debug adapters, providers, tools, and the Web/Desktop/CLI surfaces. The Debug Adapter Protocol stays behind the seam; no client consumes it directly.
+The debug group gives agents and humans IDE-level debugging over one `ctx.debug` capability seam ([subsystem contract](../../docs/subsystems/debug.md)): launch and attach for Node.js/TypeScript, Python, Go, and Rust/C/C++ across local, SSH, and sandbox execution worlds, with breakpoints, stacks, variables, and bounded output. The shared `debug` package owns the seam vocabulary, the session state machine, the provider registry, and session events; the other packages provide adapters, providers, tools, and the Web/Desktop/CLI surfaces. The Debug Adapter Protocol stays behind the seam.
 
 ## Table of Contents
 

@@ -11,6 +11,16 @@ English | [中文](README.zh.md)
 
 `dsh-client-ui-code-editor` is the debug workbench's editing surface: a CodeMirror 6 view with a breakpoint gutter, a current-line highlight for stopped frames, dirty and read-only states, and the save-conflict choice view. The component is pure presentation — the buffer, breakpoints, stop line, and conflict arrive as props and every gesture leaves through a callback. The package also owns the editor's save-facing model, its bounded client-local draft store, and the Remote face functions that open files and write guarded saves.
 
+## Table of Contents
+
+- [Use this package](#use-this-package)
+- [Understand the implementation](#understand-the-implementation)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+-----
+
 ## Use this package
 
 ### Editing a file
@@ -50,3 +60,13 @@ None; file reads and guarded saves travel over the Remote and assemble no model 
 - Language extensions are bundled with the editor chunk; per-language lazy loading is deferred.
 - Breakpoint line numbers are not remapped when the buffer is edited; the seam's breakpoint application owns positions.
 - Hover evaluation (`supportsEvaluateForHovers`) and find/replace across files are deferred with the workbench wiring.
+
+<a id="dev-note"></a>
+### Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>
