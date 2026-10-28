@@ -3,9 +3,10 @@
  * delivery per session owner, and suppression of the stop the agent's own
  * unsettled resume request caused.
  *
- * Delivery policy and wake caps live in this package's Config
- * (`debugStopDelivery`, `debugMaxConsecutiveWakes`), deliberately not the
- * job package's same-named fields.
+ * Delivery policy and wake caps are this package's designated Config home
+ * (`debugStopDelivery`, `debugMaxConsecutiveWakes` — deliberately not the
+ * job package's same-named fields); they land together with the
+ * approval-wired orchestration that first consumes these helpers.
  * @module @deepseek-ai/dsh-tool-debug/notices
  */
 

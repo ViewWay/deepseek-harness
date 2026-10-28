@@ -11,6 +11,7 @@
  * @module @deepseek-ai/dsh-api-debug-controller
  */
 import { Context } from '@deepseek-ai/cordis'
+import z from '@deepseek-ai/schemastery'
 import { Remote, TypertLookup, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-sandbox-policy'
@@ -23,6 +24,12 @@ import type { EditorWriteResult } from './editor-write.ts'
 
 /** Default replay retention; compositions pass their configured bound. */
 export const DEFAULT_DEBUG_EVENT_RING_LIMIT = 500
+
+/** Debug Controller deployment policy. */
+export interface Config {
+  /** Replay ring capacity in events per composition (default {@link DEFAULT_DEBUG_EVENT_RING_LIMIT}). */
+  readonly eventRingLimit?: number
+}
 
 /** Host-resolved editor scope: the Session identity and its workspace root. */
 export interface DebugEditorScope {
@@ -58,14 +65,21 @@ export class DebugEventCursorExpiredError extends Error {
 export class DebugController extends TypertRemoteService {
   static inject = ['debug', 'fs', 'sandboxPolicy', 'sessions', 'typert']
 
+  static Config: z<Config> = z.object({
+    eventRingLimit: z.natural().min(1).default(DEFAULT_DEBUG_EVENT_RING_LIMIT),
+  })
+
   private readonly ring: DebugEventRing
 
   /**
    * @param ctx - Host with the debug service mounted.
+   * @param config - replay retention policy; schemastery has filled the
+   *   defaulted fields before this constructor runs.
    */
-  constructor(ctx: Context, ringLimit: number = DEFAULT_DEBUG_EVENT_RING_LIMIT) {
+  constructor(ctx: Context, config: Config) {
     super(ctx, 'debugController', { namespace: 'debug' })
-    this.ring = new DebugEventRing(ringLimit)
+    const resolved = config as Required<Config>
+    this.ring = new DebugEventRing(resolved.eventRingLimit)
     ctx.inject(['sessions', 'typert', 'sandboxPolicy'], (scope) => {
       scope.typert.lookups.register('debugEditorScope', {
         parameter: 'debugEditorScope',

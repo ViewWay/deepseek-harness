@@ -63,3 +63,10 @@ describe('DebugEventRing', () => {
     expect(empty.expired).toBe(false)
   })
 })
+
+describe('DebugEventRing construction bounds', () => {
+  it('rejects a non-positive or non-integer retention at construction', () => {
+    expect(() => new DebugEventRing(0)).toThrow(RangeError)
+    expect(() => new DebugEventRing(1.5)).toThrow(RangeError)
+  })
+})
