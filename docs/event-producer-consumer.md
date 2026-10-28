@@ -89,8 +89,8 @@ This matrix shows which packages dispatch each harness-owned event and which pac
 | `workflow/log` | `emit` | [`packages/workflow/workflow/src/index.ts:58`](../packages/workflow/workflow/src/index.ts) | [`workflow`](../packages/workflow/workflow) (`events.dispatch`) | [`tool-workflow`](../packages/workflow/tool-workflow) |
 | `workflow/phase` | `emit` | [`packages/workflow/workflow/src/index.ts:51`](../packages/workflow/workflow/src/index.ts) | [`workflow`](../packages/workflow/workflow) (`events.dispatch`) | [`tool-workflow`](../packages/workflow/tool-workflow) |
 | `workflow/start` | `emit` | [`packages/workflow/workflow/src/index.ts:43`](../packages/workflow/workflow/src/index.ts) | [`workflow`](../packages/workflow/workflow) (`events.dispatch`) | - |
-| `workspace/session-activity` | `waterfall` | [`packages/workspace/workspace/src/index.ts:129`](../packages/workspace/workspace/src/index.ts) | [`workspace`](../packages/workspace/workspace) (`waterfall`) | [`agent`](../packages/core/agent), [`jobs`](../packages/jobs/jobs), [`schedule`](../packages/schedule/schedule), [`subagent`](../packages/subagent/subagent) |
-| `workspace/session-stop` | `parallel` | [`packages/workspace/workspace/src/index.ts:147`](../packages/workspace/workspace/src/index.ts) | [`workspace`](../packages/workspace/workspace) (`parallel`) | [`agent`](../packages/core/agent), [`jobs`](../packages/jobs/jobs), [`schedule`](../packages/schedule/schedule), [`subagent`](../packages/subagent/subagent) |
+| `workspace/session-activity` | `waterfall` | [`packages/workspace/workspace/src/index.ts:129`](../packages/workspace/workspace/src/index.ts) | [`workspace`](../packages/workspace/workspace) (`waterfall`) | [`agent`](../packages/core/agent), [`debug`](../packages/debug/debug), [`jobs`](../packages/jobs/jobs), [`schedule`](../packages/schedule/schedule), [`subagent`](../packages/subagent/subagent) |
+| `workspace/session-stop` | `parallel` | [`packages/workspace/workspace/src/index.ts:147`](../packages/workspace/workspace/src/index.ts) | [`workspace`](../packages/workspace/workspace) (`parallel`) | [`agent`](../packages/core/agent), [`debug`](../packages/debug/debug), [`jobs`](../packages/jobs/jobs), [`schedule`](../packages/schedule/schedule), [`subagent`](../packages/subagent/subagent) |
 <!-- END GENERATED event-producer-consumer:events -->
 
 ## Non-harness or undeclared event strings seen in package source
@@ -99,6 +99,7 @@ This matrix shows which packages dispatch each harness-owned event and which pac
 | Event string | Dispatchers | Listeners |
 | --- | --- | --- |
 | `agent/request` | [`agent-loop`](../packages/core/agent-loop) (`waterfall`) | [`compaction-basic`](../packages/compaction/compaction-basic) |
+| `connection/reset` | `gateway` (`emit`) | `terminal-controller`, `ui-settings`, `ui-sidebar-documentpreview`, `ui-tool`, `ui-workspace` |
 | `internal/config` | - | [`llm-pi-ai`](../packages/llm/llm-pi-ai) |
 | `internal/dispatch` | - | [`terminal-bash`](../packages/terminal/terminal-bash) |
 | `internal/plugin` | - | `computer-use-cua-driver-native`, `inspector`, `loader`, [`lsp-stdio`](../packages/lsp/lsp-stdio), [`mcp-client`](../packages/mcp/mcp-client), `modules` |
@@ -106,7 +107,13 @@ This matrix shows which packages dispatch each harness-owned event and which pac
 | `internal/status` | - | [`agent`](../packages/core/agent), `inspector`, `translator`, [`web`](../packages/web/web) |
 | `internal/update` | - | [`app-boot`](../packages/boot/app-boot) |
 | `loader/volatile-update` | - | [`cua`](../packages/experimental/cua), [`llm-deepseek`](../packages/llm/llm-deepseek), [`llm-deepseek-api-key`](../packages/llm/llm-deepseek-api-key), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`plugin-market`](../packages/boot/plugin-market), `product-analytics`, `speech-to-text` |
+| `locale/change` | `locale` (`emit`) | `locale`, `ui-input-trigger` |
+| `slash/input-begin-command` | - | `ui-conversation` |
+| `slash/input-consume-token` | - | `ui-conversation` |
+| `slash/input-insert-reference` | - | `ui-conversation` |
+| `slash/input-insert-text` | - | `ui-conversation` |
 | `slots/changed` | `ui-renderer` (`emit`) | - |
+| `theme/change` | `ui-theme` (`emit`) | `ui-layout`, `ui-theme` |
 <!-- END GENERATED event-producer-consumer:undeclared -->
 
 Maintenance mode: generated: Cordis event declarations and producer/listener edges are resolved from the repository TypeScript Program.

@@ -99,6 +99,15 @@ declare class SshConnection extends Service {
      * @returns a paused socket; attach a consumer before resuming it.
      */
   async connectStream(endpoint: SshStreamEndpoint, signal?: AbortSignal): Promise<Socket>;
+  /**
+     * Forward one authenticated stream to a remote TCP target: the helper dials
+     * the target on the remote side and returns private stream coordinates.
+     * @param host - dialable host name or address on the remote side.
+     * @param port - target TCP port, 1–65535.
+     * @param signal - cancellation of allocation and the resulting socket.
+     * @returns a paused authenticated socket; attach a consumer before resuming it.
+     */
+  async connectTcpStream(host: string, port: number, signal?: AbortSignal): Promise<Socket>;
   /** Tear down the helper's remote managed ranges before releasing the SSH master when reachable. */
   dispose(): Promise<void>;
 }
@@ -137,6 +146,16 @@ async request<T>(method: string, params: unknown, result: z.ZodType<T>, signal?:
  * @returns a paused socket; attach a consumer before resuming it.
  */
 async connectStream(endpoint: SshStreamEndpoint, signal?: AbortSignal): Promise<Socket>
+
+/**
+ * Forward one authenticated stream to a remote TCP target: the helper dials
+ * the target on the remote side and returns private stream coordinates.
+ * @param host - dialable host name or address on the remote side.
+ * @param port - target TCP port, 1–65535.
+ * @param signal - cancellation of allocation and the resulting socket.
+ * @returns a paused authenticated socket; attach a consumer before resuming it.
+ */
+async connectTcpStream(host: string, port: number, signal?: AbortSignal): Promise<Socket>
 
 /** Tear down the helper's remote managed ranges before releasing the SSH master when reachable. */
 dispose(): Promise<void>

@@ -817,6 +817,27 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-credentials-local -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-debug -->
+<a id="deepseek-aidsh-debug"></a>
+
+## `@deepseek-ai/dsh-debug`
+
+- `inject`: `sessionProjections`
+- `source`: [`packages/debug/debug/src/index.ts:172`](../packages/debug/debug/src/index.ts)
+
+```ts config-catalog
+/** Deployment configuration for the debug service. */
+export interface DebugConfig {
+  /** Newest sessions the `debugSessions` projection retains. */
+  maxProjectedSessions?: number
+  /** Stops the `debugSessions` projection retains per session. */
+  maxProjectedStops?: number
+  /** Breakpoints one file may hold before `setBreakpoints` rejects. */
+  maxBreakpointsPerFile?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-debug -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-deepseek-account-platform -->
 <a id="deepseek-aidsh-deepseek-account-platform"></a>
 
@@ -4353,6 +4374,47 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-tool-workspace-dependencies -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-tui-debug -->
+<a id="deepseek-aidsh-tui-debug"></a>
+
+## `@deepseek-ai/dsh-tui-debug`
+
+- `source`: [`packages/tui/tui-debug/src/index.ts:103`](../packages/tui/tui-debug/src/index.ts)
+
+```ts config-catalog
+/** Options of the pane source and the plugin. */
+export interface TuiDebugPaneSourceOptions {
+  /** Console-ring capacity (default {@link DEFAULT_MAX_CONSOLE_ENTRIES}). */
+  readonly maxConsoleEntries?: number
+  /**
+   * Resolve the editor command at command time; defaults to the `$EDITOR`
+   * environment variable. Returning undefined records unavailability.
+   */
+  readonly resolveEditor?: () => string | undefined
+  /** True when the debugged workspace is remote (default false). */
+  readonly remoteWorkspace?: boolean
+  /** The process launcher for the editor handoff; required to open editors. */
+  readonly launch?: TuiEditorLaunch
+}
+
+/**
+ * The launcher face the opener drives; the composition adapts
+ * `ctx.subprocess` onto it. The request carries an argv list only — this
+ * contract has no shell-string member, so a command line cannot be routed
+ * through a shell.
+ */
+export interface TuiEditorLaunch {
+  /**
+   * Start the editor process from an argv list, without a shell.
+   * @param request - `argv`, the argument list passed to the OS exec path
+   * element-wise, plus an optional working directory.
+   * @returns the process handle; the TUI does not wait on the editor.
+   */
+  start(request: { readonly argv: readonly string[]; readonly cwd?: string }): unknown
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-tui-debug -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-typert-loader -->
 <a id="deepseek-aidsh-typert-loader"></a>
 
@@ -4710,10 +4772,12 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-attachment` | — | [`packages/client/ui-attachment/src/index.ts`](../packages/client/ui-attachment/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-brand-official` | — | [`packages/client/ui-brand-official/src/index.ts`](../packages/client/ui-brand-official/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-chat` | — | [`packages/client/ui-chat/src/index.ts`](../packages/client/ui-chat/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-code-editor` | — | [`packages/client/ui-code-editor/src/index.ts`](../packages/client/ui-code-editor/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-commands` | — | [`packages/client/ui-commands/src/index.ts`](../packages/client/ui-commands/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-conversation` | — | [`packages/client/ui-conversation/src/index.ts`](../packages/client/ui-conversation/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-cordis` | — | [`packages/extensions/ui-cordis/src/index.ts`](../packages/extensions/ui-cordis/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-creation-recommendations` | — | [`packages/experimental/client-ui-creation-recommendations/src/index.ts`](../packages/experimental/client-ui-creation-recommendations/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-debug` | — | [`packages/client/ui-debug/src/index.ts`](../packages/client/ui-debug/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-deepseek-model-label-1017` | — | [`packages/client/ui-deepseek-model-label-1017/src/index.ts`](../packages/client/ui-deepseek-model-label-1017/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-deliverables` | `connection` · `sessionQuery` · `sessionController` · `workspaceFiles` · `fs` · `sandboxPolicy` · `workspaceChanges` | [`packages/client/ui-deliverables/src/index.ts`](../packages/client/ui-deliverables/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-directory-picker-browse` | — | [`packages/client/ui-directory-picker-browse/src/index.ts`](../packages/client/ui-directory-picker-browse/src/index.ts) |
@@ -4756,6 +4820,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-tool` | — | [`packages/client/ui-tool/src/index.ts`](../packages/client/ui-tool/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-trajectory` | — | [`packages/client/ui-trajectory/src/index.ts`](../packages/client/ui-trajectory/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-user-questions` | — | [`packages/client/ui-user-questions/src/index.ts`](../packages/client/ui-user-questions/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-workbench` | — | [`packages/client/ui-workbench/src/index.ts`](../packages/client/ui-workbench/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-workflow-run` | — | [`packages/client/ui-workflow-run/src/index.ts`](../packages/client/ui-workflow-run/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-workspace` | — | [`packages/client/ui-workspace/src/index.ts`](../packages/client/ui-workspace/src/index.ts) |
 | `@deepseek-ai/dsh-command-compact` | `commands` · `compaction` | [`packages/compaction/command-compact/src/index.ts`](../packages/compaction/command-compact/src/index.ts) |
@@ -4768,6 +4833,10 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-cordis-client-runner` | — | [`packages/extensions/cordis-client-runner/src/index.ts`](../packages/extensions/cordis-client-runner/src/index.ts) |
 | `@deepseek-ai/dsh-creation-recommendations` | `tools` · `pluginManager` · `agents` · `subagents` · `profileContext` · `skills` · `actionCards` | [`packages/experimental/creation-recommendations/src/index.ts`](../packages/experimental/creation-recommendations/src/index.ts) |
 | `@deepseek-ai/dsh-cua` | — | [`packages/experimental/cua/src/index.ts`](../packages/experimental/cua/src/index.ts) |
+| `@deepseek-ai/dsh-debug-go` | `debug` | [`packages/debug/debug-go/src/index.ts`](../packages/debug/debug-go/src/index.ts) |
+| `@deepseek-ai/dsh-debug-native` | `debug` | [`packages/debug/debug-native/src/index.ts`](../packages/debug/debug-native/src/index.ts) |
+| `@deepseek-ai/dsh-debug-node` | `debug` | [`packages/debug/debug-node/src/index.ts`](../packages/debug/debug-node/src/index.ts) |
+| `@deepseek-ai/dsh-debug-python` | `debug` | [`packages/debug/debug-python/src/index.ts`](../packages/debug/debug-python/src/index.ts) |
 | `@deepseek-ai/dsh-deepseek-llm-api-extensions` | — | [`packages/llm/deepseek-llm-api-extensions/src/index.ts`](../packages/llm/deepseek-llm-api-extensions/src/index.ts) |
 | `@deepseek-ai/dsh-deliverable-file-references` | `systemPrompt` | [`packages/deliverables/deliverable-file-references/src/index.ts`](../packages/deliverables/deliverable-file-references/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-auto-review` | `approval` · `llm` · `permissionPresets` · `sessions` · `tools` · `workingDirectory` | [`packages/experimental/auto-review/src/index.ts`](../packages/experimental/auto-review/src/index.ts) |
@@ -4804,6 +4873,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-terminal` | — | [`packages/terminal/terminal/src/index.ts`](../packages/terminal/terminal/src/index.ts) |
 | `@deepseek-ai/dsh-tool-call-timeout-policy` | `tools` | [`packages/guard/timeout-policy/src/index.ts`](../packages/guard/timeout-policy/src/index.ts) |
 | `@deepseek-ai/dsh-tool-cordis` | `tools` · `cordisInspect` | [`packages/extensions/tool-cordis/src/index.ts`](../packages/extensions/tool-cordis/src/index.ts) |
+| `@deepseek-ai/dsh-tool-debug` | `tools` · `debug` · `systemPrompt` | [`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/src/index.ts) |
 | `@deepseek-ai/dsh-tool-executor-native` | `tools` | [`packages/core/tool-executor-native/src/index.ts`](../packages/core/tool-executor-native/src/index.ts) |
 | `@deepseek-ai/dsh-tool-schedule` | `tools` | [`packages/schedule/tool-schedule/src/index.ts`](../packages/schedule/tool-schedule/src/index.ts) |
 | `@deepseek-ai/dsh-tool-subagent-control` | `tools` · `subagents` · `agents` | [`packages/subagent/tool-subagent-control/src/index.ts`](../packages/subagent/tool-subagent-control/src/index.ts) |
@@ -4848,6 +4918,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 | --- | --- | --- |
 | `@deepseek-ai/dsh-agent-loop-testkit` | — | [`packages/test-support/agent-loop-testkit/src/index.ts`](../packages/test-support/agent-loop-testkit/src/index.ts) |
 | `@deepseek-ai/dsh-anonymous-user-id` | — | [`packages/identity/anonymous-user-id/src/index.ts`](../packages/identity/anonymous-user-id/src/index.ts) |
+| `@deepseek-ai/dsh-api-debug-controller` | — | [`packages/api/debug-controller/src/index.ts`](../packages/api/debug-controller/src/index.ts) |
 | `@deepseek-ai/dsh-app-boot` | — | [`packages/boot/app-boot/src/index.ts`](../packages/boot/app-boot/src/index.ts) |
 | `@deepseek-ai/dsh-atomic-write` | — | [`packages/util/atomic-write/src/index.ts`](../packages/util/atomic-write/src/index.ts) |
 | `@deepseek-ai/dsh-base` | — | [`packages/bundle/base/src/index.ts`](../packages/bundle/base/src/index.ts) |
@@ -4861,6 +4932,12 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 | `@deepseek-ai/dsh-client-web` | — | [`packages/client/web/src/index.ts`](../packages/client/web/src/index.ts) |
 | `@deepseek-ai/dsh-cmdline` | — | [`packages/boot/cmdline/src/index.ts`](../packages/boot/cmdline/src/index.ts) |
 | `@deepseek-ai/dsh-cua-bundle` | — | [`packages/experimental/cua-bundle/src/index.ts`](../packages/experimental/cua-bundle/src/index.ts) |
+| `@deepseek-ai/dsh-debug-adapter-manager` | — | [`packages/debug/debug-adapter-manager/src/index.ts`](../packages/debug/debug-adapter-manager/src/index.ts) |
+| `@deepseek-ai/dsh-debug-bundle` | — | [`packages/bundle/debug/src/index.ts`](../packages/bundle/debug/src/index.ts) |
+| `@deepseek-ai/dsh-debug-dap` | — | [`packages/debug/debug-dap/src/index.ts`](../packages/debug/debug-dap/src/index.ts) |
+| `@deepseek-ai/dsh-debug-e2e` | — | [`packages/test-support/debug-e2e/src/index.ts`](../packages/test-support/debug-e2e/src/index.ts) |
+| `@deepseek-ai/dsh-debug-fixture` | — | [`packages/test-support/debug-fixture/src/index.ts`](../packages/test-support/debug-fixture/src/index.ts) |
+| `@deepseek-ai/dsh-debug-scenarios` | — | [`packages/test-support/debug-scenarios/src/index.ts`](../packages/test-support/debug-scenarios/src/index.ts) |
 | `@deepseek-ai/dsh-deque` | — | [`packages/util/deque/src/index.ts`](../packages/util/deque/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-agent-team-profile` | — | [`packages/experimental/agent-team-profile/src/index.ts`](../packages/experimental/agent-team-profile/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-badge-skill-bundle` | — | [`packages/experimental/badge-skill-bundle/src/index.ts`](../packages/experimental/badge-skill-bundle/src/index.ts) |
@@ -4876,6 +4953,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 | `@deepseek-ai/dsh-experimental-voice-input-bundle` | — | [`packages/experimental/voice-input-bundle/src/index.ts`](../packages/experimental/voice-input-bundle/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-webworker-packer` | — | [`packages/experimental/webworker-packer/src/index.ts`](../packages/experimental/webworker-packer/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-webworker-runtime` | — | [`packages/experimental/webworker-runtime/src/index.ts`](../packages/experimental/webworker-runtime/src/index.ts) |
+| `@deepseek-ai/dsh-fake-debug-adapter` | — | [`packages/test-support/fake-debug-adapter/src/index.ts`](../packages/test-support/fake-debug-adapter/src/index.ts) |
 | `@deepseek-ai/dsh-home-paths` | — | [`packages/util/home-paths/src/index.ts`](../packages/util/home-paths/src/index.ts) |
 | `@deepseek-ai/dsh-hook-protocol` | — | [`packages/experimental/hook-protocol/src/index.ts`](../packages/experimental/hook-protocol/src/index.ts) |
 | `@deepseek-ai/dsh-http-proxy` | — | [`packages/util/http-proxy/src/index.ts`](../packages/util/http-proxy/src/index.ts) |
@@ -4909,6 +4987,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 | `@deepseek-ai/dsh-ssh-helper-runtime` | — | [`packages/ssh/ssh-helper-runtime/src/index.ts`](../packages/ssh/ssh-helper-runtime/src/index.ts) |
 | `@deepseek-ai/dsh-timeout` | — | [`packages/util/timeout/src/index.ts`](../packages/util/timeout/src/index.ts) |
 | `@deepseek-ai/dsh-tool-testkit` | — | [`packages/test-support/tool-testkit/src/index.ts`](../packages/test-support/tool-testkit/src/index.ts) |
+| `@deepseek-ai/dsh-tui-app` | — | [`packages/bundle/tui-app/src/index.ts`](../packages/bundle/tui-app/src/index.ts) |
 | `@deepseek-ai/dsh-typert-generator` | — | [`packages/typert/generator/src/index.ts`](../packages/typert/generator/src/index.ts) |
 | `@deepseek-ai/dsh-typert-protocol` | — | [`packages/typert/protocol/src/index.ts`](../packages/typert/protocol/src/index.ts) |
 | `@deepseek-ai/dsh-typert-registry` | — | [`packages/typert/registry/src/index.ts`](../packages/typert/registry/src/index.ts) |

@@ -108,6 +108,23 @@ const GROUP_ORDER = [
 
 const SERVICE_ROLES: ServiceRole[] = [
   {
+    key: 'debug',
+    pkg: 'debug',
+    title: 'Debug session and provider service',
+    mode: 'seam',
+    implementations: ['debug-node', 'debug-python', 'debug-go', 'debug-native'],
+    consumers: ['tool-debug', 'debug-controller', 'ui-debug', 'tui-debug'],
+    note: 'Language providers resolve launch and attach plans over the ctx.debug session registry while managed third-party DAP adapters stay behind the seam; the debug tool, the Remote controller, and the Web/Desktop/TUI panes consume the normalized state.',
+  },
+  {
+    key: 'debugAdapters',
+    pkg: 'debug-adapter-manager',
+    title: 'Managed debug adapter service',
+    mode: 'service',
+    consumers: ['debug'],
+    note: 'Installs, verifies, resolves, and uninstalls the pinned third-party debug adapters in the target execution world; providers resolve their adapter through it.',
+  },
+  {
     key: 'actionCards',
     pkg: 'action-cards',
     title: 'Optional action cards',

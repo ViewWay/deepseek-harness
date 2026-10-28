@@ -72,8 +72,10 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-client-ui-attachment` | no | Dynamic attachment presentation plugin for conversation input, message-image, and trajectory image slots |
 | `@deepseek-ai/dsh-client-ui-brand-official` | no | Official DeepSeek Harness brand occupants for the Web client's sidebar slots |
 | `@deepseek-ai/dsh-client-ui-chat` | no | Chat Conversation target, node definitions, renderers, and details surface |
+| `@deepseek-ai/dsh-client-ui-code-editor` | no | Web code editor with breakpoint gutter, current-line highlight, and version-guarded saves |
 | `@deepseek-ai/dsh-client-ui-commands` | no | Client command surface: global directory cache, '/' source, three command UI kinds, popupSelect registry |
 | `@deepseek-ai/dsh-client-ui-conversation` | no | Target-neutral Conversation assembly, shell, composer, queue, and view navigation |
+| `@deepseek-ai/dsh-client-ui-debug` | no | Debug toolbar, view store, panels, and conversation tool cards for the Web/Desktop workbench |
 | `@deepseek-ai/dsh-client-ui-deepseek-model-label-1017` | no | Temporary 1017 release badge for official DeepSeek Flash model labels |
 | `@deepseek-ai/dsh-client-ui-deliverables` | no | Changed-files card with per-file comparison tabs, delivery cards, and clickable final-response file references for Web |
 | `@deepseek-ai/dsh-client-ui-directory-picker-browse` | no | In-app directory browsing surface: the workspace directory-flow owner rendering the host's listing and creation primitives |
@@ -120,6 +122,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-client-ui-tool` | no | Client Tool call-tree renderer and keyed per-tool presentation slot |
 | `@deepseek-ai/dsh-client-ui-trajectory` | no | Trajectory event ledger with an interactive timing overview: pure-consumer plugin registering into the conversation ViewMap (no service) |
 | `@deepseek-ai/dsh-client-ui-user-questions` | no | Web ask_user_question composer takeover and plan-review presentation UI |
+| `@deepseek-ai/dsh-client-ui-workbench` | no | Workbench layout, panel registry, and shared file tree and terminal surfaces composing the debug workbench |
 | `@deepseek-ai/dsh-client-ui-workflow-run` | no | Durable workflow-run Conversation Node and nested member disclosure for dsh web |
 | `@deepseek-ai/dsh-client-ui-workspace` | no | Workspace picker plugin: one WorkspacePicker registered into the sidebar and empty-state workspace slots |
 
@@ -170,6 +173,17 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-authorization` | no | Authorization seam (ctx.authorization): plugin-owned flows that obtain a credential through a conversation with the human |
 | `@deepseek-ai/dsh-credentials-local` | yes | File-backed credentials provider ($DSH_HOME/.env under the live process environment) for the DeepSeek Harness |
 | `@deepseek-ai/dsh-deepseek-account-platform` | yes | Authorize DeepSeek accounts through browser PKCE |
+
+## debug
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-debug` | yes | Debug capability seam (ctx.debug) for the DeepSeek Harness — branded debug vocabulary and frozen contracts, typed DebugError taxonomy, the session state machine, and the language-provider registry that reserves ids and file extensions atomically |
+| `@deepseek-ai/dsh-debug-go` | no | Go debug provider registering on ctx.debug: launch and attach resolution into the frozen plan shapes with delve mode and flag validation, plus the verified delve v1.27.2 adapter manifest with GitHub-published SHA-256 digests |
+| `@deepseek-ai/dsh-debug-native` | no | Rust/C/C++ debug provider registering on ctx.debug: launch and attach resolution into the frozen plan shapes for lldb-dap, plus the verified LLVM 23.1.4 archive manifest with GitHub-published SHA-256 digests |
+| `@deepseek-ai/dsh-debug-node` | no | Node.js/TypeScript debug provider registering on ctx.debug: launch and attach resolution into the frozen DebugLaunchPlan shape, js-debug adapter manifest with the GitHub-published SHA-256 digest, and node-specific config validation |
+| `@deepseek-ai/dsh-debug-python` | no | Python debug provider registering on ctx.debug: launch and attach resolution into the frozen plan shapes with interpreter validation and debugpy option whitelisting |
+| `@deepseek-ai/dsh-tool-debug` | no | Model-facing debug tools over ctx.debug: four tools with closed operation unions, bounded canonical results, a fixed system-prompt section, and pure call/result presenters |
 
 ## deliverables
 
@@ -496,6 +510,12 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | Package | Config | Description |
 |---|---|---|
 | `@deepseek-ai/dsh-tool-todo` | yes | Model-facing todo_write tool over the DeepSeek Harness event-sourced session log |
+
+## tui
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-tui-debug` | yes | Terminal debug panels, commands, source preview, and the $EDITOR handoff over the in-process ctx.debug seam |
 
 ## typert
 

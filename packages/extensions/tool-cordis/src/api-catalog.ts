@@ -1016,6 +1016,119 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'debug',
+    summary: '`ctx.debug`.',
+    description: '`ctx.debug`. Owns the provider table with its extension routes, the workspace-scoped session registry with live events, and the compound registry. A provider registration\'s id reservation and extension reservations commit in one lifecycle controller so disposal always releases them together.',
+    methods: [
+      {
+        signature: 'readonly sessions: DebugSessionRegistry = new DebugSessionRegistry()',
+        description: 'The session registry backing `list`/`get` and the live event source.',
+        parameters: [],
+      },
+      {
+        signature: 'readonly breakpoints: BreakpointRegistry',
+        description: 'Validated, persisted, and session-applied breakpoint sets.',
+        parameters: [],
+      },
+      {
+        signature: 'registerBackend<T>(sessionId: DebugSessionId, backend: T): () => void',
+        description: 'Register one live session\'s backend handle; controllers resolve it to drive execution and inspection without touching DAP.',
+        parameters: [{ name: 'sessionId', description: 'the session the backend serves.' }, { name: 'backend', description: 'the composition\'s backend handle.' }],
+        returns: 'disposer removing the registration.',
+      },
+      {
+        signature: 'backendOf<T>(sessionId: DebugSessionId): T | undefined',
+        description: 'Resolve one session\'s registered backend handle.',
+        parameters: [{ name: 'sessionId', description: 'the session to resolve.' }],
+        returns: 'the handle, or undefined when the session has none registered.',
+      },
+      {
+        signature: 'list(scope?: DebugScope): readonly DebugSessionInfo[]',
+        description: 'List debug sessions as read-facing infos.',
+        parameters: [{ name: 'scope', description: 'workspace and owner narrowing; omit for every session.' }],
+        returns: 'the matching infos in registration order.',
+      },
+      {
+        signature: 'get(id: DebugSessionId): DebugLiveSession | undefined',
+        description: 'Resolve one registered session to its stable live-session object.',
+        parameters: [{ name: 'id', description: 'the session\'s id.' }],
+        returns: 'the live session, or undefined when the id is not registered.',
+      },
+      {
+        signature: 'launch(_request: DebugLaunchRequest): Promise<DebugLiveSession>',
+        description: 'Launch a debug session.',
+        parameters: [{ name: '_request', description: 'the launch request; consumed once the DAP backend lands.' }],
+        returns: 'a promise for the live session; rejects until the backend lands.',
+        throws: ['{@link DebugError} `DEBUG_UNAVAILABLE` until the backend lands.'],
+      },
+      {
+        signature: 'attach(_request: DebugAttachRequest): Promise<DebugLiveSession>',
+        description: 'Attach to a running target.',
+        parameters: [{ name: '_request', description: 'the attach request; consumed once the DAP backend lands.' }],
+        returns: 'a promise for the live session; rejects until the backend lands.',
+        throws: ['{@link DebugError} `DEBUG_UNAVAILABLE` until the backend lands.'],
+      },
+      {
+        signature: 'registerProvider(provider: DebugProvider): () => void',
+        description: 'Register one language provider after validating it completely.',
+        parameters: [{ name: 'provider', description: 'the provider to register.' }],
+        returns: 'the disposer releasing the id and every extension reservation together.',
+        throws: ['{@link DebugError} `DEBUG_INVALID_PROVIDER` for an empty id, an empty extension list, a malformed extension, or duplicate extensions; `DEBUG_CONFLICT` when the id or any extension is already reserved.'],
+      },
+      {
+        signature: 'provider(id: DebugProviderId): DebugProvider | undefined',
+        description: 'Read one registered provider.',
+        parameters: [{ name: 'id', description: 'the provider\'s branded id.' }],
+        returns: 'the provider, or undefined when the id is not registered.',
+      },
+      {
+        signature: 'providers(): readonly DebugProvider[]',
+        description: 'List every registered provider.',
+        parameters: [],
+        returns: 'the providers in registration order.',
+      },
+    ],
+  },
+  {
+    key: 'debugAdapters',
+    summary: 'The adapter manager service.',
+    description: 'The adapter manager service. Manifest registrations commit through `ctx.effect` so disposal releases them; installs share one in-flight promise per provider and platform.',
+    methods: [
+      {
+        signature: 'registerManifest(value: unknown): () => void',
+        description: 'Register one validated adapter manifest.',
+        parameters: [{ name: 'value', description: 'the raw manifest, as read from its data file.' }],
+        returns: 'the disposer releasing the registration.',
+        throws: ['{@link DebugError} `DEBUG_INVALID_CONFIG` or `DEBUG_ADAPTER_CHECKSUM` from manifest validation; `DEBUG_CONFLICT` when the provider already has a manifest.'],
+      },
+      {
+        signature: 'list(): readonly DebugAdapterStatus[]',
+        description: 'List registered manifests.',
+        parameters: [],
+        returns: 'one status per manifest, in registration order.',
+      },
+      {
+        signature: 'async install(providerId: DebugProviderIdValue, call: DebugAdapterInstallCall): Promise<DebugAdapterInstalledLayout>',
+        description: 'Install one provider\'s adapter for one platform in the target world. Concurrent calls for the same provider and platform share one operation.',
+        parameters: [{ name: 'providerId', description: 'the registered manifest\'s provider.' }, { name: 'call', description: 'platform, install root, and target-world I/O.' }],
+        returns: 'the committed install layout.',
+        throws: ['{@link DebugError} `DEBUG_ADAPTER_NOT_FOUND` when no manifest is registered; install failures carry `DEBUG_ADAPTER_CHECKSUM` or `DEBUG_ADAPTER_UNSUPPORTED`.'],
+      },
+      {
+        signature: 'async uninstall(providerId: DebugProviderIdValue, call: DebugAdapterInstallCall): Promise<void>',
+        description: 'Remove one provider\'s installed adapter directory for one platform.',
+        parameters: [{ name: 'providerId', description: 'the registered manifest\'s provider.' }, { name: 'call', description: 'platform, install root, and target-world I/O.' }],
+      },
+      {
+        signature: 'async resolve(providerId: DebugProviderIdValue, call: DebugAdapterResolveCall): Promise<ResolvedDebugAdapter>',
+        description: 'Resolve one installed adapter. Managed resolution never falls back to a host adapter: an absent install in the target world fails.',
+        parameters: [{ name: 'providerId', description: 'the registered manifest\'s provider.' }, { name: 'call', description: 'platform, install root, and target-world presence check.' }],
+        returns: 'the resolved adapter command for the target world.',
+        throws: ['{@link DebugError} `DEBUG_ADAPTER_NOT_FOUND` when no manifest is registered or the platform has no install in the target world; `DEBUG_ADAPTER_UNSUPPORTED` when the platform was never published.'],
+      },
+    ],
+  },
+  {
     key: 'deepseekAccount',
     summary: 'Account operations; only Host consumers can obtain a request credential.',
     description: 'Account operations; only Host consumers can obtain a request credential.',
@@ -3136,6 +3249,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'a paused socket; attach a consumer before resuming it.',
       },
       {
+        signature: 'async connectTcpStream(host: string, port: number, signal?: AbortSignal): Promise<Socket>',
+        description: 'Forward one authenticated stream to a remote TCP target: the helper dials the target on the remote side and returns private stream coordinates.',
+        parameters: [{ name: 'host', description: 'dialable host name or address on the remote side.' }, { name: 'port', description: 'target TCP port, 1–65535.' }, { name: 'signal', description: 'cancellation of allocation and the resulting socket.' }],
+        returns: 'a paused authenticated socket; attach a consumer before resuming it.',
+      },
+      {
         signature: 'dispose(): Promise<void>',
         description: 'Tear down the helper\'s remote managed ranges before releasing the SSH master when reachable.',
         parameters: [],
@@ -5245,6 +5364,26 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type BrandedNumber<B extends string> = number & {\n    readonly [BRAND]: B;\n};',
   },
   {
+    name: 'BreakpointApplier',
+    declaration: 'export interface BreakpointApplier {\n    (request: {\n        readonly source: string;\n        readonly breakpoints: readonly DebugBreakpointInput[];\n    }): Promise<DebugBreakpointResult>;\n}',
+  },
+  {
+    name: 'BreakpointRegistry',
+    declaration: 'export class BreakpointRegistry {\n    constructor(store: BreakpointStore, options: BreakpointRegistryOptions = {});\n    bindSession(record: DebugSessionRecord, applier: BreakpointApplier): () => void;\n    async setFile(workspaceId: string, path: string, breakpoints: readonly DebugBreakpointInput[]): Promise<readonly BreakpointSessionApplication[]>;\n}',
+  },
+  {
+    name: 'BreakpointRegistryOptions',
+    declaration: 'export interface BreakpointRegistryOptions {\n    readonly maxPerFile?: number;\n    readonly publish?: (event: {\n        readonly kind: \'breakpoint/changed\';\n        readonly sessionId: DebugSessionId;\n        readonly workspaceId: string;\n        readonly result: DebugBreakpointResult;\n    }) => void;\n}',
+  },
+  {
+    name: 'BreakpointSessionApplication',
+    declaration: 'export interface BreakpointSessionApplication {\n    readonly sessionId: DebugSessionId;\n    readonly sessionResults: DebugBreakpointResult;\n}',
+  },
+  {
+    name: 'BreakpointStore',
+    declaration: 'export interface BreakpointStore {\n    save(workspaceId: string, path: string, breakpoints: readonly DebugBreakpointInput[]): Promise<void>;\n    load(workspaceId: string, path: string): Promise<readonly DebugBreakpointInput[]>;\n}',
+  },
+  {
     name: 'BrowserUseProviderName',
     declaration: 'export type BrowserUseProviderName = Branded<\'BrowserUseProviderName\'>;',
   },
@@ -5617,6 +5756,170 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface DailyScheduleRecord {\n    readonly id: ScheduleId;\n    readonly kind: \'daily\';\n    readonly title: string;\n    readonly prompt: string;\n    readonly time: string;\n    readonly timeZone: string;\n    readonly scheduledAt: string;\n}',
   },
   {
+    name: 'DebugAdapterCommand',
+    declaration: 'export interface DebugAdapterCommand {\n    readonly command: readonly string[];\n    readonly args: readonly string[];\n    readonly env: Readonly<Record<string, string>>;\n    readonly cwd: string;\n}',
+  },
+  {
+    name: 'DebugAdapterDescriptor',
+    declaration: 'export type DebugAdapterDescriptor = {\n    readonly kind: \'managed\';\n} | {\n    readonly kind: \'override\';\n    readonly command: readonly string[];\n};',
+  },
+  {
+    name: 'DebugAdapterInstallCall',
+    declaration: 'export interface DebugAdapterInstallCall {\n    readonly platform: DebugAdapterPlatformKey;\n    readonly installRoot: string;\n    readonly environment: DebugAdapterInstallEnvironment | DebugPypiInstallEnvironment;\n    readonly python?: string;\n    readonly pythonTag?: string;\n}',
+  },
+  {
+    name: 'DebugAdapterInstalledLayout',
+    declaration: 'export type DebugAdapterInstalledLayout = DebugAdapterInstallPath | import(\'./install.ts\').DebugPypiInstallLayout;',
+  },
+  {
+    name: 'DebugAdapterInstallEnvironment',
+    declaration: 'export interface DebugAdapterInstallEnvironment {\n    readonly pathSeparator: \'/\' | \'\\\\\';\n    fetchBytes(url: string): Promise<Uint8Array>;\n    write(path: string, bytes: Uint8Array): Promise<void>;\n    remove(path: string): Promise<void>;\n    exists(path: string): Promise<boolean>;\n    runSelfTest(command: readonly string[]): Promise<{\n        exitCode: number;\n        stdout?: string;\n        stderr?: string;\n    }>;\n}',
+  },
+  {
+    name: 'DebugAdapterInstallPath',
+    declaration: 'export interface DebugAdapterInstallPath {\n    readonly directory: string;\n    readonly archiveFile: string;\n    readonly executableFile: string;\n}',
+  },
+  {
+    name: 'DebugAdapterPlatformKey',
+    declaration: 'export type DebugAdapterPlatformKey = string;',
+  },
+  {
+    name: 'DebugAdapterResolveCall',
+    declaration: 'export interface DebugAdapterResolveCall {\n    readonly platform: DebugAdapterPlatformKey;\n    readonly installRoot: string;\n    readonly environment: Pick<DebugAdapterInstallEnvironment, \'pathSeparator\' | \'exists\'>;\n}',
+  },
+  {
+    name: 'DebugAdapterStatus',
+    declaration: 'export interface DebugAdapterStatus {\n    readonly providerId: DebugProviderIdValue;\n    readonly version: string;\n    readonly platforms: readonly DebugAdapterPlatformKey[];\n}',
+  },
+  {
+    name: 'DebugAttachPlan',
+    declaration: 'export interface DebugAttachPlan {\n    readonly adapter: DebugAdapterCommand;\n    readonly dapRequest: Readonly<Record<string, JsonValue>>;\n    readonly tunnel?: {\n        readonly host: string;\n        readonly port: number;\n    };\n    readonly requires: readonly DebugExecutionCapability[];\n    readonly manifestVersion: string;\n    readonly failureHint: string;\n}',
+  },
+  {
+    name: 'DebugAttachRequest',
+    declaration: 'export interface DebugAttachRequest {\n    readonly providerId: DebugProviderId;\n    readonly workspaceRoot: string;\n    readonly workspaceId: string;\n    readonly processId?: number;\n    readonly port?: number;\n    readonly host?: string;\n    readonly url?: string;\n    readonly providerOptions?: Readonly<Record<string, unknown>>;\n    readonly caller: DebugCaller;\n}',
+  },
+  {
+    name: 'DebugAttachTarget',
+    declaration: 'export interface DebugAttachTarget {\n    readonly name: string;\n    readonly processId?: number;\n    readonly port?: number;\n    readonly host?: string;\n    readonly url?: string;\n}',
+  },
+  {
+    name: 'DebugBreakpoint',
+    declaration: 'export interface DebugBreakpoint {\n    readonly id: DebugBreakpointId;\n    readonly source: DebugSource;\n    readonly requestedLine: number;\n    readonly verified: boolean;\n    readonly actualLine?: number;\n    readonly message?: string;\n}',
+  },
+  {
+    name: 'DebugBreakpointId',
+    declaration: 'export type DebugBreakpointId = Branded<\'DebugBreakpointId\'>;',
+  },
+  {
+    name: 'DebugBreakpointInput',
+    declaration: 'export interface DebugBreakpointInput {\n    readonly line: number;\n    readonly column?: number;\n    readonly condition?: string;\n    readonly hitCondition?: string;\n    readonly logMessage?: string;\n}',
+  },
+  {
+    name: 'DebugBreakpointResult',
+    declaration: 'export interface DebugBreakpointResult {\n    readonly applied: readonly DebugBreakpoint[];\n    readonly rejected: readonly DebugBreakpoint[];\n}',
+  },
+  {
+    name: 'DebugCaller',
+    declaration: 'export type DebugCaller = {\n    readonly kind: \'agent\' | \'user\';\n    readonly sessionId: SessionId;\n};',
+  },
+  {
+    name: 'DebugCapabilities',
+    declaration: 'export interface DebugCapabilities {\n    readonly supportsConditionalBreakpoints: boolean;\n    readonly supportsHitConditionalBreakpoints: boolean;\n    readonly supportsLogPoints: boolean;\n    readonly supportsFunctionBreakpoints: boolean;\n    readonly supportsDataBreakpoints: boolean;\n    readonly supportsInstructionBreakpoints: boolean;\n    readonly supportsExceptionFilterOptions: boolean;\n    readonly supportsStepBack: boolean;\n    readonly supportsRestartFrame: boolean;\n    readonly supportsSetVariable: boolean;\n    readonly supportsSetExpression: boolean;\n    readonly supportsCompletionsRequest: boolean;\n    readonly supportsModulesRequest: boolean;\n    readonly supportsLoadedSourcesRequest: boolean;\n    readonly supportsDisassembleRequest: boolean;\n    readonly supportsReadMemoryRequest: boolean;\n    readonly supportsWriteMemoryRequest: boolean;\n    readonly supportsTerminateRequest: boolean;\n    readonly supportsRestartRequest: boolean;\n    readonly supportsDelayedStackTraceLoading: boolean;\n    readonly supportsValueFormattingOptions: boolean;\n    readonly supportsEvaluateForHovers: boolean;\n    readonly supportsExceptionInfoRequest: boolean;\n    readonly supportsCancelRequest: boolean;\n    readonly supportsANSIStyling: boolean;\n    readonly supportsProgressReporting: boolean;\n    readonly supportsRunInTerminalRequest: boolean;\n    readonly supportsStartDebuggingRequest: boolean;\n}',
+  },
+  {
+    name: 'DebugEnvironment',
+    declaration: 'export interface DebugEnvironment {\n    readonly workspaceRoot: string;\n    readonly cwd: string;\n    readonly platform: string;\n    readonly arch: string;\n    readonly pathSeparator: \'/\' | \'\\\\\';\n    readonly shell?: string;\n    readonly subprocess: SubprocessRuntime;\n    readonly fs: FileSystem;\n    readonly adapters: {\n        resolve(providerId: DebugProviderId): Promise<ResolvedDebugAdapter>;\n    };\n    readonly requiredCapabilities: readonly DebugExecutionCapability[];\n}',
+  },
+  {
+    name: 'DebugEvent',
+    declaration: 'export type DebugEvent = {\n    readonly kind: \'session/starting\';\n    readonly sessionId: DebugSessionId;\n    readonly workspaceId: string;\n} | {\n    readonly kind: \'session/running\';\n    readonly sessionId: DebugSessionId;\n    readonly workspaceId: string;\n} | {\n    readonly kind: \'session/stopped\';\n    readonly sessionId: DebugSessionId;\n    readonly workspaceId: string;\n} | {\n    readonly kind: \'session/terminated\';\n    readonly sessionId: DebugSessionId;\n    readonly workspaceId: string;\n    readonly actor: DebugEventActor;\n} | {\n    readonly kind: \'session/failed\';\n    readonly sessionId: DebugSessionId;\n    readonly workspaceId: string;\n} | {\n    readonly kind: \'breakpoint/changed\';\n    readonly sessionId: DebugSessionId;\n    readonly workspaceId: string;\n    readonly result: DebugBreakpointResult;\n} | {\n    readonly kind: \'console/output\';\n    readonly sessionId: DebugSessionId;\n    readonly workspaceId: string;\n    readonly text: string;\n    readonly truncated: boolean;\n} | {\n    readonly kind: \'adapter/output\';\n    readonly sessionId: DebugSessionId;\n    readonly workspaceId: string;\n    readonly text: string;\n    readonly truncated: boolean;\n} | {\n    readonly kind: \'capabilities/changed\';\n    readonly sessionId: DebugSessionId;\n    readonly workspaceId: string;\n    readonly capabilities: DebugCapabilities;\n} | {\n    readonly kind: \'session/owner-changed\';\n    readonly sessionId: DebugSessionId;\n    readonly workspaceId: string;\n    readonly from: DebugCaller;\n    r /* …truncated — full shape in source */',
+  },
+  {
+    name: 'DebugEventActor',
+    declaration: 'export type DebugEventActor = \'user\' | \'agent\';',
+  },
+  {
+    name: 'DebugEventFilter',
+    declaration: 'export interface DebugEventFilter {\n    readonly workspaceId?: string;\n    readonly sessionId?: DebugSessionId;\n}',
+  },
+  {
+    name: 'DebugEventSource',
+    declaration: 'export interface DebugEventSource {\n    subscribe(filter: DebugEventFilter, listener: (event: DebugEvent) => void): () => void;\n}',
+  },
+  {
+    name: 'DebugExecutionCapability',
+    declaration: 'export type DebugExecutionCapability = \'ptrace\' | \'processControl\' | \'networkListen\' | \'python\' | \'go\';',
+  },
+  {
+    name: 'DebugLaunchPlan',
+    declaration: 'export interface DebugLaunchPlan {\n    readonly adapter: DebugAdapterCommand;\n    readonly dapRequest: Readonly<Record<string, JsonValue>>;\n    readonly target: DebugTargetPlan;\n    readonly requires: readonly DebugExecutionCapability[];\n    readonly manifestVersion: string;\n    readonly failureHint: string;\n}',
+  },
+  {
+    name: 'DebugLaunchRequest',
+    declaration: 'export interface DebugLaunchRequest {\n    readonly providerId: DebugProviderId;\n    readonly workspaceRoot: string;\n    readonly workspaceId: string;\n    readonly cwd: string;\n    readonly program?: string;\n    readonly module?: string;\n    readonly args?: readonly string[];\n    readonly env?: Readonly<Record<string, string>>;\n    readonly stopOnEntry?: boolean;\n    readonly configurationName?: string;\n    readonly breakpoints?: readonly DebugBreakpointInput[];\n    readonly providerOptions?: Readonly<Record<string, unknown>>;\n    readonly caller: DebugCaller;\n}',
+  },
+  {
+    name: 'DebugLiveSession',
+    declaration: 'export interface DebugLiveSession {\n    readonly id: DebugSessionId;\n    readonly state: DebugSessionState;\n    readonly info: DebugSessionInfo;\n    terminate(): Promise<void>;\n    disconnect(): Promise<void>;\n}',
+  },
+  {
+    name: 'DebugProvider',
+    declaration: 'export interface DebugProvider {\n    readonly id: DebugProviderId;\n    readonly displayName: string;\n    readonly extensions: readonly string[];\n    readonly adapter: DebugAdapterDescriptor;\n    readonly configSchema: JsonSchema;\n    resolveLaunch(request: DebugLaunchRequest, environment: DebugEnvironment): Promise<DebugLaunchPlan>;\n    resolveAttach(request: DebugAttachRequest, environment: DebugEnvironment): Promise<DebugAttachPlan>;\n    probeAttachTargets?(environment: DebugEnvironment, signal?: AbortSignal): Promise<readonly DebugAttachTarget[]>;\n}',
+  },
+  {
+    name: 'DebugProviderId',
+    declaration: 'export type DebugProviderId = Branded<\'DebugProviderId\'>;',
+  },
+  {
+    name: 'DebugPypiInstallEnvironment',
+    declaration: 'export interface DebugPypiInstallEnvironment {\n    readonly pathSeparator: \'/\' | \'\\\\\';\n    fetchJson(url: string): Promise<unknown>;\n    fetchBytes(url: string): Promise<Uint8Array>;\n    write(path: string, bytes: Uint8Array): Promise<void>;\n    remove(path: string): Promise<void>;\n    runPython(python: string, args: readonly string[]): Promise<{\n        exitCode: number;\n        stdout?: string;\n        stderr?: string;\n    }>;\n}',
+  },
+  {
+    name: 'DebugPypiInstallLayout',
+    declaration: 'export interface DebugPypiInstallLayout {\n    readonly directory: string;\n    readonly venvPython: string;\n    readonly wheelFile: string;\n}',
+  },
+  {
+    name: 'DebugScope',
+    declaration: 'export interface DebugScope {\n    readonly workspaceId: string;\n    readonly ownerSessionId?: SessionId;\n}',
+  },
+  {
+    name: 'DebugSessionId',
+    declaration: 'export type DebugSessionId = Branded<\'DebugSessionId\'>;',
+  },
+  {
+    name: 'DebugSessionInfo',
+    declaration: 'export interface DebugSessionInfo {\n    readonly id: DebugSessionId;\n    readonly providerId: DebugProviderId;\n    readonly workspaceId: string;\n    readonly state: DebugSessionState;\n    readonly ownerSessionId?: SessionId;\n}',
+  },
+  {
+    name: 'DebugSessionRecord',
+    declaration: 'export interface DebugSessionRecord {\n    readonly id: DebugSessionId;\n    readonly providerId: DebugProviderId;\n    readonly workspaceId: string;\n    readonly ownerSessionId?: SessionId;\n    state: DebugSessionState;\n    setState(state: DebugSessionState): void;\n    dispose(): Promise<void>;\n}',
+  },
+  {
+    name: 'DebugSessionRegistry',
+    declaration: 'export class DebugSessionRegistry {\n    get events(): DebugEventSource;\n    publish(event: DebugEvent): void;\n    add(record: DebugSessionRecord): void;\n    get(id: DebugSessionId, scope?: DebugSessionScope): DebugSessionRecord | undefined;\n    list(scope?: DebugSessionScope): readonly DebugSessionRecord[];\n    setState(id: DebugSessionId, state: DebugSessionState): void;\n    remove(id: DebugSessionId, actor: DebugEventActor): Promise<void>;\n}',
+  },
+  {
+    name: 'DebugSessionScope',
+    declaration: 'export interface DebugSessionScope {\n    readonly workspaceId?: string;\n    readonly ownerSessionId?: SessionId;\n}',
+  },
+  {
+    name: 'DebugSessionState',
+    declaration: 'export type DebugSessionState = \'starting\' | \'running\' | \'stopped\' | \'terminated\' | \'failed\';',
+  },
+  {
+    name: 'DebugSource',
+    declaration: 'export interface DebugSource {\n    readonly workspaceRelativePath: string;\n    readonly absolutePath: string;\n    readonly sourceReference?: DebugSourceReference;\n}',
+  },
+  {
+    name: 'DebugSourceReference',
+    declaration: 'export type DebugSourceReference = Branded<\'DebugSourceReference\'>;',
+  },
+  {
+    name: 'DebugTargetPlan',
+    declaration: 'export interface DebugTargetPlan {\n    readonly executable: string;\n    readonly args: readonly string[];\n    readonly env: Readonly<Record<string, string>>;\n    readonly cwd: string;\n}',
+  },
+  {
     name: 'DeepSeekLlmApiExtensionMap',
     declaration: 'export interface DeepSeekLlmApiExtensionMap {\n}',
   },
@@ -5803,6 +6106,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'FileReferenceCandidate',
     declaration: 'export interface FileReferenceCandidate {\n    path: string;\n    kind: \'file\' | \'directory\';\n}',
+  },
+  {
+    name: 'FileSystem',
+    declaration: 'export abstract class FileSystem extends Service {\n    constructor(ctx: Context);\n    watch(target: FsTarget, changed: (error?: Error) => void, signal: AbortSignal): Promise<() => Promise<void>>;\n    get sandboxMode(): SandboxMode | undefined;\n    abstract resolve(path: string, opts?: {\n        cwd?: string;\n        signal?: AbortSignal;\n    }): Promise<FsTarget>;\n    abstract processPath(target: FsTarget): string;\n    processPathFromHostPath(hostPath: string): string | undefined;\n    abstract fileUrl(target: FsTarget): string;\n    abstract contains(parent: FsTarget, child: FsTarget): boolean;\n    abstract stat(target: FsTarget, signal?: AbortSignal): Promise<FsInfo | undefined>;\n    abstract lstat(path: string, opts?: {\n        cwd?: string;\n    }, signal?: AbortSignal): Promise<FsPathInfo | undefined>;\n    abstract readText(target: FsTarget, signal?: AbortSignal): Promise<string>;\n    abstract streamText(target: FsTarget, signal?: AbortSignal): Promise<AsyncIterable<string>>;\n    abstract readBytes(target: FsTarget, signal: AbortSignal | undefined, maxBytes: number): Promise<Uint8Array>;\n    abstract readByteRange(target: FsTarget, range: {\n        offset: number;\n        length: number;\n    }, signal?: AbortSignal): Promise<Uint8Array>;\n    abstract listDir(target: FsTarget, signal?: AbortSignal): Promise<FsDirEntry[]>;\n    abstract writeText(target: FsTarget, content: string, expected?: FsWriteIntent, signal?: AbortSignal, sandboxPolicy?: SandboxExecutionPolicy): Promise< /* …truncated — full shape in source */',
   },
   {
     name: 'FileUploadReceiptId',
@@ -6173,6 +6480,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface JobView {\n    readonly id: JobId;\n    readonly kind: string;\n    readonly label: string;\n    readonly owner?: SessionId;\n    readonly outputLimitBytes?: number;\n    readonly status: JobStatus;\n    readonly progress?: string;\n    readonly detail?: string;\n    readonly startedAt: number;\n    readonly finishedAt?: number;\n    readonly output: {\n        readonly total: number;\n        readonly earliest: number;\n        readonly spillPaths?: readonly string[];\n    };\n}',
   },
   {
+    name: 'JsonObject',
+    declaration: 'export interface JsonObject {\n    readonly [key: string]: JsonValue;\n}',
+  },
+  {
+    name: 'JsonSchema',
+    declaration: 'export type JsonSchema = Readonly<JsonObject>;',
+  },
+  {
     name: 'JsonSchemaNode',
     declaration: 'export interface JsonSchemaNode {\n    type?: JsonSchemaType;\n    oneOf?: JsonSchemaNode[];\n    properties?: Record<string, JsonSchemaNode>;\n    required?: string[];\n    additionalProperties?: boolean;\n    items?: JsonSchemaNode;\n    enum?: JsonSchemaScalar[];\n    const?: JsonSchemaScalar;\n    description?: string;\n    title?: string;\n    default?: JsonValue;\n    examples?: JsonValue;\n}',
   },
@@ -6183,10 +6498,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'JsonSchemaType',
     declaration: 'export type JsonSchemaType = \'object\' | \'array\' | \'string\' | \'number\' | \'integer\' | \'boolean\' | \'null\';',
-  },
-  {
-    name: 'JsonValue',
-    declaration: 'export type JsonValue = null | boolean | number | string | JsonValue[] | {\n    [key: string]: JsonValue;\n};',
   },
   {
     name: 'KvFacet',
@@ -7163,6 +7474,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ResolvedCredential',
     declaration: 'export interface ResolvedCredential {\n    value: string;\n    source: string;\n}',
+  },
+  {
+    name: 'ResolvedDebugAdapter',
+    declaration: 'export interface ResolvedDebugAdapter {\n    readonly command: readonly string[];\n    readonly args: readonly string[];\n    readonly env: Readonly<Record<string, string>>;\n    readonly version: string;\n    readonly platform: string;\n    readonly source: \'managed\' | \'override\';\n    readonly executablePath: string;\n}',
   },
   {
     name: 'ResolvedNormalRetryPolicy',
@@ -8331,6 +8646,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SubprocessOutputReader',
     declaration: 'export interface SubprocessOutputReader {\n    readFrom(fromByte: number): SubprocessOutputRead;\n}',
+  },
+  {
+    name: 'SubprocessRuntime',
+    declaration: 'export abstract class SubprocessRuntime extends Service {\n    constructor(ctx: Context);\n    abstract resolveExecutable(command: string, env?: Readonly<Record<string, string>>, signal?: AbortSignal): Promise<string>;\n    abstract terminalEnvironment(signal?: AbortSignal): Promise<SubprocessTerminalEnvironment>;\n    abstract spawn(spec: SubprocessSpawnSpec): SubprocessHandle;\n    abstract spawnTerminal(spec: SubprocessTerminalSpawnSpec): Promise<SubprocessTerminalHandle>;\n}',
   },
   {
     name: 'SubprocessSpawnSpec',

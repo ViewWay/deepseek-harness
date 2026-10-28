@@ -30,9 +30,9 @@ const PATTERNS = [
   'packages/**/*.ts',
 ]
 
-/** Paths excluded from the scan: built output and vendored upstream source. */
+/** Excluded paths: built output, vendored source, and working plans (they name proposal paths that need not exist). */
 const isExcluded = (p: string): boolean =>
-  isArchivedAgentNotePath(p) || p.includes('/lib/') || p.endsWith('.d.ts') || p.startsWith('vendor/')
+  isArchivedAgentNotePath(p) || p.includes('/lib/') || p.endsWith('.d.ts') || p.startsWith('vendor/') || p.startsWith('docs/superpowers/plans/') || p.startsWith('docs/superpowers/specs/')
 
 /**
  * Directory names of every real package, `packages/<group>/<pkg>`. A broken

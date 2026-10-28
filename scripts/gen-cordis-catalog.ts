@@ -50,6 +50,8 @@ export { REGION_BEGIN, REGION_END }
  * errors, so the partition can never silently drift from the service API.
  */
 export const SERVICE_PAGE: Record<string, string> = {
+  debug: 'debug.md',
+  debugAdapters: 'debug.md',
   headlessStartup: 'boot.md',
   translator: 'translation.md',
   cotTranslation: 'translation.md',
@@ -174,6 +176,7 @@ export const SERVICE_PAGE: Record<string, string> = {
  * to a model as `cordis_runtime_inspect what:"client"`).
  */
 export const SERVICE_WALK_EXEMPTIONS: Record<string, string> = {
+  tuiDebugPane: 'optional in-process pane-source service the TUI app consumes when the debug seam is composed — packages/tui/tui-debug/README.md owns the pane contract',
   invocation: 'not a service: per-call accessor (RemoteInvocation | undefined) the Gateway derives for each Remote call — packages/api/gateway/README.md owns the contract',
   webTerminals: 'client-side terminal view models — packages/api/terminal-controller/README.md owns the API',
   appReady: 'not a service: launcher-provided successful-startup signal — packages/boot/cmdline/README.md owns the launcher contract',
@@ -872,6 +875,20 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   TypertPackageRecord: 'typert.md',
   TypertSchemaFilter: 'typert.md',
   TypertSchemaRecord: 'typert.md',
+  DebugSessionId: 'debug.md',
+  DebugSessionInfo: 'debug.md',
+  DebugScope: 'debug.md',
+  DebugLiveSession: 'debug.md',
+  DebugLaunchRequest: 'debug.md',
+  DebugAttachRequest: 'debug.md',
+  DebugProvider: 'debug.md',
+  DebugProviderId: 'debug.md',
+  DebugProviderIdValue: 'debug.md',
+  ResolvedDebugAdapter: 'debug.md',
+  DebugAdapterStatus: 'debug.md',
+  DebugAdapterResolveCall: 'debug.md',
+  DebugAdapterInstallCall: 'debug.md',
+  DebugAdapterInstalledLayout: 'debug.md',
 }
 
 /** TypeScript lib and pinned framework types with no repository-owned data page. */

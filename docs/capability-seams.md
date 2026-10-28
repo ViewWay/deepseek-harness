@@ -7,6 +7,18 @@ A service can be a core spine service, a swappable capability seam, a bundle/com
 
 ```mermaid
 flowchart LR
+  pkg_debug["debug"]
+  svc_debug["ctx.debug<br/>Debug session and provider service"]
+  pkg_debug_node["debug-node"]
+  pkg_debug_python["debug-python"]
+  pkg_debug_go["debug-go"]
+  pkg_debug_native["debug-native"]
+  pkg_tool_debug["tool-debug"]
+  pkg_debug_controller["debug-controller"]
+  pkg_ui_debug["ui-debug"]
+  pkg_tui_debug["tui-debug"]
+  pkg_debug_adapter_manager["debug-adapter-manager"]
+  svc_debugAdapters["ctx.debugAdapters<br/>Managed debug adapter service"]
   pkg_action_cards["action-cards"]
   svc_actionCards["ctx.actionCards<br/>Optional action cards"]
   pkg_creation_recommendations["creation-recommendations"]
@@ -346,6 +358,12 @@ flowchart LR
   pkg_credentials --> svc_credentials
   pkg_credentials_local --> svc_credentials
   pkg_cua --> svc_cuaAccess
+  pkg_debug --> svc_debug
+  pkg_debug_adapter_manager --> svc_debugAdapters
+  pkg_debug_go --> svc_debug
+  pkg_debug_native --> svc_debug
+  pkg_debug_node --> svc_debug
+  pkg_debug_python --> svc_debug
   pkg_deepseek_account --> svc_deepseekAccount
   pkg_deepseek_account_platform --> svc_deepseekAccount
   pkg_deepseek_llm_api_extensions --> svc_deepseekLlmApiExtensions
@@ -500,6 +518,11 @@ flowchart LR
   svc_credentials --> pkg_llm_deepseek
   svc_credentials --> pkg_llm_pi_ai
   svc_cuaAccess --> pkg_cua
+  svc_debug --> pkg_debug_controller
+  svc_debug --> pkg_tool_debug
+  svc_debug --> pkg_tui_debug
+  svc_debug --> pkg_ui_debug
+  svc_debugAdapters --> pkg_debug
   svc_deepseekAccount --> pkg_api_account_controller
   svc_deepseekAccount --> pkg_llm_deepseek
   svc_deepseekLlmApiExtensions --> pkg_llm_deepseek
@@ -631,6 +654,8 @@ flowchart LR
 
 | ctx key | Role | Owner | Implementations | Direct consumers | Companion plugins | Note |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.debug` | `seam` | [`debug`](../packages/debug/debug) | [`debug-node`](../packages/debug/debug-node), [`debug-python`](../packages/debug/debug-python), [`debug-go`](../packages/debug/debug-go), [`debug-native`](../packages/debug/debug-native) | [`tool-debug`](../packages/debug/tool-debug), `debug-controller`, `ui-debug`, [`tui-debug`](../packages/tui/tui-debug) | - | Language providers resolve launch and attach plans over the ctx.debug session registry while managed third-party DAP adapters stay behind the seam; the debug tool, the Remote controller, and the Web/Desktop/TUI panes consume the normalized state. |
+| `ctx.debugAdapters` | `service` | [`debug-adapter-manager`](../packages/debug/debug-adapter-manager) | - | [`debug`](../packages/debug/debug) | - | Installs, verifies, resolves, and uninstalls the pinned third-party debug adapters in the target execution world; providers resolve their adapter through it. |
 | `ctx.actionCards` | `service` | [`action-cards`](../packages/experimental/action-cards) | - | [`creation-recommendations`](../packages/experimental/creation-recommendations), [`client-ui-action-cards`](../packages/experimental/client-ui-action-cards) | - | Owns the card tool, card state, user actions and status notices; card kinds register their actions and handlers. |
 | `ctx.pluginRecommendations` | `service` | [`plugin-recommendations`](../packages/experimental/plugin-recommendations) | - | [`client-ui-plugin-recommendations`](../packages/experimental/client-ui-plugin-recommendations) | - | Reads the current catalog text of an official plugin card and enables the plugin through the profile plugin manager after a click. |
 | `ctx.headlessStartup` | `core` | [`headless`](../packages/bundle/headless) | - | [`headless`](../packages/bundle/headless) | - | Supplies parsed task and run options to the headless runner and its sandbox-policy configuration. |

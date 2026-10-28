@@ -9,6 +9,18 @@
 
 ```mermaid
 flowchart LR
+  pkg_debug["debug"]
+  svc_debug["ctx.debug<br/>Debug session and provider service"]
+  pkg_debug_node["debug-node"]
+  pkg_debug_python["debug-python"]
+  pkg_debug_go["debug-go"]
+  pkg_debug_native["debug-native"]
+  pkg_tool_debug["tool-debug"]
+  pkg_debug_controller["debug-controller"]
+  pkg_ui_debug["ui-debug"]
+  pkg_tui_debug["tui-debug"]
+  pkg_debug_adapter_manager["debug-adapter-manager"]
+  svc_debugAdapters["ctx.debugAdapters<br/>Managed debug adapter service"]
   pkg_action_cards["action-cards"]
   svc_actionCards["ctx.actionCards<br/>Optional action cards"]
   pkg_creation_recommendations["creation-recommendations"]
@@ -348,6 +360,12 @@ flowchart LR
   pkg_credentials --> svc_credentials
   pkg_credentials_local --> svc_credentials
   pkg_cua --> svc_cuaAccess
+  pkg_debug --> svc_debug
+  pkg_debug_adapter_manager --> svc_debugAdapters
+  pkg_debug_go --> svc_debug
+  pkg_debug_native --> svc_debug
+  pkg_debug_node --> svc_debug
+  pkg_debug_python --> svc_debug
   pkg_deepseek_account --> svc_deepseekAccount
   pkg_deepseek_account_platform --> svc_deepseekAccount
   pkg_deepseek_llm_api_extensions --> svc_deepseekLlmApiExtensions
@@ -502,6 +520,11 @@ flowchart LR
   svc_credentials --> pkg_llm_deepseek
   svc_credentials --> pkg_llm_pi_ai
   svc_cuaAccess --> pkg_cua
+  svc_debug --> pkg_debug_controller
+  svc_debug --> pkg_tool_debug
+  svc_debug --> pkg_tui_debug
+  svc_debug --> pkg_ui_debug
+  svc_debugAdapters --> pkg_debug
   svc_deepseekAccount --> pkg_api_account_controller
   svc_deepseekAccount --> pkg_llm_deepseek
   svc_deepseekLlmApiExtensions --> pkg_llm_deepseek
@@ -633,6 +656,8 @@ flowchart LR
 
 | ctx 键 | 角色 | 所属包 | 实现 | 直接消费方 | 配套插件 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.debug` | `seam` | [`debug`](../packages/debug/debug) | [`debug-node`](../packages/debug/debug-node), [`debug-python`](../packages/debug/debug-python), [`debug-go`](../packages/debug/debug-go), [`debug-native`](../packages/debug/debug-native) | [`tool-debug`](../packages/debug/tool-debug), `debug-controller`, `ui-debug`, [`tui-debug`](../packages/tui/tui-debug) | - | 语言 provider 在 ctx.debug 会话注册表上解析 launch 与 attach 计划，托管第三方 DAP 适配器保持在 seam 之后；调试工具、Remote 控制器与 Web/Desktop/TUI 面板消费归一化状态。 |
+| `ctx.debugAdapters` | `service` | [`debug-adapter-manager`](../packages/debug/debug-adapter-manager) | - | [`debug`](../packages/debug/debug) | - | 在目标执行世界中安装、校验、解析与卸载固定版本的第三方调试适配器；provider 经它解析自己的适配器。 |
 | `ctx.actionCards` | `service` | [`action-cards`](../packages/experimental/action-cards) | - | [`creation-recommendations`](../packages/experimental/creation-recommendations), [`client-ui-action-cards`](../packages/experimental/client-ui-action-cards) | - | 负责卡片工具、卡片状态、用户操作和状态通知；各卡片种类注册自己的动作和处理器。 |
 | `ctx.pluginRecommendations` | `service` | [`plugin-recommendations`](../packages/experimental/plugin-recommendations) | - | [`client-ui-plugin-recommendations`](../packages/experimental/client-ui-plugin-recommendations) | - | 读取官方插件卡片的当前目录文本，并在用户点击后通过配置插件管理器启用该插件。 |
 | `ctx.headlessStartup` | `core` | [`headless`](../packages/bundle/headless) | - | [`headless`](../packages/bundle/headless) | - | 将解析后的任务和运行选项提供给无界面运行器及其 sandbox-policy 配置。 |
