@@ -3232,7 +3232,7 @@ git commit -m "test(debug): add three-surface consistency snapshots"
 - Consumes: real providers, managed adapters, local/SSH/sandbox execution worlds.
 - Produces: `launchFixture`, `skipWithoutAdapter`, four-language e2e coverage, SSH launch/attach coverage, sandbox launch coverage.
 
-- [ ] **Step 1: Write the failing Node e2e test**
+- [x] **Step 1: Write the failing Node e2e test**
 
 Create `packages/test-support/debug-e2e/tests/node.spec.ts`:
 
@@ -3257,9 +3257,11 @@ Run: `pnpm exec vitest run packages/test-support/debug-e2e/tests/node.spec.ts`
 
 Expected: FAIL because the e2e harness does not exist.
 
-- [ ] **Step 3: Implement the harness and fixtures**
+- [x] **Step 3: Implement the harness and fixtures**
 
 `launchFixture(language, options)` resolves the managed adapter, starts the real provider and debug service in the normal profile composition, applies the fixture breakpoints, and returns the live session. `skipWithoutAdapter` checks the provider, adapter manifest, and toolchain; when missing it returns a reason string, never a mock.
+
+Landed in `packages/test-support/debug-e2e/src/index.ts`: `skipWithoutAdapter` returns and records reason strings (`recordedSkipReasons`), and Go and native are decided by explicit skip regardless of toolchain presence.
 
 Add minimal fixtures with a known breakpoint line and a step target for Node, Python, Go, and C. The SSH and sandbox tests use the repository's existing profile patches and fixtures; assert launch and breakpoint behavior, and assert `DEBUG_ATTACH_UNSUPPORTED` or `DEBUG_SANDBOX_DENIED` where the world cannot grant the capability.
 
@@ -3267,13 +3269,17 @@ Add minimal fixtures with a known breakpoint line and a step target for Node, Py
 
 Each language test follows the same shape with its provider and fixture. The SSH test runs a stdio launch and a tunneled attach when supported; otherwise it asserts the explicit unsupported code. The sandbox test asserts launch under the configured sandbox and the ptrace denial path.
 
-- [ ] **Step 5: Run the matrix**
+Landed: Python (real launch with the missing-adapter skip fallback), Go and native (explicit skips with recorded reasons and a skip-record assertion), and SSH (the explicit `DEBUG_ATTACH_UNSUPPORTED` path through the fixture stub). Open: no `tests/sandbox.spec.ts` was created, so the sandbox lane from the file list stays uncovered here; `DEBUG_SANDBOX_DENIED` coverage remains in `packages/debug/debug/tests/environment.spec.ts`.
+
+- [x] **Step 5: Run the matrix**
 
 Run:
 
 `pnpm exec vitest run packages/test-support/debug-e2e/tests`
 
 Expected: PASS or explicit skip reasons recorded in the test output. CI installs pinned adapters and runs the full matrix.
+
+2026-10-27 local run: 5 files, 5 passed, 2 skipped, 0 failed. The Node lane executed the real launch, breakpoint, and terminate loop through the managed js-debug 1.140.0 socket bridge, and the Python lane through debugpy 1.8.22 on the managed venv interpreter; Go and native kept their explicit skips recorded by `skipWithoutAdapter` (this host had `go`/`dlv` on PATH and `lldb-dap` absent, and the closed loops land with the adapter-matrix follow-up regardless). SSH exercised only the explicit `DEBUG_ATTACH_UNSUPPORTED` stub. Local subset; the full-platform matrix belongs to CI.
 
 - [x] **Step 6: Commit**
 
