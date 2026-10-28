@@ -51,6 +51,7 @@ await adapter.read() // stopped event at the first scripted stop
 
 检查类请求（`threads`、`stackTrace`、`scopes`、`variables`、`evaluate`）返回确定性 fixture 数据，顶层栈帧位于最近一次脚本停住点。未知命令收到 `success: false` 响应；缺少必填字段的请求参数直接抛错，不做隐式转换。
 
+<a id="known-limitations-and-deferred-work"></a>
 ## 已知限制与延期工作
 
 这些限制界定了假适配器需要谨慎使用的场景，是当前包约束，不是任务清单。

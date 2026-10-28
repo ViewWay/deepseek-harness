@@ -104,6 +104,7 @@ Use the debug tools when a failure depends on runtime state that reading code an
 
 无；UI 呈现在模型请求之外。
 
+<a id="known-limitations-and-deferred-work"></a>
 ## 已知限制与延后工作
 
 - launch 与 attach 先校验字段，随后以 `DEBUG_UNAVAILABLE` 失败，等待审批接线的编排任务落地；execution 与 inspection 操作在 DAP 会话面暴露到 live 会话之前同样类型化失败。

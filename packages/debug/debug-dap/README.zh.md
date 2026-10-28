@@ -47,6 +47,7 @@ await client.dispose()
 - **握手** — `initializeDebugAdapter` 按规范顺序执行（携带 `linesStartAt1`/`columnsStartAt1`/`pathFormat: 'path'` 的 initialize、等待 `initialized`、`setBreakpoints`/`setExceptionBreakpoints`、仅当原始响应声明时发送 `configurationDone`、随后 `launch`/`attach`），并以 `mapCapabilities` 归一化的能力与首个停住点结算。`mapCapabilities` 把未声明的标志默认为 false，遵循协议「缺省即不支持」。
 - **后端** — `DapDebugBackend` 暴露会话操作而不透出任何原始 DAP：跟踪停住（为每个快取帧来源）、在每次恢复后以 `DEBUG_STALE_REFERENCE` 失效旧的帧/变量引用、对未声明能力在发送前以 `DEBUG_UNSUPPORTED_CAPABILITY` 拒绝、运行中以 `DEBUG_NOT_STOPPED` 拒绝检查，并以非消费 `nextOffset` 游标分页有界 console 环。`continue`/`step` 在一个恢复窗口内等待下一次停住，否则返回 `{ kind: 'running' }`；被适配器显式拒绝的命令以携带其消息的 `DEBUG_LAUNCH_FAILED` 失败。
 
+<a id="known-limitations-and-deferred-work"></a>
 ## 已知限制与延期工作
 
 这些限制界定了本库需要谨慎使用的场景，是当前包约束，不是任务清单。
