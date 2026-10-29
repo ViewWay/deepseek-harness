@@ -26,7 +26,7 @@ describe('TUI debug pane source', () => {
   it('folds live debug events into the rendered lines', () => {
     const debug = makeDebug()
     const handle = createTuiDebugPaneSource(debug, { resolveEditor: () => undefined })
-    const seen: string[][] = []
+    const seen: (readonly string[])[] = []
     const stop = handle.pane.subscribe((lines) => { seen.push(lines) })
     const id = fixtureDebugSessionId(1)
     debug.sessions.publish({ kind: 'session/starting', sessionId: id, workspaceId: 'ws-1' })

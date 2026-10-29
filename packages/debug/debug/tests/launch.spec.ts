@@ -4,7 +4,8 @@ import { fixtureSessionId } from '@deepseek-ai/dsh-debug-fixture'
 import { DebugSessionRegistry } from '../src/registry.ts'
 import { attachDebugSession, launchDebugSession } from '../src/launch.ts'
 import { BreakpointRegistry, MemoryBreakpointStore } from '../src/breakpoints.ts'
-import type { DebugDurableAppend, JsonValue } from '../src/launch.ts'
+import type { DebugDurableAppend } from '../src/launch.ts'
+import type { JsonValue } from '../src/types.ts'
 
 /** Build the typed durable-append double every case in this file shares. */
 function durableAppend() {

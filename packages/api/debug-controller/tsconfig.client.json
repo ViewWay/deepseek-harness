@@ -5,8 +5,9 @@
     "outDir": "lib/types",
     "tsBuildInfoFile": "lib/tsconfig.client.tsbuildinfo"
   },
-  "files": [
-    "src/client/index.ts"
+  "include": [
+    "src/client/**/*.ts",
+    "src/types.ts"
   ],
   "references": [
     { "path": "../../../vendor/cordis" },

@@ -32,7 +32,7 @@ function mountScripted(exchanges: Readonly<Record<string, readonly ExchangeStep[
   const waiters: { resolve: (result: IteratorResult<Uint8Array>) => void }[] = []
   const queued: IteratorResult<Uint8Array>[] = []
   let wireSeq = 100
-  const deliver = (message: DapResponse | DapEvent): void => {
+  const deliver = (message: DapResponse | DapEvent | DapRequest): void => {
     const bytes = encodeDapFrame(message)
     const waiter = waiters.shift()
     if (waiter === undefined) queued.push({ done: false, value: bytes })

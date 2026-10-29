@@ -21,7 +21,7 @@ import type { DebugAttachRequest, DebugLaunchRequest, ResolvedDebugAdapter } fro
 
 const invalid = (detail: string): DebugError => new DebugError(`test: ${detail}`, 'DEBUG_INVALID_CONFIG', { detail })
 
-function launchRequest(init: { program?: string | undefined; module?: string | undefined } = {}): Pick<DebugLaunchRequest, 'program' | 'module'> {
+function launchRequest(init: Pick<DebugLaunchRequest, 'program' | 'module'> = {}): Pick<DebugLaunchRequest, 'program' | 'module'> {
   return init
 }
 

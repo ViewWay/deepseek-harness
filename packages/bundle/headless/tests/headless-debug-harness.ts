@@ -9,14 +9,17 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import { unsupportedInbox } from '@deepseek-ai/dsh-agent-loop-testkit/src/inbox.ts'
 import { unsupportedModel } from '@deepseek-ai/dsh-agent-loop-testkit/src/model.ts'
 import SessionStore from '@deepseek-ai/dsh-session'
-import type { SessionEventMap, SessionEventType } from '@deepseek-ai/dsh-session/types'
+import type { SessionEventMap } from '@deepseek-ai/dsh-session/types'
 import { SessionId } from '@deepseek-ai/dsh-session/types'
 import { projectJsonRun } from '../src/json-stream.ts'
 
 interface DebugHarness {
   readonly lines: string[]
   readonly parsed: () => Record<string, unknown>[]
-  emit<K extends SessionEventType>(type: K, data: SessionEventMap[K]): void
+  emit(type: 'debug/session-started', data: SessionEventMap['debug/session-started']): void
+  emit(type: 'debug/stopped', data: SessionEventMap['debug/stopped']): void
+  emit(type: 'debug/control', data: SessionEventMap['debug/control']): void
+  emit(type: 'debug/session-ended', data: SessionEventMap['debug/session-ended']): void
 }
 
 /**
@@ -63,7 +66,20 @@ export async function createHeadlessHarness(): Promise<DebugHarness> {
     lines,
     parsed: () => lines.map(line => JSON.parse(line) as Record<string, unknown>),
     emit: (type, data) => {
-      session.append(type, data)
+      switch (type) {
+        case 'debug/session-started':
+          session.append(type, data as SessionEventMap['debug/session-started'])
+          break
+        case 'debug/stopped':
+          session.append(type, data as SessionEventMap['debug/stopped'])
+          break
+        case 'debug/control':
+          session.append(type, data as SessionEventMap['debug/control'])
+          break
+        case 'debug/session-ended':
+          session.append(type, data as SessionEventMap['debug/session-ended'])
+          break
+      }
     },
   }
 }

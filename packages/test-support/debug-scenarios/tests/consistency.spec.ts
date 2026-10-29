@@ -113,12 +113,16 @@ describe('three-surface debug consistency', () => {
         normalizeSurfaceEvents(await runScenario(surface, scenario))),
     )
     const terminate = { sessionId: String(scenario.sessionId), actor: 'user', operation: 'terminate' }
-    expect(normalized[0].controls).toEqual([terminate])
-    expect(normalized[1].controls).toEqual([terminate])
-    expect(normalized[2].controls).toEqual([terminate])
-    expect(normalized[0].sessions).toEqual([{ sessionId: String(scenario.sessionId), state: 'terminated' }])
-    expect(normalized[0].sessions).toEqual(normalized[1].sessions)
-    expect(normalized[2].sessions).toEqual(normalized[0].sessions)
+    const [web, tui, headless] = normalized
+    expect(web).toBeDefined()
+    expect(tui).toBeDefined()
+    expect(headless).toBeDefined()
+    expect(web?.controls).toEqual([terminate])
+    expect(tui?.controls).toEqual([terminate])
+    expect(headless?.controls).toEqual([terminate])
+    expect(web?.sessions).toEqual([{ sessionId: String(scenario.sessionId), state: 'terminated' }])
+    expect(web?.sessions).toEqual(tui?.sessions)
+    expect(headless?.sessions).toEqual(web?.sessions)
   })
 
   it('normalizes a failed ending into the failed lifecycle state and its error code on headless', async () => {

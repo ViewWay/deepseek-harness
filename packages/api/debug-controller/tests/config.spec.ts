@@ -8,6 +8,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_DEBUG_EVENT_RING_LIMIT, DebugController } from '../src/index.ts'
+import type { Config } from '../src/index.ts'
 import { DebugEventRing } from '../src/ring.ts'
 
 describe('debug controller config', () => {
@@ -23,7 +24,8 @@ describe('debug controller config', () => {
   })
 
   it('feeds the validated retention straight into the bounded ring', () => {
-    const ring = new DebugEventRing(DebugController.Config({ eventRingLimit: 2 }).eventRingLimit)
+    const { eventRingLimit } = DebugController.Config({ eventRingLimit: 2 }) as Required<Config>
+    const ring = new DebugEventRing(eventRingLimit)
     ring.append('s1', 'a')
     ring.append('s1', 'b')
     ring.append('s1', 'c')
