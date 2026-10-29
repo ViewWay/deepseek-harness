@@ -65,6 +65,9 @@ const SAFE_HOST_DEPENDENCY_EXPORTS = {
 const PEER_REQUIRED_HOST_EXPORTS = {
   // CUA checks UserQuestionError and preserves AttachmentError from image admission.
   '@deepseek-ai/dsh-attachment': ['admitEncodedImages'],
+  // Debug editor saves catch FsError and brand FsVersion/DebugSessionId/DebugError identities.
+  '@deepseek-ai/dsh-debug': ['DebugError', 'DebugSessionId'],
+  '@deepseek-ai/dsh-fs': ['FsError', 'FsVersion'],
   '@deepseek-ai/dsh-user-questions': ['UserQuestionError'],
   // `instanceof` checks need the translator's own class instance.
   '@deepseek-ai/dsh-experimental-translator': ['TranslationError'],

@@ -21,6 +21,9 @@ import { DebugEventRing } from './ring.ts'
 import type { DebugEventReplay } from './ring.ts'
 import { editorVersion, writeEditorText } from './editor-write.ts'
 import type { EditorWriteResult } from './editor-write.ts'
+import type { DebugEditorScope, DebugSessionBackend } from './types.ts'
+
+export type { DebugEditorScope, DebugSessionBackend } from './types.ts'
 
 /** Default replay retention; compositions pass their configured bound. */
 export const DEFAULT_DEBUG_EVENT_RING_LIMIT = 500
@@ -29,14 +32,6 @@ export const DEFAULT_DEBUG_EVENT_RING_LIMIT = 500
 export interface Config {
   /** Replay ring capacity in events per composition (default {@link DEFAULT_DEBUG_EVENT_RING_LIMIT}). */
   readonly eventRingLimit?: number
-}
-
-/** Host-resolved editor scope: the Session identity and its workspace root. */
-export interface DebugEditorScope {
-  /** Session identity received on the wire. */
-  readonly sessionId: SessionId
-  /** Session workspace root, resolved from the session header host-side. */
-  readonly workspaceRoot: string
 }
 
 declare module '@deepseek-ai/dsh-typert-protocol' {
@@ -244,13 +239,4 @@ export class DebugController extends TypertRemoteService {
     }
     return operate(backend)
   }
-}
-
-/** The session-backend slice this controller drives. */
-export interface DebugSessionBackend {
-  continue(): Promise<DebugResumeResult>
-  pause(): Promise<void>
-  step(kind: 'over' | 'in' | 'out' | 'back'): Promise<DebugResumeResult>
-  currentThreadStack(): Promise<DebugStackTrace>
-  evaluate(expression: string, context: string): Promise<DebugEvaluateResult>
 }

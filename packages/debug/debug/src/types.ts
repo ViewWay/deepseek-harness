@@ -6,7 +6,7 @@
  * @module @deepseek-ai/dsh-debug/types
  */
 
-import type { SessionId } from '@deepseek-ai/dsh-session'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
 import type { FileSystem } from '@deepseek-ai/dsh-fs'
 import type {
@@ -19,6 +19,8 @@ import type {
   DebugThreadId,
   DebugVariableReference,
 } from './brand.ts'
+
+export type { DebugSessionId } from './brand.ts'
 
 /** Lifecycle of one debug session; the state machine in `./state.ts` owns the legal transitions. */
 export type DebugSessionState = 'starting' | 'running' | 'stopped' | 'terminated' | 'failed'

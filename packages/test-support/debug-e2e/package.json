@@ -2,9 +2,8 @@
   "name": "@deepseek-ai/dsh-debug-e2e",
   "description": "Real-adapter debug e2e matrix: Node/Python closed loops, explicit Go/Native skips, SSH world fixtures",
   "version": "0.2.1-rc.3",
-  "private": true,
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
   "repository": {
     "type": "git",

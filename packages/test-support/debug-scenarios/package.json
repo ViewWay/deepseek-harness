@@ -2,9 +2,8 @@
   "name": "@deepseek-ai/dsh-debug-scenarios",
   "description": "Deterministic three-surface debug scenarios: one canonical fact timeline driven through the web view store, the TUI pane reducer, and the headless NDJSON projection with a shared normalizer for cross-surface consistency tests",
   "version": "0.2.1-rc.3",
-  "private": true,
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
   "repository": {
     "type": "git",

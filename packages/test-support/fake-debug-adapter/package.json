@@ -2,9 +2,8 @@
   "name": "@deepseek-ai/dsh-fake-debug-adapter",
   "description": "Deterministic in-memory fake Debug Adapter Protocol adapter for debug tests",
   "version": "0.2.1-rc.3",
-  "private": true,
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
   "repository": {
     "type": "git",
@@ -26,5 +25,11 @@
     "lib/index.js",
     "lib/types/**/*.d.ts"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~"
+  }
 }

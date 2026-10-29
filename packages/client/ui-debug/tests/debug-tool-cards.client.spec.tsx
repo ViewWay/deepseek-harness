@@ -37,7 +37,7 @@ describe('debugToolCard', () => {
   it('renders session state and puts stop locations on the card', () => {
     const sessionCard = debugToolCard('debug_session', { sessionId: 'debug-1', state: 'running' })
     expect(sessionCard.card).toBe('generic')
-    expect(sessionCard.title).toContain('Debug')
+    expect(sessionCard.title).toBe('debug_session')
     expect(debugToolCard('debug_execution', { reason: 'breakpoint', source: 'src/a.ts', line: 4 }))
       .toMatchObject({ locations: [{ path: 'src/a.ts', line: 4 }] })
   })

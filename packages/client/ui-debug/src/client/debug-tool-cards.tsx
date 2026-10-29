@@ -44,12 +44,12 @@ export interface DebugToolCardModel {
   readonly locations?: readonly DebugToolCardLocation[] | undefined
 }
 
-/** Locale key and English default for one tool's card title. */
-const TITLE_KEYS: Record<DebugToolName, { readonly key: DebugKey; readonly fallback: string }> = {
-  debug_session: { key: 'tool.session.title', fallback: 'Debug session' },
-  debug_breakpoints: { key: 'tool.breakpoints.title', fallback: 'Debug breakpoints' },
-  debug_execution: { key: 'tool.execution.title', fallback: 'Debug execution' },
-  debug_inspect: { key: 'tool.inspect.title', fallback: 'Debug inspect' },
+/** Locale key for one tool's card title; an absent dictionary leaves the wire name. */
+const TITLE_KEYS: Record<DebugToolName, DebugKey> = {
+  debug_session: 'tool.session.title',
+  debug_breakpoints: 'tool.breakpoints.title',
+  debug_execution: 'tool.execution.title',
+  debug_inspect: 'tool.inspect.title',
 }
 
 /**
@@ -104,7 +104,7 @@ function locationField(payload: Record<string, unknown>): DebugToolCardLocation 
  * @param payload - the call's parsed argument object, or anything else when
  *   the arguments were absent or malformed.
  * @param translate - optional dictionary translate resolving the title key;
- *   without it the English default stands in.
+ *   without it the wire tool name stands in.
  * @returns the card model.
  */
 export function debugToolCard(
@@ -112,11 +112,9 @@ export function debugToolCard(
   payload: unknown,
   translate?: (key: DebugKey) => string,
 ): DebugToolCardModel {
-  const known: { readonly key: DebugKey; readonly fallback: string } | undefined
+  const known: DebugKey | undefined
     = Object.hasOwn(TITLE_KEYS, name) ? TITLE_KEYS[name as DebugToolName] : undefined
-  const title = known === undefined
-    ? name
-    : (translate?.(known.key) ?? known.fallback)
+  const title = known === undefined ? name : (translate?.(known) ?? name)
   if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
     return { card: 'generic', title }
   }

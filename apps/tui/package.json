@@ -1,10 +1,14 @@
 {
   "name": "@deepseek-ai/dsh-tui",
   "description": "Terminal UI application for the DeepSeek Harness: an Ink-based interactive shell over the agent session with chat, split, and debug layouts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "apps/tui"
+  },
   "version": "0.2.1-rc.3",
-  "private": true,
   "type": "module",
-  "main": "src/index.ts",
+  "main": "lib/index.js",
   "license": "MIT",
   "dependencies": {
     "commander": "^15.0.0",
@@ -34,8 +38,14 @@
     "@deepseek-ai/dsh-session": "workspace:*",
     "@deepseek-ai/dsh-session-query": "workspace:*",
     "@deepseek-ai/dsh-user-approval": "workspace:*",
-    "@types/react": "^19.0.0",
     "ink-testing-library": "^4.0.0",
     "node-pty": "1.2.0-beta.15"
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "lib/*.js",
+    "lib/types/*.d.ts"
+  ]
 }
