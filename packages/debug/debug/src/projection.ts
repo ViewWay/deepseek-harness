@@ -10,8 +10,8 @@
 import { z as zod } from 'zod'
 import type { ZodType } from 'zod'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
-import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session'
-import type { SessionLogOffset } from '@deepseek-ai/dsh-session'
+import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session/types'
+import type { SessionLogOffset } from '@deepseek-ai/dsh-session/types'
 import type { DebugSessionState } from './types.ts'
 
 /** One projected stop: the durable `debug/stopped` fields a reconnection needs. */

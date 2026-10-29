@@ -8,7 +8,7 @@
 import type { DebugProviderId, DebugSessionId } from './brand.ts'
 import type { DebugEventActor } from './events.ts'
 import type { DebugSessionInfo, DebugSessionState } from './types.ts'
-import type { SessionId } from '@deepseek-ai/dsh-session'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 
 /** One registered debug session's lifecycle state and teardown handle. */
 export interface DebugSessionRecord {

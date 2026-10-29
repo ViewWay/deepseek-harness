@@ -10,7 +10,7 @@ import type { DebugSessionState } from './types.ts'
 import { DebugEventBus } from './events.ts'
 import type { DebugEvent, DebugEventActor, DebugEventSource } from './events.ts'
 import type { DebugSessionRecord } from './session.ts'
-import type { SessionId } from '@deepseek-ai/dsh-session'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 
 /** Narrowing scope for registry reads; an unset member does not filter. */
 export interface DebugSessionScope {

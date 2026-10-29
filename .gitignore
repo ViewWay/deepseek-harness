@@ -46,4 +46,5 @@ apps/web/dist/
 worktrees/
 .agents/worktrees/
 .typert-*/
+.mimosa/
 native/system/test/bin/

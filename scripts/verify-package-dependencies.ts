@@ -30,6 +30,15 @@ const CORDIS = '@deepseek-ai/cordis'
  * location that TypeScript scans when it computes module specifiers for every JSX file.
  */
 const ROOT_TYPE_PACKAGES: ReadonlySet<string> = new Set(['@types/react', '@types/react-dom'])
+/**
+ * Recorded per-package exceptions: a manifest whose runtime framework hard-requires a newer type
+ * major than the root provides declares it locally, because the alternative is resolving two
+ * @types/react instances in one program (pnpm auto-installs ink 8's optional peer at 19 while the
+ * root pins 18 for the React 18 client), which fails every JSX compile in that app.
+ */
+const ROOT_TYPE_PACKAGE_EXCEPTIONS: Readonly<Record<string, ReadonlySet<string>>> = {
+  'apps/tui/package.json': new Set(['@types/react']),
+}
 function workspaceRange(name: string): 'workspace:*' | 'workspace:~' {
   return name === '@deepseek-ai/dsh' || name.startsWith('@deepseek-ai/dsh-') ? 'workspace:*' : 'workspace:~'
 }
@@ -873,6 +882,7 @@ export function collectRootTypePackageViolations(
     }
     for (const pkg of packages) {
       for (const sectionName of declaredSections(pkg.manifest, name)) {
+        if (ROOT_TYPE_PACKAGE_EXCEPTIONS[pkg.manifestPath]?.has(name)) continue
         violations.push(
           `${pkg.manifestPath}: remove ${sectionName}.${name}; the root package.json provides it because each `
           + 'package-local link slows TypeScript JSX checking (packages/client/AGENTS.md#dependency-declaration)',

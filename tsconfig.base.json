@@ -436,6 +436,7 @@
       "@deepseek-ai/dsh-credentials-local": ["./packages/credentials/credentials-local/src"],
       "@deepseek-ai/dsh-cua-bundle": ["./packages/experimental/cua-bundle/src"],
       "@deepseek-ai/dsh-debug": ["./packages/debug/debug/src"],
+      "@deepseek-ai/dsh-debug/types": ["./packages/debug/debug/src/types.ts"],
       "@deepseek-ai/dsh-debug-adapter-manager": ["./packages/debug/debug-adapter-manager/src"],
       "@deepseek-ai/dsh-debug-dap": ["./packages/debug/debug-dap/src"],
       "@deepseek-ai/dsh-debug-e2e": ["./packages/test-support/debug-e2e/src"],

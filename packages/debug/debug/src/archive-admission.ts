@@ -7,7 +7,7 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
-import type { SessionId } from '@deepseek-ai/dsh-session'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { SessionActivity } from '@deepseek-ai/dsh-workspace'
 import type { DebugSessionId } from './brand.ts'
 import type { DebugSessionRegistry } from './registry.ts'

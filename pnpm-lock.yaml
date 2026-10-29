@@ -987,6 +987,9 @@ importers:
       '@deepseek-ai/dsh-user-approval':
         specifier: workspace:*
         version: link:../../packages/interaction/user-approval
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
       ink-testing-library:
         specifier: ^4.0.0
         version: 4.0.0(@types/react@19.3.0)
@@ -29051,7 +29054,6 @@ snapshots:
   '@types/react@19.3.0':
     dependencies:
       csstype: 3.2.3
-    optional: true
 
   '@types/readable-stream@4.0.24':
     dependencies:
