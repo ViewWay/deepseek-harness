@@ -21,7 +21,7 @@ describe('stdio transport', () => {
     const stdin = new PassThrough()
     const stdout = new PassThrough()
     const transport = createStdioTransport({ stdin, stdout })
-    const written = new Promise<Uint8Array>(resolve => stdin.once('data', chunk => resolve(chunk as Uint8Array)))
+    const written = new Promise<Uint8Array>((resolve) => { stdin.once('data', (chunk) => { resolve(chunk as Uint8Array) }) })
     const bytes = new TextEncoder().encode('frame-bytes')
     await transport.write(bytes)
     expect(new Uint8Array(await written)).toEqual(bytes)
@@ -104,7 +104,7 @@ describe('tunnel transport', () => {
 
     const transport = createTunnelTransport(socket)
     const bytes = new TextEncoder().encode('tunnel-frame')
-    const received = new Promise<Uint8Array>(resolve => serverSocket.once('data', chunk => resolve(chunk as Uint8Array)))
+    const received = new Promise<Uint8Array>((resolve) => { serverSocket.once('data', (chunk) => { resolve(chunk as Uint8Array) }) })
     await transport.write(bytes)
     expect(new Uint8Array(await received)).toEqual(bytes)
 

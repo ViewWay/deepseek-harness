@@ -339,7 +339,7 @@ describe('fake debug adapter', () => {
     const pending = adapter.read()
     adapter.write(request(2, 'launch', {}))
     await expect(pending).rejects.toBeInstanceOf(FakeDebugAdapterCrashError)
-    expect(() => adapter.write(request(3, 'terminate', {}))).not.toThrow()
+    expect(() => { adapter.write(request(3, 'terminate', {})) }).not.toThrow()
     await expect(adapter.readWire()).rejects.toBeInstanceOf(FakeDebugAdapterCrashError)
 
     const quiet = createFakeDebugAdapter({ crashAfter: 'launch' })
@@ -351,11 +351,11 @@ describe('fake debug adapter', () => {
 
   it('rejects request arguments that miss required fields', () => {
     const adapter = createFakeDebugAdapter()
-    expect(() => adapter.write(request(1, 'setBreakpoints', { source: { path: '/ws/a.ts' } }))).toThrow(/breakpoints/)
-    expect(() => adapter.write(request(2, 'setBreakpoints', { source: { path: '/ws/a.ts' }, breakpoints: [42] }))).toThrow(/object/)
-    expect(() => adapter.write(request(3, 'setBreakpoints', { source: { path: '/ws/a.ts' }, breakpoints: [{}] }))).toThrow(/line/)
-    expect(() => adapter.write(request(4, 'evaluate', { expression: 42 }))).toThrow(/expression/)
-    expect(() => adapter.write(request(5, 'variables', {}))).toThrow(/variablesReference/)
+    expect(() => { adapter.write(request(1, 'setBreakpoints', { source: { path: '/ws/a.ts' } })) }).toThrow(/breakpoints/)
+    expect(() => { adapter.write(request(2, 'setBreakpoints', { source: { path: '/ws/a.ts' }, breakpoints: [42] })) }).toThrow(/object/)
+    expect(() => { adapter.write(request(3, 'setBreakpoints', { source: { path: '/ws/a.ts' }, breakpoints: [{}] })) }).toThrow(/line/)
+    expect(() => { adapter.write(request(4, 'evaluate', { expression: 42 })) }).toThrow(/expression/)
+    expect(() => { adapter.write(request(5, 'variables', {})) }).toThrow(/variablesReference/)
   })
 })
 

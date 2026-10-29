@@ -375,6 +375,15 @@ function asRecord(value: JsonValue | undefined): Readonly<Record<string, JsonVal
 }
 
 /**
+ * Renders one request verb for an error message.
+ * @param verb - The rejected `request` field.
+ * @returns the verb text itself, or its JSON form for non-string values.
+ */
+function verbText(verb: JsonValue | undefined): string {
+  return typeof verb === 'string' ? verb : JSON.stringify(verb)
+}
+
+/**
  * Resolves once the js-debug server announces its socket endpoint on stdout.
  * @param stdout - The adapter process's piped stdout.
  * @returns the announced host and port.
@@ -638,7 +647,7 @@ function stdioLaunchBackendOf(
       const signal = AbortSignal.timeout(timeoutMs)
       const { request: verb, ...launchArguments } = launch
       if (verb !== 'launch' && verb !== 'attach') {
-        throw new DebugError(`unsupported debug request verb ${String(verb)}`, 'DEBUG_INVALID_CONFIG')
+        throw new DebugError(`unsupported debug request verb ${verbText(verb)}`, 'DEBUG_INVALID_CONFIG')
       }
       requireSuccess(await client.request('initialize', initializeArguments(), signal), 'initialize')
       const launchSettled = client.request(verb, launchArguments, signal)
@@ -706,7 +715,7 @@ async function rootLaunchUntilStartDebugging(
   })
   const { request: verb, ...launchArguments } = launch
   if (verb !== 'launch' && verb !== 'attach') {
-    throw new DebugError(`unsupported debug request verb ${String(verb)}`, 'DEBUG_INVALID_CONFIG')
+    throw new DebugError(`unsupported debug request verb ${verbText(verb)}`, 'DEBUG_INVALID_CONFIG')
   }
   requireSuccess(await client.request('initialize', initializeArguments(), signal), 'initialize')
   await nextEvent(client, 'initialized', signal)
@@ -853,7 +862,7 @@ export async function launchFixture(language: DebugE2eLanguage, options: { reado
     pathSeparator: '/',
     subprocess: context.subprocess,
     fs: context.fs,
-    adapters: { resolve: async () => ensureAdapter(language) },
+    adapters: { resolve: () => Promise.resolve(ensureAdapter(language)) },
     requiredCapabilities: matrix.capabilities,
   }
 

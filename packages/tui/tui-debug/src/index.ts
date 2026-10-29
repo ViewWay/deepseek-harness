@@ -217,7 +217,7 @@ export function createTuiDebugPaneSource(debug: Debug, options: TuiDebugPaneSour
     remoteWorkspace: options.remoteWorkspace ?? false,
     launch: options.launch,
   }
-  const stopEvents = debug.events.subscribe({}, event => absorb(core, event))
+  const stopEvents = debug.events.subscribe({}, (event) => { absorb(core, event) })
   const pane: TuiDebugPaneSource = {
     current: () => renderDebugPaneLines(core.state),
     subscribe(listener) {
@@ -242,7 +242,7 @@ export function createTuiDebugPaneSource(debug: Debug, options: TuiDebugPaneSour
         emit(core)
         return true
       }
-      void execute(core, debug, command).then(() => emit(core))
+      void execute(core, debug, command).then(() => { emit(core) })
       emit(core)
       return true
     },

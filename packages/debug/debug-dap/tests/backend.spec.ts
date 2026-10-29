@@ -276,7 +276,7 @@ describe('DapDebugBackend lifecycle', () => {
       })
       if (adapter === undefined) throw new Error('fake adapter missing')
       await backend.start(HANDSHAKE_PLAN)
-      await vi.waitFor(() => expect(adapter.reverseRequestResponses).toHaveLength(1))
+      await vi.waitFor(() => { expect(adapter.reverseRequestResponses).toHaveLength(1) })
       expect(commands).toEqual(['runInTerminal'])
       expect(adapter.reverseRequestResponses[0]).toMatchObject({ success: true, body: { processId: 777 } })
     })
@@ -285,9 +285,9 @@ describe('DapDebugBackend lifecycle', () => {
       const { backend, adapter } = mountBackend({ stops: [{ reason: 'breakpoint', threadId: 1, line: 4 }], runInTerminal: { args: ['node', 'app.js'] } })
       if (adapter === undefined) throw new Error('fake adapter missing')
       await backend.start(HANDSHAKE_PLAN)
-      await vi.waitFor(() => expect(adapter.reverseRequestResponses).toHaveLength(1))
+      await vi.waitFor(() => { expect(adapter.reverseRequestResponses).toHaveLength(1) })
       const response = adapter.reverseRequestResponses[0]
-      expect(response).toMatchObject({ success: false, message: expect.stringMatching(/unsupported reverse request/) })
+      expect(response).toMatchObject({ success: false, message: expect.stringMatching(/unsupported reverse request/) as string })
     })
   })
 
@@ -346,7 +346,7 @@ describe('DapDebugBackend lifecycle', () => {
       expect(modules).toMatchObject({ totalModules: 5, truncated: true })
       expect(modules.modules[0]).toMatchObject({ id: 1, name: 'm', path: '/p', version: 'v' })
       await expect(backend.loadedSources()).resolves.toEqual([
-        { workspaceRelativePath: 'b.ts', absolutePath: '/ws/b.ts', sourceReference: expect.anything() },
+        { workspaceRelativePath: 'b.ts', absolutePath: '/ws/b.ts', sourceReference: expect.anything() as string },
       ])
       await expect(backend.source(DebugSourceReference('5'))).resolves.toMatchObject({ content: 'let x = 1', mimeType: 'text/x-typescript' })
       await expect(backend.disassemble({ memoryReference: '0x1', instructionCount: 1 })).resolves.toMatchObject({

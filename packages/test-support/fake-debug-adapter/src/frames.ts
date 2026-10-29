@@ -5,8 +5,15 @@
  * line, then a UTF-8 JSON body whose byte length the header declares. Malformed
  * input fails loud instead of being skipped, so tests can observe exactly what
  * a client would reject.
+ *
+ * This codec is a deliberate independent re-implementation of
+ * `@deepseek-ai/dsh-debug-dap`'s frames, not an import: the fake is the wire
+ * oracle that exercises the real client's codec, so sharing one implementation
+ * would let a codec bug pass both sides of the test.
  * @module @deepseek-ai/dsh-fake-debug-adapter/frames
  */
+
+/* jscpd:ignore-start */
 
 /** JSON value shapes carried by DAP message fields. */
 export type JsonValue = null | boolean | number | string | readonly JsonValue[] | { readonly [key: string]: JsonValue }
@@ -123,9 +130,11 @@ function parseMessage(json: string): DapMessage {
   if (typeof parsed !== 'object' || parsed === null) {
     throw new Error(`fake debug adapter: frame body is not a JSON object: ${json}`)
   }
-  const candidate = parsed as DapMessage
-  if (candidate.type !== 'request' && candidate.type !== 'response' && candidate.type !== 'event') {
+  const type = (parsed as { readonly type?: unknown }).type
+  if (type !== 'request' && type !== 'response' && type !== 'event') {
     throw new Error(`fake debug adapter: frame body has no DAP message type: ${json}`)
   }
-  return candidate
+  return parsed as DapMessage
 }
+
+/* jscpd:ignore-end */

@@ -43,7 +43,7 @@ function createScriptedTransport(script: Readonly<Record<string, readonly Uint8A
     async write(bytes) {
       for (const message of decodeDapFrames(bytes).messages) {
         if (message.type !== 'request') continue
-        const request = message as DapRequest
+        const request: DapRequest = message
         sentCommands.push(request.command)
         for (const frame of script[request.command] ?? []) deliver(frame)
       }

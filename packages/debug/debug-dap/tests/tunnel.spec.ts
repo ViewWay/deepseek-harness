@@ -53,7 +53,7 @@ async function openEchoServer(): Promise<EchoServer> {
   if (address === null || typeof address === 'string') throw new Error('no listen address')
   let pending: Duplex | undefined
   server.on('connection', (socket) => {
-    pending = socket as Duplex
+    pending = socket
   })
   return {
     host: '127.0.0.1',
@@ -61,10 +61,9 @@ async function openEchoServer(): Promise<EchoServer> {
     async answerNext() {
       let socket = pending
       if (socket === undefined) {
-        const [connected] = await once(server, 'connection')
-        socket = connected as Duplex
+        socket = (await once(server, 'connection'))[0] as Duplex
       }
-      socket.once('data', (chunk) => {
+      socket.once('data', (chunk: Uint8Array) => {
         const request = decodeDapFrames(chunk).messages[0]
         if (request === undefined || request.type !== 'request') throw new Error('no request frame')
         const seq = request.seq

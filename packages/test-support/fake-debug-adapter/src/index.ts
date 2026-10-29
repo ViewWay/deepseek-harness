@@ -127,7 +127,7 @@ interface OutputWaiter {
 
 function requireArray(value: JsonValue | undefined, field: string): readonly JsonValue[] {
   if (!Array.isArray(value)) throw new Error(`fake debug adapter: ${field} must be an array`)
-  return value
+  return value as readonly JsonValue[]
 }
 
 function isJsonRecord(value: JsonValue): value is JsonRecord {

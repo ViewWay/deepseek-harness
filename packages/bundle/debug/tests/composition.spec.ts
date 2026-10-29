@@ -45,6 +45,9 @@ describe('debug bundle composition', () => {
     }
     const withProfile = (name: string): unknown => {
       const get = (key: string) => key === 'profileContext' ? { name } : undefined
+      // The guard is a serialized cordis.yml `disabled` expression; compiling it
+      // with its ctx argument is the behavior under test.
+      // oxlint-disable-next-line typescript/no-implied-eval, typescript/no-unsafe-call
       return new Function('ctx', `"use strict"; return (${guard('ui-debug')})`)({ get })
     }
     expect(withProfile('web')).toBe(false)

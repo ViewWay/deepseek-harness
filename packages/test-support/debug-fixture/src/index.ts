@@ -322,11 +322,11 @@ export interface FixtureBackend {
  */
 export function fixtureBackend(init: { terminated?: boolean } = {}): FixtureBackend {
   return {
-    start: vi.fn(async (_options: { launch: Readonly<Record<string, JsonValue>>; timeoutMs: number }) => init.terminated === true
+    start: vi.fn((_options: { launch: Readonly<Record<string, JsonValue>>; timeoutMs: number }) => Promise.resolve(init.terminated === true
       ? { terminated: true }
-      : { terminated: false, stop: { reason: 'breakpoint', threadId: '1', source: 'src/a.ts', line: 4 } }),
-    setBreakpoints: vi.fn(async () => ({ applied: [], rejected: [] })),
-    dispose: vi.fn(async () => {}),
+      : { terminated: false, stop: { reason: 'breakpoint', threadId: '1', source: 'src/a.ts', line: 4 } })),
+    setBreakpoints: vi.fn(() => Promise.resolve({ applied: [], rejected: [] })),
+    dispose: vi.fn(() => Promise.resolve()),
   }
 }
 
@@ -352,9 +352,7 @@ export function fixtureProvider(id: string, resolveLaunch: () => Promise<Fixture
     adapter: { kind: 'managed' },
     configSchema: { type: 'object' },
     resolveLaunch: vi.fn(resolveLaunch),
-    resolveAttach: vi.fn(async () => {
-      throw new Error('fixture provider cannot attach')
-    }),
+    resolveAttach: vi.fn((): Promise<never> => Promise.reject(new Error('fixture provider cannot attach'))),
   }
 }
 
@@ -387,7 +385,7 @@ export class FakeLaunchSubprocessRuntime extends SubprocessRuntime {
       collected: {},
       done: Promise.resolve({ exitCode: 0, signal: null }),
       terminate: () => {},
-      waitForExit: async () => true,
+      waitForExit: () => Promise.resolve(true),
     }
   }
 

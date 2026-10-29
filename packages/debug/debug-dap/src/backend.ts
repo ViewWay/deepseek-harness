@@ -138,7 +138,7 @@ export class DapDebugBackend {
   constructor(client: DapClient, options: DapDebugBackendOptions) {
     this.client = client
     this.options = options
-    client.onEvent(event => this.handleEvent(event))
+    client.onEvent((event) => { this.handleEvent(event) })
     client.onReverseRequest(request => this.handleReverseRequest(request))
   }
 
@@ -213,8 +213,7 @@ export class DapDebugBackend {
       breakpoints: request.breakpoints.map(breakpoint => ({
         dataId: breakpoint.dataId,
         ...(breakpoint.bytes === undefined ? {} : { bytes: breakpoint.bytes }),
-        ...(breakpoint.condition === undefined ? {} : { condition: breakpoint.condition }),
-        ...(breakpoint.hitCondition === undefined ? {} : { hitCondition: breakpoint.hitCondition }),
+        ...breakpointConditions(breakpoint),
       })),
     })
     return { applied: [], rejected: [] }
@@ -232,8 +231,7 @@ export class DapDebugBackend {
       breakpoints: request.breakpoints.map(breakpoint => ({
         instructionReference: breakpoint.instructionReference,
         ...(breakpoint.offset === undefined ? {} : { offset: breakpoint.offset }),
-        ...(breakpoint.condition === undefined ? {} : { condition: breakpoint.condition }),
-        ...(breakpoint.hitCondition === undefined ? {} : { hitCondition: breakpoint.hitCondition }),
+        ...breakpointConditions(breakpoint),
       })),
     })
     return { applied: [], rejected: [] }
@@ -341,7 +339,7 @@ export class DapDebugBackend {
       ...(options?.startFrame === undefined ? {} : { startFrame: options.startFrame }),
       ...(options?.levels === undefined ? {} : { levels: options.levels }),
     })
-    const frames = isJsonObject(body) && Array.isArray(body['stackFrames']) ? body['stackFrames'] : []
+    const frames = isJsonObject(body) && Array.isArray(body['stackFrames']) ? body['stackFrames'] as readonly JsonValue[] : []
     const totalFrames = wireNumber(isJsonObject(body) ? body['totalFrames'] : undefined, 'stackTrace.totalFrames')
     const mapped = frames.map(frame => this.registerFrame(frame))
     return { frames: mapped, totalFrames, truncated: totalFrames > mapped.length }
@@ -357,7 +355,7 @@ export class DapDebugBackend {
     this.requireStopped()
     this.requireCurrentFrame(frameId)
     const body = await this.request('scopes', { frameId: wireId(frameId) })
-    const scopes = isJsonObject(body) && Array.isArray(body['scopes']) ? body['scopes'] : []
+    const scopes = isJsonObject(body) && Array.isArray(body['scopes']) ? body['scopes'] as readonly JsonValue[] : []
     return scopes.map((scope) => {
       const reference = wireNumber(isJsonObject(scope) ? scope['variablesReference'] : undefined, 'scopes[].variablesReference')
       this.variableGenerations.set(reference, this.generation)
@@ -384,7 +382,7 @@ export class DapDebugBackend {
       ...(options?.count === undefined ? {} : { count: options.count }),
       ...(options?.filter === undefined ? {} : { filter: options.filter }),
     })
-    const variables = isJsonObject(body) && Array.isArray(body['variables']) ? body['variables'] : []
+    const variables = isJsonObject(body) && Array.isArray(body['variables']) ? body['variables'] as readonly JsonValue[] : []
     const mapped = variables.map(variable => this.registerVariable(variable))
     return { variables: mapped, total: mapped.length, truncated: false }
   }
@@ -479,7 +477,7 @@ export class DapDebugBackend {
       column,
       ...(frameId === undefined ? {} : { frameId: wireId(frameId) }),
     })
-    const targets = isJsonObject(body) && Array.isArray(body['targets']) ? body['targets'] : []
+    const targets = isJsonObject(body) && Array.isArray(body['targets']) ? body['targets'] as readonly JsonValue[] : []
     return targets.map((target) => {
       const record = isJsonObject(target) ? target : {}
       return {
@@ -524,7 +522,7 @@ export class DapDebugBackend {
       ...(options?.moduleCount === undefined ? {} : { moduleCount: options.moduleCount }),
     })
     const record = isJsonObject(body) ? body : {}
-    const list = Array.isArray(record['modules']) ? record['modules'] : []
+    const list = Array.isArray(record['modules']) ? record['modules'] as readonly JsonValue[] : []
     const totalModules = wireNumber(record['totalModules'] === undefined ? list.length : record['totalModules'], 'modules.totalModules')
     const mapped = list.map((module) => {
       const entry = isJsonObject(module) ? module : {}
@@ -547,7 +545,7 @@ export class DapDebugBackend {
     this.requireCapability('supportsLoadedSourcesRequest')
     const body = await this.request('loadedSources', {})
     const record = isJsonObject(body) ? body : {}
-    const list = Array.isArray(record['sources']) ? record['sources'] : []
+    const list = Array.isArray(record['sources']) ? record['sources'] as readonly JsonValue[] : []
     return list.map(source => wireSource(isJsonObject(source) ? source : {}, this.options.workspaceRoot))
   }
 
@@ -582,7 +580,7 @@ export class DapDebugBackend {
       ...(request.resolveSymbols === undefined ? {} : { resolveSymbols: request.resolveSymbols }),
     })
     const record = isJsonObject(body) ? body : {}
-    const list = Array.isArray(record['instructions']) ? record['instructions'] : []
+    const list = Array.isArray(record['instructions']) ? record['instructions'] as readonly JsonValue[] : []
     const instructions = list.map((instruction) => {
       const entry = isJsonObject(instruction) ? instruction : {}
       return {
@@ -669,10 +667,10 @@ export class DapDebugBackend {
         this.resumeWaiter = undefined
         resolve(result)
       }
-      const timer = setTimeout(() => settle({ kind: 'running' }), this.options.resumeTimeoutMs)
+      const timer = setTimeout(() => { settle({ kind: 'running' }) }, this.options.resumeTimeoutMs)
       timer.unref()
       if (signal !== undefined) {
-        const onAbort = () => settle({ kind: 'running' })
+        const onAbort = () => { settle({ kind: 'running' }) }
         if (signal.aborted) onAbort()
         else signal.addEventListener('abort', onAbort, { once: true })
       }
@@ -686,7 +684,7 @@ export class DapDebugBackend {
       return
     }
     if (message.event === 'stopped') {
-      void this.handleStopped(message)
+      this.handleStopped(message)
       return
     }
     if (message.event === 'continued') {
@@ -727,9 +725,10 @@ export class DapDebugBackend {
   private async snapshotSource(threadId: number): Promise<Pick<DebugStopSnapshot, 'source' | 'line' | 'column' | 'frameId'>> {
     try {
       const body = await this.request('stackTrace', { threadId })
-      const frames = isJsonObject(body) && Array.isArray(body['stackFrames']) ? body['stackFrames'] : []
-      if (frames.length === 0) return emptyStopPosition()
-      const frame = this.registerFrame(frames[0])
+      const frames = isJsonObject(body) && Array.isArray(body['stackFrames']) ? body['stackFrames'] as readonly JsonValue[] : []
+      const [first] = frames
+      if (first === undefined) return emptyStopPosition()
+      const frame = this.registerFrame(first)
       return { frameId: frame.id, source: frame.source ?? { workspaceRelativePath: '', absolutePath: '' }, line: frame.line ?? 1, column: frame.column ?? 1 }
     } catch {
       return emptyStopPosition()
@@ -759,7 +758,7 @@ export class DapDebugBackend {
     throw new Error(`unsupported reverse request: ${request.command}`)
   }
 
-  private requireCapability(name: keyof DebugCapabilities & string): void {
+  private requireCapability(name: keyof DebugCapabilities): void {
     if (this.capabilities?.[name] === true) return
     throw new DebugError(`adapter did not declare ${name}`, 'DEBUG_UNSUPPORTED_CAPABILITY')
   }
@@ -841,7 +840,7 @@ interface WireBreakpoint {
 }
 
 function wireBreakpoints(body: JsonValue | undefined): readonly WireBreakpoint[] {
-  const list = isJsonObject(body) && Array.isArray(body['breakpoints']) ? body['breakpoints'] : []
+  const list = isJsonObject(body) && Array.isArray(body['breakpoints']) ? body['breakpoints'] as readonly JsonValue[] : []
   return list.map((entry) => {
     const record = isJsonObject(entry) ? entry : {}
     return {
@@ -913,6 +912,17 @@ function exceptionDetails(
 
 function wireId(id: DebugThreadId | DebugFrameId | DebugVariableReference | DebugSourceReference): number {
   return Number(id)
+}
+
+/** Optional condition fields every breakpoint wire form carries when present. */
+function breakpointConditions(breakpoint: { readonly condition?: string; readonly hitCondition?: string }): {
+  readonly condition?: string
+  readonly hitCondition?: string
+} {
+  return {
+    ...(breakpoint.condition === undefined ? {} : { condition: breakpoint.condition }),
+    ...(breakpoint.hitCondition === undefined ? {} : { hitCondition: breakpoint.hitCondition }),
+  }
 }
 
 function wireNumber(value: JsonValue | undefined, field: string): number {

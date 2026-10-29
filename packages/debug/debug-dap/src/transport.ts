@@ -70,8 +70,8 @@ async function* streamChunks(stream: Readable): AsyncGenerator<Uint8Array> {
 /** Writes bytes and resolves once the stream has flushed them to the sink. */
 function writeChunks(stream: Writable, bytes: Uint8Array): Promise<void> {
   return new Promise((resolve, reject) => {
-    stream.write(bytes, (error) => {
-      if (error === null) resolve()
+    stream.write(bytes, (error: Error | null | undefined) => {
+      if (error == null) resolve()
       else reject(error)
     })
   })

@@ -140,9 +140,9 @@ function parseFrameBody(body: string): DapMessage {
   if (typeof parsed !== 'object' || parsed === null) {
     throw malformed(`frame body is not a message object: ${body}`)
   }
-  const message = parsed as DapMessage
-  if (message.type !== 'request' && message.type !== 'response' && message.type !== 'event') {
+  const type = (parsed as { readonly type?: unknown }).type
+  if (type !== 'request' && type !== 'response' && type !== 'event') {
     throw malformed(`frame body has no known message type: ${body}`)
   }
-  return message
+  return parsed as DapMessage
 }

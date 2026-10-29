@@ -91,7 +91,7 @@ class BreakpointMarker extends GutterMarker {
     toggle.className = 'dsw-cm-breakpoint'
     toggle.dataset.breakpoint = String(this.mark.line)
     toggle.setAttribute('aria-label', this.mark.label)
-    toggle.addEventListener('click', () => this.onToggle(this.mark.line))
+    toggle.addEventListener('click', () => { this.onToggle(this.mark.line) })
     return toggle
   }
 }
@@ -270,7 +270,7 @@ export function CodeEditor(props: CodeEditorProps): ReactElement {
           line: breakpoint.line,
           label: t('gutter.toggle', { line: breakpoint.line }),
         })),
-        onToggle: line => propsRef.current.onToggleBreakpoint(line),
+        onToggle: (line) => { propsRef.current.onToggleBreakpoint(line) },
       }),
     })
   }, [props.breakpoints, t])

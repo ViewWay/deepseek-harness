@@ -255,7 +255,7 @@ export function parseDebugCommand(line: string): TuiDebugCommand {
         return { name: 'adapter-install', providerId }
       }
       throw new DebugError(
-        `unknown debug command ":adapter ${String(action)}"; expected list or install`,
+        `unknown debug command ":adapter ${action}"; expected list or install`,
         'DEBUG_UNKNOWN_OPERATION',
       )
     }
