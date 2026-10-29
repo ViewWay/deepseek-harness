@@ -470,7 +470,7 @@ describe('DapDebugBackend lifecycle', () => {
       const trace = await backend.stackTrace(DebugThreadId('3'), { startFrame: 0, levels: 1 })
       expect(trace).toMatchObject({ totalFrames: 2, truncated: true })
       const frame = trace.frames[0]?.id ?? DebugFrameId('7')
-      await expect(backend.scopes(frame)).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+      await expect(backend.scopes(frame)).resolves.toEqual([])
       const evaluated = await backend.evaluate('e', 'repl', frame)
       expect(evaluated).toMatchObject({ result: 'r', type: 't' })
       await expect(backend.setExpression('x', '1', frame)).resolves.toMatchObject({ result: 'ok', type: 't' })

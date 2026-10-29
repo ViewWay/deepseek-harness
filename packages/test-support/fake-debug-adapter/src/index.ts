@@ -158,6 +158,7 @@ class ScriptedAdapter implements FakeDebugAdapter {
   private nextSeq = 1
   private stopCursor = 0
   private stopEmitted = false
+  private pauseInjected = false
   private frameEpoch = 0
   private currentStop: FakeScriptedStop | undefined
   private stderrCollected = ''
@@ -323,6 +324,7 @@ class ScriptedAdapter implements FakeDebugAdapter {
         break
       case 'pause':
         this.respondOk(request, {})
+        this.pauseInjected = true
         this.enqueueEvent('stopped', { reason: 'pause', threadId: 1, line: 1, column: 1, description: '', text: '' })
         break
       case 'restart':
@@ -366,9 +368,17 @@ class ScriptedAdapter implements FakeDebugAdapter {
     const stop = (this.script.stops ?? [])[this.stopCursor]
     this.frameEpoch += 1
     if (stop === undefined) {
+      // A pause-injected suspension has no scripted continuation; resuming it
+      // leaves the debuggee running instead of ending the scripted process.
+      if (this.pauseInjected) {
+        this.pauseInjected = false
+        this.enqueueEvent('continued')
+        return
+      }
       this.enqueueEvent('terminated')
       return
     }
+    this.pauseInjected = false
     this.stopCursor += 1
     this.stopEmitted = true
     this.currentStop = stop

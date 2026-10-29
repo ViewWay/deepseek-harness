@@ -341,7 +341,7 @@ export class DapDebugBackend {
     })
     const frames = isJsonObject(body) && Array.isArray(body['stackFrames']) ? body['stackFrames'] as readonly JsonValue[] : []
     const totalFrames = wireNumber(isJsonObject(body) ? body['totalFrames'] : undefined, 'stackTrace.totalFrames')
-    const mapped = frames.map(frame => this.registerFrame(frame))
+    const mapped = frames.filter(isJsonObject).map(frame => this.registerFrame(frame))
     return { frames: mapped, totalFrames, truncated: totalFrames > mapped.length }
   }
 
@@ -356,13 +356,13 @@ export class DapDebugBackend {
     this.requireCurrentFrame(frameId)
     const body = await this.request('scopes', { frameId: wireId(frameId) })
     const scopes = isJsonObject(body) && Array.isArray(body['scopes']) ? body['scopes'] as readonly JsonValue[] : []
-    return scopes.map((scope) => {
-      const reference = wireNumber(isJsonObject(scope) ? scope['variablesReference'] : undefined, 'scopes[].variablesReference')
+    return scopes.filter(isJsonObject).map((scope) => {
+      const reference = wireNumber(scope['variablesReference'], 'scopes[].variablesReference')
       this.variableGenerations.set(reference, this.generation)
       return {
-        name: wireString(isJsonObject(scope) ? scope['name'] : undefined, 'scopes[].name'),
+        name: typeof scope['name'] === 'string' ? scope['name'] : '',
         variablesReference: DebugVariableReference(String(reference)),
-        expensive: (isJsonObject(scope) ? scope['expensive'] : undefined) === true,
+        expensive: scope['expensive'] === true,
       }
     })
   }
@@ -726,7 +726,7 @@ export class DapDebugBackend {
     try {
       const body = await this.request('stackTrace', { threadId })
       const frames = isJsonObject(body) && Array.isArray(body['stackFrames']) ? body['stackFrames'] as readonly JsonValue[] : []
-      const [first] = frames
+      const first = frames.find(isJsonObject)
       if (first === undefined) return emptyStopPosition()
       const frame = this.registerFrame(first)
       return { frameId: frame.id, source: frame.source ?? { workspaceRelativePath: '', absolutePath: '' }, line: frame.line ?? 1, column: frame.column ?? 1 }
@@ -783,16 +783,15 @@ export class DapDebugBackend {
     throw new DebugError(`variable reference is stale: ${reference}`, 'DEBUG_STALE_REFERENCE')
   }
 
-  private registerFrame(frame: JsonValue): DebugStackFrame {
-    const record = isJsonObject(frame) ? frame : {}
-    const id = wireNumber(record['id'], 'stackFrames[].id')
+  private registerFrame(frame: { readonly [key: string]: JsonValue }): DebugStackFrame {
+    const id = wireNumber(frame['id'], 'stackFrames[].id')
     this.frameGenerations.set(id, this.generation)
     return {
       id: DebugFrameId(String(id)),
-      name: wireString(record['name'], 'stackFrames[].name'),
-      ...(isJsonObject(record['source']) ? { source: wireSource(record['source'], this.options.workspaceRoot) } : {}),
-      ...(typeof record['line'] === 'number' ? { line: record['line'] } : {}),
-      ...(typeof record['column'] === 'number' ? { column: record['column'] } : {}),
+      name: wireString(frame['name'], 'stackFrames[].name'),
+      ...(isJsonObject(frame['source']) ? { source: wireSource(frame['source'], this.options.workspaceRoot) } : {}),
+      ...(typeof frame['line'] === 'number' ? { line: frame['line'] } : {}),
+      ...(typeof frame['column'] === 'number' ? { column: frame['column'] } : {}),
     }
   }
 
@@ -841,15 +840,12 @@ interface WireBreakpoint {
 
 function wireBreakpoints(body: JsonValue | undefined): readonly WireBreakpoint[] {
   const list = isJsonObject(body) && Array.isArray(body['breakpoints']) ? body['breakpoints'] as readonly JsonValue[] : []
-  return list.map((entry) => {
-    const record = isJsonObject(entry) ? entry : {}
-    return {
-      id: wireNumber(record['id'], 'breakpoints[].id'),
-      verified: record['verified'] === true,
-      ...(typeof record['line'] === 'number' ? { line: record['line'] } : {}),
-      ...(typeof record['message'] === 'string' ? { message: record['message'] } : {}),
-    }
-  })
+  return list.filter(isJsonObject).map(entry => ({
+    id: wireNumber(entry['id'], 'breakpoints[].id'),
+    verified: entry['verified'] === true,
+    ...(typeof entry['line'] === 'number' ? { line: entry['line'] } : {}),
+    ...(typeof entry['message'] === 'string' ? { message: entry['message'] } : {}),
+  }))
 }
 
 function partitionBreakpoints(
