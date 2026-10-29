@@ -5,7 +5,7 @@
  * @module @deepseek-ai/dsh-debug-python/config
  */
 
-import { DebugError } from '@deepseek-ai/dsh-debug'
+import { DebugError, processOrPortAttachForm, readOptionalBoolean, readOptionalString, rejectUnknownOptions, requireSingleEntry } from '@deepseek-ai/dsh-debug'
 import type { DebugAttachRequest, DebugLaunchRequest, JsonSchema } from '@deepseek-ai/dsh-debug'
 
 /** Provider-option keys debugpy understands; anything else fails. */
@@ -46,29 +46,23 @@ function invalid(detail: string): DebugError {
  * or mistyped.
  */
 export function resolvePythonLaunchConfig(request: DebugLaunchRequest): PythonLaunchConfig {
-  const hasProgram = request.program !== undefined
-  const hasModule = request.module !== undefined
-  if (hasProgram === hasModule) {
-    throw invalid('launch requires exactly one of program or module')
-  }
+  const entryKind = requireSingleEntry(request, 'program or module', invalid)
 
   const options = request.providerOptions ?? {}
-  for (const key of Object.keys(options)) {
-    if (!LAUNCH_OPTION_KEYS.has(key)) throw invalid(`unknown python launch option "${key}"`)
-  }
-  const python = readOptionalString(options, 'python')
+  rejectUnknownOptions(options, LAUNCH_OPTION_KEYS, 'python', invalid)
+  const python = readOptionalString(options, 'python', 'python', invalid)
   if (python === undefined) throw invalid('the python interpreter option is required')
 
-  const justMyCode = readOptionalBoolean(options, 'justMyCode')
-  const subProcess = readOptionalBoolean(options, 'subProcess')
-  const django = readOptionalBoolean(options, 'django')
-  const flask = readOptionalBoolean(options, 'flask')
+  const justMyCode = readOptionalBoolean(options, 'justMyCode', 'python', invalid)
+  const subProcess = readOptionalBoolean(options, 'subProcess', 'python', invalid)
+  const django = readOptionalBoolean(options, 'django', 'python', invalid)
+  const flask = readOptionalBoolean(options, 'flask', 'python', invalid)
 
-  const entry = hasProgram ? request.program : request.module
+  const entry = entryKind === 'program' ? request.program : request.module
   if (entry === undefined) throw invalid('launch entry is missing')
   return {
     entry,
-    entryKind: hasProgram ? 'program' : 'module',
+    entryKind,
     args: request.args ?? [],
     env: request.env ?? {},
     cwd: request.cwd,
@@ -89,30 +83,7 @@ export function resolvePythonLaunchConfig(request: DebugLaunchRequest): PythonLa
  * are not exactly one.
  */
 export function resolvePythonAttachConfig(request: DebugAttachRequest): PythonAttachConfig {
-  const forms = [request.processId, request.port].filter(value => value !== undefined)
-  if (forms.length !== 1) {
-    throw invalid('attach requires exactly one of processId or port')
-  }
-  return {
-    ...(request.processId !== undefined ? { processId: request.processId } : {}),
-    ...(request.port !== undefined ? { port: request.port } : {}),
-  }
-}
-
-/** Read one optional string option. */
-function readOptionalString(options: Readonly<Record<string, unknown>>, key: string): string | undefined {
-  const value = options[key]
-  if (value === undefined) return undefined
-  if (typeof value !== 'string') throw invalid(`python option "${key}" must be a string`)
-  return value
-}
-
-/** Read one optional boolean option. */
-function readOptionalBoolean(options: Readonly<Record<string, unknown>>, key: string): boolean | undefined {
-  const value = options[key]
-  if (value === undefined) return undefined
-  if (typeof value !== 'boolean') throw invalid(`python option "${key}" must be a boolean`)
-  return value
+  return processOrPortAttachForm(request, invalid)
 }
 
 /** The provider's configSchema describing its launch and attach options. */

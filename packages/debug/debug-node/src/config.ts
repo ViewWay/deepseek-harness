@@ -5,7 +5,7 @@
  * @module @deepseek-ai/dsh-debug-node/config
  */
 
-import { DebugError } from '@deepseek-ai/dsh-debug'
+import { DebugError, readOptionalBoolean, readOptionalString, readOptionalStringArray, rejectUnknownOptions, requireSingleEntry } from '@deepseek-ai/dsh-debug'
 import type { DebugAttachRequest, DebugLaunchRequest, JsonSchema } from '@deepseek-ai/dsh-debug'
 
 /** Provider-option keys js-debug understands; anything else fails. */
@@ -50,33 +50,27 @@ function invalid(detail: string): DebugError {
  * are not exactly one, or a provider option is unknown or mistyped.
  */
 export function resolveNodeLaunchConfig(request: DebugLaunchRequest): NodeLaunchConfig {
-  const hasProgram = request.program !== undefined
-  const hasModule = request.module !== undefined
-  if (hasProgram === hasModule) {
-    throw invalid('launch requires exactly one of program or module')
-  }
+  const entryKind = requireSingleEntry(request, 'program or module', invalid)
 
   const options = request.providerOptions ?? {}
-  for (const key of Object.keys(options)) {
-    if (!LAUNCH_OPTION_KEYS.has(key)) throw invalid(`unknown node launch option "${key}"`)
-  }
+  rejectUnknownOptions(options, LAUNCH_OPTION_KEYS, 'node', invalid)
 
-  const runtimeExecutable = readOptionalString(options, 'runtimeExecutable')
-  const rawConsole = readOptionalString(options, 'console')
+  const runtimeExecutable = readOptionalString(options, 'runtimeExecutable', 'node', invalid)
+  const rawConsole = readOptionalString(options, 'console', 'node', invalid)
   const consoleMode = CONSOLE_MODES.find(mode => mode === rawConsole)
   if (rawConsole !== undefined && consoleMode === undefined) {
     throw invalid('console must be internalConsole, integratedTerminal, or externalTerminal')
   }
-  const runtimeArgs = readOptionalStringArray(options, 'runtimeArgs')
-  const outFiles = readOptionalStringArray(options, 'outFiles')
-  const autoAttachChildProcesses = readOptionalBoolean(options, 'autoAttachChildProcesses')
-  const sourceMaps = readOptionalBoolean(options, 'sourceMaps')
+  const runtimeArgs = readOptionalStringArray(options, 'runtimeArgs', 'node', invalid)
+  const outFiles = readOptionalStringArray(options, 'outFiles', 'node', invalid)
+  const autoAttachChildProcesses = readOptionalBoolean(options, 'autoAttachChildProcesses', 'node', invalid)
+  const sourceMaps = readOptionalBoolean(options, 'sourceMaps', 'node', invalid)
 
-  const entry = hasProgram ? request.program : request.module
+  const entry = entryKind === 'program' ? request.program : request.module
   if (entry === undefined) throw invalid('launch entry is missing')
   return {
     entry,
-    entryKind: hasProgram ? 'program' : 'module',
+    entryKind,
     args: request.args ?? [],
     env: request.env ?? {},
     cwd: request.cwd,
@@ -107,35 +101,6 @@ export function resolveNodeAttachConfig(request: DebugAttachRequest): NodeAttach
     ...(request.port !== undefined ? { port: request.port } : {}),
     ...(request.url !== undefined ? { url: request.url } : {}),
   }
-}
-
-/** Read one optional string option. */
-function readOptionalString(options: Readonly<Record<string, unknown>>, key: string): string | undefined {
-  const value = options[key]
-  if (value === undefined) return undefined
-  if (typeof value !== 'string') throw invalid(`node option "${key}" must be a string`)
-  return value
-}
-
-/** Read one optional string-array option. */
-function readOptionalStringArray(options: Readonly<Record<string, unknown>>, key: string): readonly string[] | undefined {
-  const value = options[key]
-  if (value === undefined) return undefined
-  if (!Array.isArray(value)) throw invalid(`node option "${key}" must be an array of strings`)
-  const result: string[] = []
-  for (const item of value) {
-    if (typeof item !== 'string') throw invalid(`node option "${key}" must be an array of strings`)
-    result.push(item)
-  }
-  return result
-}
-
-/** Read one optional boolean option. */
-function readOptionalBoolean(options: Readonly<Record<string, unknown>>, key: string): boolean | undefined {
-  const value = options[key]
-  if (value === undefined) return undefined
-  if (typeof value !== 'boolean') throw invalid(`node option "${key}" must be a boolean`)
-  return value
 }
 
 /** The provider's configSchema describing its launch and attach options. */

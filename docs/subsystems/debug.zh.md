@@ -66,14 +66,14 @@ Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnp
  * @param backend - the composition's backend handle.
  * @returns disposer removing the registration.
  */
-registerBackend<T>(sessionId: DebugSessionId, backend: T): () => void
+registerBackend(sessionId: DebugSessionId, backend: unknown): () => void
 
 /**
  * Resolve one session's registered backend handle.
  * @param sessionId - the session to resolve.
  * @returns the handle, or undefined when the session has none registered.
  */
-backendOf<T>(sessionId: DebugSessionId): T | undefined
+backendOf(sessionId: DebugSessionId): unknown
 
 /**
  * List debug sessions as read-facing infos.

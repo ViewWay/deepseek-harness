@@ -29,8 +29,8 @@ import type {
 import { DockController, DockSurface, FloatLayer, findContentTab } from '@deepseek-ai/dsh-client-ui-dockkit'
 import type { DockIntents, DockLabels, TabRecord, TabRenderer } from '@deepseek-ai/dsh-client-ui-dockkit'
 import { DebugToolbar } from '@deepseek-ai/dsh-client-ui-debug/src/client/DebugToolbar.tsx'
-import type { DebugToolbarActor } from '@deepseek-ai/dsh-client-ui-debug/src/client/DebugToolbar.tsx'
-import type { DebugAction, DebugViewState } from '@deepseek-ai/dsh-client-ui-debug/src/client/store.ts'
+import type { DebugToolbarProps } from '@deepseek-ai/dsh-client-ui-debug/src/client/DebugToolbar.tsx'
+import type {} from '@deepseek-ai/dsh-client-ui-debug/src/client/store.ts'
 import type {} from '@deepseek-ai/dsh-client-ui-debug/src/client/locales.ts'
 import type {} from './locales.ts'
 import { panelsAt } from './layout.ts'
@@ -53,24 +53,7 @@ export interface WorkbenchStopNotice {
 }
 
 /** The debug toolbar's state and gestures, as the workbench forwards them. */
-export interface WorkbenchDebugControls {
-  /** Folded debug view state driving the toolbar. */
-  readonly state: DebugViewState
-  /** Dictionary translate for the `debug` namespace, which the toolbar owns. */
-  readonly t: TranslateNS<'debug'>
-  /** Whether agent stop notifications are enabled. */
-  readonly notifications: boolean
-  /** Who controls the composition right now. */
-  readonly actor: DebugToolbarActor
-  /** Run-control gesture, mapped to Remote calls by the page host. */
-  readonly onAction: (action: DebugAction) => void
-  /** Notification toggle gesture. */
-  readonly onNotificationsChange: (enabled: boolean) => void
-  /** Session-selector gesture. */
-  readonly onSelectSession: (sessionId: string) => void
-  /** Thread-selector gesture. */
-  readonly onSelectThread: (threadId: number) => void
-}
+export type WorkbenchDebugControls = DebugToolbarProps
 
 /** The launch-config picker's parsed content, or the validation failure. */
 export type WorkbenchConfigResult =

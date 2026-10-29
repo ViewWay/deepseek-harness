@@ -7,7 +7,7 @@
  * @module @deepseek-ai/dsh-debug/launch-config
  */
 
-import { DebugError } from './error.ts'
+import { configInvalidFactory, optionalStringRecord, recordOf } from './json-narrow.ts'
 
 /** One named launch or attach configuration after expansion. */
 export interface DebugLaunchConfiguration {
@@ -51,18 +51,7 @@ export interface DebugLaunchConfig {
 }
 
 /** Fail one configuration parse with the seam's config code. */
-function invalid(detail: string): DebugError {
-  return new DebugError(`debug launch configuration: ${detail}`, 'DEBUG_INVALID_CONFIG', { detail })
-}
-
-/** Narrow one value to a plain record. */
-function recordOf(value: unknown, field: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw invalid(`${field} must be an object`)
-  }
-  // The runtime checks above proved the record shape; narrow the survivor.
-  return value as Record<string, unknown>
-}
+const invalid = configInvalidFactory('debug launch configuration')
 
 /** The variables one string field may carry. */
 const KNOWN_VARIABLES = new Set(['workspaceFolder', 'file', 'relativeFile', 'fileBasename', 'fileDirname'])
@@ -156,22 +145,14 @@ function narrowSafeInteger(record: Record<string, unknown>, field: string, name:
   return value
 }
 
-/** Read one optional string-record field. */
+/** Read one optional string-record field, naming the owning configuration. */
 function narrowStringRecord(record: Record<string, unknown>, field: string, name: string): Readonly<Record<string, string>> | undefined {
-  const value = record[field]
-  if (value === undefined) return undefined
-  const entries = recordOf(value, field)
-  const result: Record<string, string> = {}
-  for (const [key, entry] of Object.entries(entries)) {
-    if (typeof entry !== 'string') throw invalid(`configuration "${name}": ${field} values must be strings`)
-    result[key] = entry
-  }
-  return result
+  return optionalStringRecord(record, field, detail => invalid(`configuration "${name}": ${detail}`))
 }
 
 /** Parse one configuration entry. */
 function parseConfiguration(value: unknown, context: DebugLaunchConfigContext, seenNames: Set<string>): DebugLaunchConfiguration {
-  const record = recordOf(value, 'configuration')
+  const record = recordOf(value, 'configuration', invalid)
   for (const key of Object.keys(record)) {
     if (!CONFIGURATION_KEYS.has(key)) throw invalid(`unknown configuration field "${key}"`)
   }
@@ -196,7 +177,7 @@ function parseConfiguration(value: unknown, context: DebugLaunchConfigContext, s
     throw invalid(`configuration "${name}": stopOnEntry must be a boolean`)
   }
   const options = record['options']
-  if (options !== undefined) recordOf(options, 'options')
+  if (options !== undefined) recordOf(options, 'options', invalid)
 
   const program = expandedString(record, 'program', context)
   const module = expandedString(record, 'module', context)
@@ -219,13 +200,13 @@ function parseConfiguration(value: unknown, context: DebugLaunchConfigContext, s
     ...(stopOnEntry !== undefined ? { stopOnEntry } : {}),
     ...(processId !== undefined ? { processId } : {}),
     ...(port !== undefined ? { port } : {}),
-    ...(options !== undefined ? { options: recordOf(options, 'options') } : {}),
+    ...(options !== undefined ? { options: recordOf(options, 'options', invalid) } : {}),
   }
 }
 
 /** Parse one compound entry after all configurations are known. */
 function parseCompound(value: unknown, knownNames: ReadonlySet<string>, seenNames: Set<string>): DebugCompoundConfiguration {
-  const record = recordOf(value, 'compound')
+  const record = recordOf(value, 'compound', invalid)
   for (const key of Object.keys(record)) {
     if (!COMPOUND_KEYS.has(key)) throw invalid(`unknown compound field "${key}"`)
   }
@@ -265,7 +246,7 @@ export function parseLaunchConfig(json: string, context: DebugLaunchConfigContex
   } catch (error: unknown) {
     throw invalid(`not valid JSON (${error instanceof Error ? error.message : String(error)})`)
   }
-  const record = recordOf(parsed, 'document')
+  const record = recordOf(parsed, 'document', invalid)
   for (const key of Object.keys(record)) {
     if (key !== 'version' && key !== 'configurations' && key !== 'compounds') {
       throw invalid(`unknown top-level field "${key}"`)

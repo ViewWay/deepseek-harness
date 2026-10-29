@@ -49,12 +49,13 @@ function storageKey(workspaceId: string, path: string): string {
 export class MemoryBreakpointStore implements BreakpointStore {
   private readonly files = new Map<string, readonly DebugBreakpointInput[]>()
 
-  async save(workspaceId: string, path: string, breakpoints: readonly DebugBreakpointInput[]): Promise<void> {
+  save(workspaceId: string, path: string, breakpoints: readonly DebugBreakpointInput[]): Promise<void> {
     this.files.set(storageKey(workspaceId, path), [...breakpoints])
+    return Promise.resolve()
   }
 
-  async load(workspaceId: string, path: string): Promise<readonly DebugBreakpointInput[]> {
-    return [...this.files.get(storageKey(workspaceId, path)) ?? []]
+  load(workspaceId: string, path: string): Promise<readonly DebugBreakpointInput[]> {
+    return Promise.resolve([...this.files.get(storageKey(workspaceId, path)) ?? []])
   }
 }
 
@@ -73,11 +74,11 @@ export class StorageBreakpointStore implements BreakpointStore {
     await this.table.put(storageKey(workspaceId, path), JSON.stringify([...breakpoints]))
   }
 
-  async load(workspaceId: string, path: string): Promise<readonly DebugBreakpointInput[]> {
+  load(workspaceId: string, path: string): Promise<readonly DebugBreakpointInput[]> {
     const encoded = this.table.get(storageKey(workspaceId, path))
-    if (encoded === undefined) return []
+    if (encoded === undefined) return Promise.resolve([])
     const parsed: unknown = JSON.parse(encoded)
     if (!Array.isArray(parsed)) throw new Error('persisted breakpoint set is not an array')
-    return parsed as readonly DebugBreakpointInput[]
+    return Promise.resolve(parsed as readonly DebugBreakpointInput[])
   }
 }

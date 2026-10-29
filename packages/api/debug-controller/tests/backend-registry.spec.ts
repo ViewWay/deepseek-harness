@@ -19,9 +19,9 @@ describe('debug service backend registry', () => {
     const id = fixtureDebugSessionId(9)
     const handle: Handle = { tag: 'backend' }
     const dispose = debug.registerBackend(id, handle)
-    expect(debug.backendOf<Handle>(id)).toBe(handle)
+    expect(debug.backendOf(id)).toBe(handle)
     dispose()
-    expect(debug.backendOf<Handle>(id)).toBeUndefined()
+    expect(debug.backendOf(id)).toBeUndefined()
   })
 
   it('keeps the latest registration and ignores a stale disposer', async () => {
@@ -30,6 +30,6 @@ describe('debug service backend registry', () => {
     const disposeFirst = debug.registerBackend(id, { tag: 'first' })
     debug.registerBackend(id, { tag: 'second' })
     disposeFirst()
-    expect(debug.backendOf<Handle>(id)).toMatchObject({ tag: 'second' })
+    expect(debug.backendOf(id)).toMatchObject({ tag: 'second' })
   })
 })

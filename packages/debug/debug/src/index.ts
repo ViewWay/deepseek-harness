@@ -119,6 +119,25 @@ export type { BreakpointStore } from './breakpoint-store.ts'
 export { attachDebugSession, launchDebugSession } from './launch.ts'
 export type { AttachDependencies, DebugDurableAppend, LaunchBackend, LaunchDependencies, LaunchOutcome } from './launch.ts'
 export type { DebugSessionOutcome, DebugStateEvent } from './state.ts'
+export { debugSpanAttributes } from './telemetry.ts'
+export type {
+  DebugTelemetryAttributes,
+  DebugTelemetryInput,
+  DebugTelemetryOutcome,
+  DebugTelemetrySurface,
+  DebugTelemetryWorld,
+} from './telemetry.ts'
+export {
+  absoluteEntry,
+  adapterCommandOf,
+  processOrPortAttachForm,
+  readOptionalBoolean,
+  readOptionalString,
+  readOptionalStringArray,
+  rejectUnknownOptions,
+  requireSingleEntry,
+} from './provider-options.ts'
+export type { ProviderInvalid } from './provider-options.ts'
 export { DebugEventBus } from './events.ts'
 export type { DebugEvent, DebugEventActor, DebugEventFilter, DebugEventSource } from './events.ts'
 export { DebugSessionRegistry } from './registry.ts'
@@ -239,7 +258,7 @@ export class Debug extends Service {
    * @param backend - the composition's backend handle.
    * @returns disposer removing the registration.
    */
-  registerBackend<T>(sessionId: DebugSessionId, backend: T): () => void {
+  registerBackend(sessionId: DebugSessionId, backend: unknown): () => void {
     this.sessionBackends.set(sessionId, backend)
     return () => {
       if (this.sessionBackends.get(sessionId) === backend) this.sessionBackends.delete(sessionId)
@@ -251,8 +270,8 @@ export class Debug extends Service {
    * @param sessionId - the session to resolve.
    * @returns the handle, or undefined when the session has none registered.
    */
-  backendOf<T>(sessionId: DebugSessionId): T | undefined {
-    return this.sessionBackends.get(sessionId) as T | undefined
+  backendOf(sessionId: DebugSessionId): unknown {
+    return this.sessionBackends.get(sessionId)
   }
 
   constructor(ctx: Context, config: DebugConfig = {}) {

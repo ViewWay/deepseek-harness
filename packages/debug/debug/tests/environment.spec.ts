@@ -50,6 +50,7 @@ function probeInit(overrides: ProbeOverrides = {}): DebugEnvironmentProbe {
 describe('probeDebugEnvironment', () => {
   it('derives world facts from the subprocess service, never the host', async () => {
     const subprocess = subprocessDouble()
+    const terminalSpy = vi.spyOn(subprocess, 'terminalEnvironment')
     const environment = await probeDebugEnvironment(probeInit({ subprocess }))
     expect(environment.platform).toBe('linux')
     expect(environment.arch).toBe('x64')
@@ -57,7 +58,7 @@ describe('probeDebugEnvironment', () => {
     expect(environment.shell).toBe('/bin/sh')
     expect(environment.workspaceRoot).toBe('/ws')
     expect(environment.cwd).toBe('/ws')
-    expect(subprocess.terminalEnvironment).toHaveBeenCalled()
+    expect(terminalSpy).toHaveBeenCalled()
   })
 
   it('maps windows platform keys and shells', async () => {

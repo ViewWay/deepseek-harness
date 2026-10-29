@@ -55,7 +55,7 @@ class RecordingFileSystem extends FileSystem {
     }
     this.writeCount += 1
     const existed = this.state.has(target.displayPath)
-    const version = 'v' + (this.writeCount + 1)
+    const version = `v${this.writeCount + 1}`
     this.state.set(target.displayPath, version)
     return Promise.resolve({ operation: existed ? 'update' : 'create', version: version as never, before: null, after: content })
   }

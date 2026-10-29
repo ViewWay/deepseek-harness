@@ -6,7 +6,7 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
-import { DebugProviderId } from '@deepseek-ai/dsh-debug'
+import { DebugProviderId, absoluteEntry, adapterCommandOf } from '@deepseek-ai/dsh-debug'
 import type {
   DebugAttachPlan,
   DebugAttachRequest,
@@ -38,12 +38,6 @@ export const GO_ADAPTER_MANIFEST = {
   platforms: DELVE_PLATFORMS,
   command: ['dlv', 'dap'],
   requires: ['go'],
-}
-
-/** Absolutize a workspace-relative program path in the target world. */
-function absolute(entry: string, workspaceRoot: string, separator: string): string {
-  if (entry.startsWith('/') || entry.startsWith(separator) || /^[A-Za-z]:/.test(entry)) return entry
-  return `${workspaceRoot}${separator}${entry}`
 }
 
 /** Build the DAP launch request from the validated config. */
@@ -84,15 +78,10 @@ export const goDebugProvider: DebugProvider = {
     const config = resolveGoLaunchConfig(request)
     const resolved = await environment.adapters.resolve(request.providerId)
     const programPath = config.entryKind === 'program'
-      ? absolute(config.entry, request.workspaceRoot, environment.pathSeparator)
+      ? absoluteEntry(config.entry, request.workspaceRoot, environment.pathSeparator)
       : config.entry
     return {
-      adapter: {
-        command: resolved.command,
-        args: resolved.args,
-        env: resolved.env,
-        cwd: environment.cwd,
-      },
+      adapter: adapterCommandOf(resolved, environment),
       dapRequest: launchRequest(config, programPath),
       target: {
         executable: resolved.command[0] ?? 'dlv',
@@ -109,12 +98,7 @@ export const goDebugProvider: DebugProvider = {
     const config = resolveGoAttachConfig(request)
     const resolved = await environment.adapters.resolve(request.providerId)
     return {
-      adapter: {
-        command: resolved.command,
-        args: resolved.args,
-        env: resolved.env,
-        cwd: environment.cwd,
-      },
+      adapter: adapterCommandOf(resolved, environment),
       dapRequest: attachRequest(config),
       requires: ['go'],
       manifestVersion: resolved.version,

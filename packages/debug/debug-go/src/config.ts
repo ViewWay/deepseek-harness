@@ -4,7 +4,7 @@
  * @module @deepseek-ai/dsh-debug-go/config
  */
 
-import { DebugError } from '@deepseek-ai/dsh-debug'
+import { DebugError, processOrPortAttachForm, readOptionalStringArray, rejectUnknownOptions, requireSingleEntry } from '@deepseek-ai/dsh-debug'
 import type { DebugAttachRequest, DebugLaunchRequest, JsonSchema } from '@deepseek-ai/dsh-debug'
 
 /** Delve launch modes. */
@@ -45,29 +45,23 @@ function invalid(detail: string): DebugError {
  * are not exactly one, or an option is unknown or mistyped.
  */
 export function resolveGoLaunchConfig(request: DebugLaunchRequest): GoLaunchConfig {
-  const hasProgram = request.program !== undefined
-  const hasModule = request.module !== undefined
-  if (hasProgram === hasModule) {
-    throw invalid('launch requires exactly one of program or package (module)')
-  }
+  const entryKind = requireSingleEntry(request, 'program or package (module)', invalid) === 'program' ? 'program' : 'package'
 
   const options = request.providerOptions ?? {}
-  for (const key of Object.keys(options)) {
-    if (!LAUNCH_OPTION_KEYS.has(key)) throw invalid(`unknown go launch option "${key}"`)
-  }
+  rejectUnknownOptions(options, LAUNCH_OPTION_KEYS, 'go', invalid)
   const rawMode = options['mode']
   const mode = DELVE_MODES.find(entry => entry === rawMode)
   if (rawMode !== undefined && mode === undefined) {
     throw invalid('mode must be debug, test, exec, or auto')
   }
-  const buildFlags = readOptionalStringArray(options, 'buildFlags')
-  const dlvFlags = readOptionalStringArray(options, 'dlvFlags')
+  const buildFlags = readOptionalStringArray(options, 'buildFlags', 'go', invalid)
+  const dlvFlags = readOptionalStringArray(options, 'dlvFlags', 'go', invalid)
 
-  const entry = hasProgram ? request.program : request.module
+  const entry = entryKind === 'program' ? request.program : request.module
   if (entry === undefined) throw invalid('launch entry is missing')
   return {
     entry,
-    entryKind: hasProgram ? 'program' : 'package',
+    entryKind,
     args: request.args ?? [],
     env: request.env ?? {},
     cwd: request.cwd,
@@ -86,27 +80,7 @@ export function resolveGoLaunchConfig(request: DebugLaunchRequest): GoLaunchConf
  * are not exactly one.
  */
 export function resolveGoAttachConfig(request: DebugAttachRequest): GoAttachConfig {
-  const forms = [request.processId, request.port].filter(value => value !== undefined)
-  if (forms.length !== 1) {
-    throw invalid('attach requires exactly one of processId or port')
-  }
-  return {
-    ...(request.processId !== undefined ? { processId: request.processId } : {}),
-    ...(request.port !== undefined ? { port: request.port } : {}),
-  }
-}
-
-/** Read one optional string-array option. */
-function readOptionalStringArray(options: Readonly<Record<string, unknown>>, key: string): readonly string[] | undefined {
-  const value = options[key]
-  if (value === undefined) return undefined
-  if (!Array.isArray(value)) throw invalid(`go option "${key}" must be an array of strings`)
-  const result: string[] = []
-  for (const item of value) {
-    if (typeof item !== 'string') throw invalid(`go option "${key}" must be an array of strings`)
-    result.push(item)
-  }
-  return result
+  return processOrPortAttachForm(request, invalid)
 }
 
 /** The provider's configSchema describing its launch and attach options. */

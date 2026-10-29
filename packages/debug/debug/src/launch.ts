@@ -123,7 +123,7 @@ async function orchestrate(base: OrchestrationBase, mode: 'launch' | 'attach'): 
     void resolved
     backend = await base.createBackend(spawnAdapter(base, plan))
     const outcome = await backend.start({
-      launch: { request: mode, ...plan.dapRequest } as Readonly<Record<string, JsonValue>>,
+      launch: { request: mode, ...plan.dapRequest },
       timeoutMs: base.requestTimeoutMs ?? 30_000,
     })
 

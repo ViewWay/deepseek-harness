@@ -27,6 +27,7 @@ describe('Shipped profile templates', () => {
       headless: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-headless'] },
       sdk: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-sdk-app'] },
       'sdk-minimal': { bundles: ['@deepseek-ai/dsh-sdk-minimal'] },
+      tui: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-tui-app'] },
     })
   })
 })

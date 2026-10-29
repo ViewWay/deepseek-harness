@@ -7,7 +7,7 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
-import { DebugProviderId } from '@deepseek-ai/dsh-debug'
+import { DebugProviderId, absoluteEntry, adapterCommandOf } from '@deepseek-ai/dsh-debug'
 import type {
   DebugAttachPlan,
   DebugAttachRequest,
@@ -20,12 +20,6 @@ import type {
 import { PYTHON_OPTIONS_SCHEMA, resolvePythonAttachConfig, resolvePythonLaunchConfig } from './config.ts'
 import type { PythonAttachConfig, PythonLaunchConfig } from './config.ts'
 import type { DebugAdapterManager } from '@deepseek-ai/dsh-debug-adapter-manager'
-
-/** Absolutize a workspace-relative script path in the target world. */
-function absolute(entry: string, workspaceRoot: string, separator: string): string {
-  if (entry.startsWith('/') || entry.startsWith(separator) || /^[A-Za-z]:/.test(entry)) return entry
-  return `${workspaceRoot}${separator}${entry}`
-}
 
 /** Build the DAP launch request from the validated config. */
 function launchRequest(config: PythonLaunchConfig, entryPath: string): Readonly<Record<string, JsonValue>> {
@@ -75,15 +69,10 @@ export const pythonDebugProvider: DebugProvider = {
     const config = resolvePythonLaunchConfig(request)
     const resolved = await environment.adapters.resolve(request.providerId)
     const entryPath = config.entryKind === 'program'
-      ? absolute(config.entry, request.workspaceRoot, environment.pathSeparator)
+      ? absoluteEntry(config.entry, request.workspaceRoot, environment.pathSeparator)
       : config.entry
     return {
-      adapter: {
-        command: resolved.command,
-        args: resolved.args,
-        env: resolved.env,
-        cwd: environment.cwd,
-      },
+      adapter: adapterCommandOf(resolved, environment),
       dapRequest: launchRequest(config, entryPath),
       target: {
         executable: config.python,
@@ -100,12 +89,7 @@ export const pythonDebugProvider: DebugProvider = {
     const config = resolvePythonAttachConfig(request)
     const resolved = await environment.adapters.resolve(request.providerId)
     return {
-      adapter: {
-        command: resolved.command,
-        args: resolved.args,
-        env: resolved.env,
-        cwd: environment.cwd,
-      },
+      adapter: adapterCommandOf(resolved, environment),
       dapRequest: attachRequest(config),
       requires: ['python'],
       manifestVersion: resolved.version,

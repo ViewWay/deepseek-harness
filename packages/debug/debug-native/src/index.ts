@@ -8,7 +8,7 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
-import { DebugProviderId } from '@deepseek-ai/dsh-debug'
+import { DebugProviderId, absoluteEntry, adapterCommandOf } from '@deepseek-ai/dsh-debug'
 import type {
   DebugAttachPlan,
   DebugAttachRequest,
@@ -43,12 +43,6 @@ export const NATIVE_ADAPTER_MANIFEST = {
 /** The provider's configSchema: no provider options are modeled. */
 export const NATIVE_OPTIONS_SCHEMA: JsonSchema = { type: 'object', properties: {}, additionalProperties: false }
 
-/** Absolutize a workspace-relative program path in the target world. */
-function absolute(entry: string, workspaceRoot: string, separator: string): string {
-  if (entry.startsWith('/') || entry.startsWith(separator) || /^[A-Za-z]:/.test(entry)) return entry
-  return `${workspaceRoot}${separator}${entry}`
-}
-
 /** Fail one config validation with the seam's config code. */
 function invalid(detail: string): DebugError {
   return new DebugError(`native debug config: ${detail}`, 'DEBUG_INVALID_CONFIG', { detail })
@@ -69,14 +63,9 @@ export const nativeDebugProvider: DebugProvider = {
       throw invalid('the native provider models no launch options')
     }
     const resolved = await environment.adapters.resolve(request.providerId)
-    const program = absolute(request.program, request.workspaceRoot, environment.pathSeparator)
+    const program = absoluteEntry(request.program, request.workspaceRoot, environment.pathSeparator)
     return {
-      adapter: {
-        command: resolved.command,
-        args: resolved.args,
-        env: resolved.env,
-        cwd: environment.cwd,
-      },
+      adapter: adapterCommandOf(resolved, environment),
       dapRequest: {
         request: 'launch',
         program,
@@ -103,12 +92,7 @@ export const nativeDebugProvider: DebugProvider = {
     }
     const resolved = await environment.adapters.resolve(request.providerId)
     return {
-      adapter: {
-        command: resolved.command,
-        args: resolved.args,
-        env: resolved.env,
-        cwd: environment.cwd,
-      },
+      adapter: adapterCommandOf(resolved, environment),
       dapRequest: {
         request: 'attach',
         ...(request.processId !== undefined ? { pid: request.processId } : {}),

@@ -1031,13 +1031,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [],
       },
       {
-        signature: 'registerBackend<T>(sessionId: DebugSessionId, backend: T): () => void',
+        signature: 'registerBackend(sessionId: DebugSessionId, backend: unknown): () => void',
         description: 'Register one live session\'s backend handle; controllers resolve it to drive execution and inspection without touching DAP.',
         parameters: [{ name: 'sessionId', description: 'the session the backend serves.' }, { name: 'backend', description: 'the composition\'s backend handle.' }],
         returns: 'disposer removing the registration.',
       },
       {
-        signature: 'backendOf<T>(sessionId: DebugSessionId): T | undefined',
+        signature: 'backendOf(sessionId: DebugSessionId): unknown',
         description: 'Resolve one session\'s registered backend handle.',
         parameters: [{ name: 'sessionId', description: 'the session to resolve.' }],
         returns: 'the handle, or undefined when the session has none registered.',

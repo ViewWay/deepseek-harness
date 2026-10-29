@@ -9,6 +9,7 @@
 import { DebugProviderId } from '@deepseek-ai/dsh-debug'
 import type { DebugExecutionCapability, DebugProviderId as DebugProviderIdValue } from '@deepseek-ai/dsh-debug'
 import { DebugError } from '@deepseek-ai/dsh-debug'
+import { configInvalidFactory, optionalStringRecord, recordOf } from '@deepseek-ai/dsh-debug/src/json-narrow.ts'
 
 /** One published platform combination, e.g. `linux-x64`. */
 export type DebugAdapterPlatformKey = string
@@ -52,18 +53,7 @@ const CAPABILITIES: readonly DebugExecutionCapability[] = ['ptrace', 'processCon
 const TOP_LEVEL_KEYS = new Set(['providerId', 'version', 'license', 'source', 'platforms', 'command', 'environment', 'requires'])
 
 /** Validate-and-fail helper carrying the manifest's config code. */
-function invalid(detail: string): DebugError {
-  return new DebugError(`adapter manifest: ${detail}`, 'DEBUG_INVALID_CONFIG', { detail })
-}
-
-/** Narrow one value to a plain record. */
-function recordOf(value: unknown, field: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw invalid(`${field} must be an object`)
-  }
-  // The runtime checks above proved the record shape; narrow the survivor.
-  return value as Record<string, unknown>
-}
+const invalid = configInvalidFactory('adapter manifest')
 
 /** Read one required non-empty string field. */
 function requiredString(record: Record<string, unknown>, key: string, label: string = key): string {
@@ -72,19 +62,6 @@ function requiredString(record: Record<string, unknown>, key: string, label: str
     throw invalid(`${label} must be a non-empty string`)
   }
   return value
-}
-
-/** Read one optional string-record field. */
-function optionalStringRecord(record: Record<string, unknown>, field: string): Readonly<Record<string, string>> | undefined {
-  const value = record[field]
-  if (value === undefined) return undefined
-  const entries = recordOf(value, field)
-  const result: Record<string, string> = {}
-  for (const [key, entry] of Object.entries(entries)) {
-    if (typeof entry !== 'string') throw invalid(`${field}.${key} must be a string`)
-    result[key] = entry
-  }
-  return result
 }
 
 /** Read one optional array-of-strings field, validated element by element. */
@@ -102,7 +79,7 @@ function parseStringArray(record: Record<string, unknown>, field: string, label:
 
 /** Validate one source descriptor. */
 function parseSource(value: unknown): DebugAdapterSource {
-  const record = recordOf(value, 'source')
+  const record = recordOf(value, 'source', invalid)
   const kind = record['kind']
   if (kind === 'archive') {
     return { kind, url: requiredString(record, 'url', 'source.url') }
@@ -121,7 +98,7 @@ function parseSource(value: unknown): DebugAdapterSource {
 
 /** Validate one platform entry including its checksum format. */
 function parsePlatformEntry(provider: string, key: string, value: unknown): DebugAdapterPlatformEntry {
-  const record = recordOf(value, `platforms.${key}`)
+  const record = recordOf(value, `platforms.${key}`, invalid)
   const archive = requiredString(record, 'archive', `platforms.${key}.archive`)
   if (archive.includes('/')) throw invalid(`platforms.${key}.archive must be a file name`)
   const sha256 = requiredString(record, 'sha256', `platforms.${key}.sha256`)
@@ -158,7 +135,7 @@ function parsePlatformEntry(provider: string, key: string, value: unknown): Debu
  * `DEBUG_INVALID_CONFIG` for every other malformed field.
  */
 export function parseAdapterManifest(value: unknown): DebugAdapterManifest {
-  const record = recordOf(value, 'manifest')
+  const record = recordOf(value, 'manifest', invalid)
   for (const key of Object.keys(record)) {
     if (!TOP_LEVEL_KEYS.has(key)) throw invalid(`unknown field "${key}"`)
   }
@@ -172,7 +149,7 @@ export function parseAdapterManifest(value: unknown): DebugAdapterManifest {
   // wheels against the target interpreter and must not carry platforms.
   let platforms: Record<DebugAdapterPlatformKey, DebugAdapterPlatformEntry> | undefined
   if (source.kind === 'archive') {
-    const rawPlatforms = recordOf(record['platforms'], 'platforms')
+    const rawPlatforms = recordOf(record['platforms'], 'platforms', invalid)
     const platformKeys = Object.keys(rawPlatforms)
     if (platformKeys.length === 0) throw invalid('platforms must list at least one platform')
     platforms = {}
@@ -207,7 +184,7 @@ export function parseAdapterManifest(value: unknown): DebugAdapterManifest {
     requires = validated
   }
 
-  const environment = optionalStringRecord(record, 'environment')
+  const environment = optionalStringRecord(record, 'environment', invalid)
   return {
     providerId: DebugProviderId(providerId),
     version,

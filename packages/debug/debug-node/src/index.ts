@@ -9,7 +9,7 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
-import { DebugProviderId } from '@deepseek-ai/dsh-debug'
+import { DebugProviderId, absoluteEntry, adapterCommandOf } from '@deepseek-ai/dsh-debug'
 import type {
   DebugAttachPlan,
   DebugAttachRequest,
@@ -45,12 +45,6 @@ export const NODE_ADAPTER_MANIFEST = {
     'win32-x64': JS_DEBUG_PLATFORM_ENTRY,
   },
   command: ['node', 'js-debug/src/dapDebugServer.js'],
-}
-
-/** Join a workspace-relative entry into an absolute path in the target world. */
-function absolute(entry: string, workspaceRoot: string, separator: string): string {
-  if (entry.startsWith('/') || entry.startsWith(separator) || /^[A-Za-z]:/.test(entry)) return entry
-  return `${workspaceRoot}${separator}${entry}`
 }
 
 /** Build the DAP launch request from the validated config. */
@@ -93,14 +87,9 @@ export const nodeDebugProvider: DebugProvider = {
   async resolveLaunch(request: DebugLaunchRequest, environment: DebugEnvironment): Promise<DebugLaunchPlan> {
     const config = resolveNodeLaunchConfig(request)
     const resolved = await environment.adapters.resolve(request.providerId)
-    const entryPath = absolute(config.entry, request.workspaceRoot, environment.pathSeparator)
+    const entryPath = absoluteEntry(config.entry, request.workspaceRoot, environment.pathSeparator)
     return {
-      adapter: {
-        command: resolved.command,
-        args: resolved.args,
-        env: resolved.env,
-        cwd: environment.cwd,
-      },
+      adapter: adapterCommandOf(resolved, environment),
       dapRequest: launchRequest(config, entryPath),
       target: {
         executable: config.runtimeExecutable ?? 'node',
@@ -117,12 +106,7 @@ export const nodeDebugProvider: DebugProvider = {
     const config = resolveNodeAttachConfig(request)
     const resolved = await environment.adapters.resolve(request.providerId)
     return {
-      adapter: {
-        command: resolved.command,
-        args: resolved.args,
-        env: resolved.env,
-        cwd: environment.cwd,
-      },
+      adapter: adapterCommandOf(resolved, environment),
       dapRequest: attachRequest(config),
       requires: config.processId !== undefined ? ['processControl'] : [],
       manifestVersion: resolved.version,

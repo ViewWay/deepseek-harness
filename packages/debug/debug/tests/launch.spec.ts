@@ -4,10 +4,16 @@ import { fixtureSessionId } from '@deepseek-ai/dsh-debug-fixture'
 import { DebugSessionRegistry } from '../src/registry.ts'
 import { attachDebugSession, launchDebugSession } from '../src/launch.ts'
 import { BreakpointRegistry, MemoryBreakpointStore } from '../src/breakpoints.ts'
+import type { DebugDurableAppend, JsonValue } from '../src/launch.ts'
+
+/** Build the typed durable-append double every case in this file shares. */
+function durableAppend() {
+  return vi.fn<DebugDurableAppend>()
+}
 
 describe('launchDebugSession', () => {
   it('resolves the provider, starts the adapter, applies breakpoints, and records durable events', async () => {
-    const append = vi.fn()
+    const append = durableAppend()
     const environment = fixtureLaunchEnvironment({ resolvedCommand: ['adapter'] })
     const backend = fixtureBackend()
     const breakpoints = new BreakpointRegistry(new MemoryBreakpointStore())
@@ -29,7 +35,11 @@ describe('launchDebugSession', () => {
     })
     expect(['starting', 'running', 'stopped']).toContain(session.state)
     expect(environment.subprocess.spawns[0]).toMatchObject({ argv: ['adapter'], graceMs: 5000 })
-    expect(append).toHaveBeenCalledWith('debug/session-started', expect.objectContaining({ sessionId: expect.any(String) }), { ignorable: true })
+    const started = append.mock.calls.find(([type]) => type === 'debug/session-started')
+    expect(started).toBeDefined()
+    const payload: Readonly<Record<string, JsonValue>> = started?.[1] ?? {}
+    expect(typeof payload.sessionId).toBe('string')
+    expect(started?.[2]).toEqual({ ignorable: true })
     expect(append.mock.calls.some(([type]) => type === 'debug/stopped' || type === 'debug/session-ended')).toBe(true)
     expect(backend.dispose).not.toHaveBeenCalled()
 
@@ -60,7 +70,7 @@ describe('launchDebugSession', () => {
   })
 
   it('appends session-ended with failed and disposes the backend when a stage throws', async () => {
-    const append = vi.fn()
+    const append = durableAppend()
     const backend = fixtureBackend()
     await expect(launchDebugSession({
       request: {
@@ -83,7 +93,7 @@ describe('launchDebugSession', () => {
   })
 
   it('records termination without a stop through the same path on attach', async () => {
-    const append = vi.fn()
+    const append = durableAppend()
     const session = await attachDebugSession({
       request: {
         providerId: fixtureProvider('node', async () => fixtureLaunchPlan()).id,
