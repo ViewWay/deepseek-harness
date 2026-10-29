@@ -10,7 +10,11 @@
  */
 import { DebugError } from './error.ts'
 
-/** Build one seam-scoped `DEBUG_INVALID_CONFIG` thrower. */
+/**
+ * Build one seam-scoped `DEBUG_INVALID_CONFIG` thrower.
+ * @param seam - Config surface name prefixing every invalid-field detail.
+ * @returns Unary factory turning a field detail into a `DebugError`.
+ */
 export function configInvalidFactory(seam: string): (detail: string) => DebugError {
   return detail => new DebugError(`${seam}: ${detail}`, 'DEBUG_INVALID_CONFIG', { detail })
 }

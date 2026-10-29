@@ -1,5 +1,7 @@
 # Debug session throughput
 
+English | [中文](README.zh.md)
+
 Measures the production `DapDebugBackend` (`@deepseek-ai/dsh-debug-dap`) over a
 scripted in-process wire: one launch replays 10,000 console output events, then
 25 stop/continue cycles each read a 20-frame stack page, one scope, a

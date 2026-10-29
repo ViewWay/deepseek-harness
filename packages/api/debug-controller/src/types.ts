@@ -8,11 +8,11 @@
  */
 
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import type { DebugEvaluateResult, DebugResumeResult, DebugStackTrace } from '@deepseek-ai/dsh-debug/types'
+import type { DebugEvaluateResult, DebugResumeResult, DebugStackTrace } from '@deepseek-ai/dsh-debug'
 
 export type { EditorFileSystem, EditorWriteRequest, EditorWriteResult } from './editor-write.ts'
 export type { DebugEventRecord, DebugEventReplay } from './ring.ts'
-export type { DebugBreakpointInput, DebugSessionId, DebugSessionInfo } from '@deepseek-ai/dsh-debug/types'
+export type { DebugBreakpointInput, DebugSessionId, DebugSessionInfo } from '@deepseek-ai/dsh-debug'
 
 /** Host-resolved editor scope: the Session identity and its workspace root. */
 export interface DebugEditorScope {

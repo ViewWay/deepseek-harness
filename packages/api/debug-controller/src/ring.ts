@@ -10,7 +10,7 @@
  * @module @deepseek-ai/dsh-api-debug-controller/ring
  */
 
-import type { JsonValue } from '@deepseek-ai/dsh-debug/types'
+import type { JsonValue } from '@deepseek-ai/dsh-debug'
 
 /** One sequenced debug event retained for replay. */
 export interface DebugEventRecord {

@@ -825,7 +825,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-debug`
 
 - `inject`: `sessionProjections`
-- `source`: [`packages/debug/debug/src/index.ts:172`](../packages/debug/debug/src/index.ts)
+- `source`: [`packages/debug/debug/src/index.ts:192`](../packages/debug/debug/src/index.ts)
 
 ```ts config-catalog
 /** Deployment configuration for the debug service. */
