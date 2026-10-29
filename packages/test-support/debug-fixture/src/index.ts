@@ -361,7 +361,7 @@ export function fixtureProvider(id: string, resolveLaunch: () => Promise<Fixture
 /** A subprocess double that records spawn specs and yields pipe stdio. */
 export class FakeLaunchSubprocessRuntime extends SubprocessRuntime {
   /** Every spawn spec, in call order. */
-  readonly spawns: { argv: readonly string[]; cwd: string }[] = []
+  readonly spawns: { argv: readonly string[]; cwd: string; graceMs: number }[] = []
 
   constructor() {
     super(new Context())
@@ -376,7 +376,7 @@ export class FakeLaunchSubprocessRuntime extends SubprocessRuntime {
   }
 
   override spawn(spec: SubprocessSpawnSpec): SubprocessHandle {
-    this.spawns.push({ argv: spec.argv, cwd: spec.cwd })
+    this.spawns.push({ argv: spec.argv, cwd: spec.cwd, graceMs: spec.graceMs })
     const stdin = new PassThrough()
     const stdout = new PassThrough()
     return {

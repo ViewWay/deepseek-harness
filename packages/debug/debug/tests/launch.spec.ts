@@ -28,7 +28,7 @@ describe('launchDebugSession', () => {
       breakpoints,
     })
     expect(['starting', 'running', 'stopped']).toContain(session.state)
-    expect(environment.subprocess.spawns[0]).toMatchObject({ argv: ['adapter'] })
+    expect(environment.subprocess.spawns[0]).toMatchObject({ argv: ['adapter'], graceMs: 5000 })
     expect(append).toHaveBeenCalledWith('debug/session-started', expect.objectContaining({ sessionId: expect.any(String) }), { ignorable: true })
     expect(append.mock.calls.some(([type]) => type === 'debug/stopped' || type === 'debug/session-ended')).toBe(true)
     expect(backend.dispose).not.toHaveBeenCalled()
@@ -36,6 +36,27 @@ describe('launchDebugSession', () => {
     await breakpoints.setFile('ws-1', 'src/a.ts', [{ line: 4 }])
     expect(backend.setBreakpoints).toHaveBeenCalledOnce()
     expect(session.id).toMatch(/^debug-[0-9a-f]{16}$/)
+  })
+
+  it('passes the injected terminate grace to the adapter spawn', async () => {
+    const environment = fixtureLaunchEnvironment()
+    await launchDebugSession({
+      request: {
+        providerId: fixtureProvider('node', async () => fixtureLaunchPlan()).id,
+        workspaceRoot: '/ws',
+        workspaceId: 'ws-1',
+        cwd: '/ws',
+        program: 'src/a.ts',
+        caller: { kind: 'user', sessionId: fixtureSessionId(4) },
+      },
+      provider: fixtureProvider('node', async () => fixtureLaunchPlan({ command: ['adapter'] })),
+      environment,
+      registry: new DebugSessionRegistry(),
+      append: vi.fn(),
+      createBackend: async () => fixtureBackend(),
+      terminateGraceMs: 250,
+    })
+    expect(environment.subprocess.spawns[0]).toMatchObject({ argv: ['adapter'], graceMs: 250 })
   })
 
   it('appends session-ended with failed and disposes the backend when a stage throws', async () => {

@@ -73,6 +73,8 @@ export interface LaunchDependencies {
   readonly breakpoints?: BreakpointRegistry
   /** Handshake timeout in milliseconds; defaults to 30 seconds. */
   readonly requestTimeoutMs?: number
+  /** Grace before the adapter spawn is force-killed, in milliseconds; defaults to 5 seconds. */
+  readonly terminateGraceMs?: number
 }
 
 /** Injected dependencies of one attach. */
@@ -104,7 +106,7 @@ function spawnAdapter(
     cwd: plan.adapter.cwd,
     env: plan.adapter.env,
     stdio: { stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' },
-    graceMs: 5000,
+    graceMs: base.terminateGraceMs ?? 5000,
   })
   if (handle.stdin === undefined || handle.stdout === undefined) {
     throw new DebugError('adapter process did not provide piped stdio', 'DEBUG_LAUNCH_FAILED')
