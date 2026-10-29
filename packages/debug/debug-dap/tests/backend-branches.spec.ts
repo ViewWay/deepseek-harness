@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createFakeDebugAdapter } from '@deepseek-ai/dsh-fake-debug-adapter'
-import { DebugError, DebugFrameId, DebugSessionId, DebugThreadId, DebugVariableReference } from '@deepseek-ai/dsh-debug'
+import { DebugError, DebugFrameId, DebugSessionId, DebugThreadId } from '@deepseek-ai/dsh-debug'
 import type { JsonValue } from '@deepseek-ai/dsh-debug'
 import { createMemoryTransport } from './memory-transport.ts'
 import { DapClient } from '../src/client.ts'
@@ -157,7 +157,5 @@ describe('backend terminal-branch carriers (isolated)', () => {
       exceptionInfo: [{ response: { exceptionId: 'X', details: {} } }],
     })
     await expect(backend.start(PLAN)).rejects.toBeInstanceOf(DebugError)
-    void backend as unknown as { exceptionInfo?: unknown }
-    void DebugVariableReference
   })
 })

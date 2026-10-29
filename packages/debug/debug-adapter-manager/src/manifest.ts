@@ -6,10 +6,8 @@
  * @module @deepseek-ai/dsh-debug-adapter-manager/manifest
  */
 
-import { DebugProviderId } from '@deepseek-ai/dsh-debug'
+import { configInvalidFactory, DebugError, DebugProviderId, optionalStringRecord, recordOf } from '@deepseek-ai/dsh-debug'
 import type { DebugExecutionCapability, DebugProviderId as DebugProviderIdValue } from '@deepseek-ai/dsh-debug'
-import { DebugError } from '@deepseek-ai/dsh-debug'
-import { configInvalidFactory, optionalStringRecord, recordOf } from '@deepseek-ai/dsh-debug/src/json-narrow.ts'
 
 /** One published platform combination, e.g. `linux-x64`. */
 export type DebugAdapterPlatformKey = string

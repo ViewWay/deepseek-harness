@@ -138,6 +138,7 @@ export {
   requireSingleEntry,
 } from './provider-options.ts'
 export type { ProviderInvalid } from './provider-options.ts'
+export { configInvalidFactory, optionalStringRecord, recordOf } from './json-narrow.ts'
 export { DebugEventBus } from './events.ts'
 export type { DebugEvent, DebugEventActor, DebugEventFilter, DebugEventSource } from './events.ts'
 export { DebugSessionRegistry } from './registry.ts'
