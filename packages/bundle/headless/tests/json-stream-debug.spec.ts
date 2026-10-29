@@ -4,21 +4,15 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import { createHeadlessHarness } from './headless-debug-harness.ts'
 
-/** Build one debug event with the given type and data. */
-function debugEvent(type: string, data: Record<string, unknown>): SessionEvent {
-  return { type, seq: 0, time: 0, ignorable: true, data } as unknown as SessionEvent
-}
-
 describe('headless debug NDJSON', () => {
-  it('emits a bounded stop event without variables or raw DAP', () => {
-    const harness = createHeadlessHarness()
-    harness.emit(debugEvent('debug/stopped', {
+  it('emits a bounded stop event without variables or raw DAP', async () => {
+    const harness = await createHeadlessHarness()
+    harness.emit('debug/stopped', {
       sessionId: 'debug-1', reason: 'breakpoint', threadId: 'thread-1',
       source: 'src/a.ts', line: 4, column: 2,
-    }))
+    })
     const line = harness.parsed().at(-1)
     expect(line).toMatchObject({
       type: 'debug/stopped',
@@ -28,18 +22,18 @@ describe('headless debug NDJSON', () => {
     expect(JSON.stringify(line)).not.toContain('Content-Length')
   })
 
-  it('emits session-started, session-ended, and control events with their bounded fields', () => {
-    const harness = createHeadlessHarness()
-    harness.emit(debugEvent('debug/session-started', {
+  it('emits session-started, session-ended, and control events with their bounded fields', async () => {
+    const harness = await createHeadlessHarness()
+    harness.emit('debug/session-started', {
       sessionId: 'debug-1', providerId: 'node', language: 'node', mode: 'launch',
       workspaceRoot: '/ws', adapterVersion: '1.140.0',
-    }))
-    harness.emit(debugEvent('debug/session-ended', {
+    })
+    harness.emit('debug/session-ended', {
       sessionId: 'debug-1', outcome: 'terminated', reason: 'completed', durationMs: 5000,
-    }))
-    harness.emit(debugEvent('debug/control', {
+    })
+    harness.emit('debug/control', {
       sessionId: 'debug-1', actor: 'agent', operation: 'continue', threadId: 'thread-1',
-    }))
+    })
     const lines = harness.parsed().slice(1)
     expect(lines[0]).toMatchObject({
       type: 'debug/session-started',
@@ -59,12 +53,12 @@ describe('headless debug NDJSON', () => {
     }
   })
 
-  it('bounds long strings in debug events with the existing cap', () => {
-    const harness = createHeadlessHarness()
-    harness.emit(debugEvent('debug/stopped', {
+  it('bounds long strings in debug events with the existing cap', async () => {
+    const harness = await createHeadlessHarness()
+    harness.emit('debug/stopped', {
       sessionId: 'debug-1', reason: 'breakpoint', threadId: 'thread-1',
       source: 'src/'.repeat(2000) + 'a.ts', line: 4, column: 2,
-    }))
+    })
     const raw = harness.lines.at(-1) ?? ''
     expect(raw.length).toBeLessThan(10 * 1024)
   })
