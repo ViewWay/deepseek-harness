@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-api-debug-controller` exposes the debug seam over authenticated Remote for Web and Desktop consumers. Unary methods follow the design's resource groups — session listing, execution control (continue/pause/step), inspection (stack, evaluation), and per-file breakpoint replacement — and `events(sessionId, after)` replays one session's sequenced events from a bounded ring using the monotonic `debugEventSeq` cursor. A cursor that fell behind the ring's retention answers with the `debug/event-cursor-expired` flow-control code so clients resynchronize instead of silently missing events. Editor file writes belong to a separate controller.
+`dsh-api-debug-controller` exposes the debug seam over authenticated Remote for Web and Desktop. Unary methods follow the design's resource groups — session listing, execution control (continue/pause/step/restart-frame), inspection (threads, stacks, scopes, variables, set-variable/set-expression, completions, exception info, modules, sources, breakpoint locations, disassembly), memory reads and writes with base64 bytes, console paging, and per-file breakpoint replacement — and `events(sessionId, after)` replays one session's sequenced events from a bounded ring using the monotonic `debugEventSeq` cursor. A cursor that fell behind retention answers `debug/event-cursor-expired` so clients resynchronize instead of silently missing events. Editor file writes belong to a separate controller.
 
 ## Table of Contents
 

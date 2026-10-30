@@ -10,18 +10,47 @@
  * Editor file writes are a separate controller's concern.
  * @module @deepseek-ai/dsh-api-debug-controller
  */
+import { Buffer } from 'node:buffer'
 import { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { Remote, TypertLookup, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-sandbox-policy'
-import { DebugError, DebugSessionId } from '@deepseek-ai/dsh-debug'
-import type { BreakpointSessionApplication, DebugBreakpointInput, DebugEvaluateResult, DebugResumeResult, DebugSessionInfo, DebugStackTrace, JsonValue } from '@deepseek-ai/dsh-debug'
+import { DebugError, DebugFrameId, DebugSessionId, DebugSourceReference, DebugThreadId, DebugVariableReference } from '@deepseek-ai/dsh-debug'
+import type {
+  BreakpointSessionApplication,
+  DebugBreakpointInput,
+  DebugBreakpointLocation,
+  DebugBreakpointLocationsRequest,
+  DebugCompletion,
+  DebugConsoleOptions,
+  DebugConsolePage,
+  DebugDisassembleRequest,
+  DebugDisassembly,
+  DebugEvaluateResult,
+  DebugExceptionInfo,
+  DebugModulesOptions,
+  DebugModulesPage,
+  DebugReadMemoryRequest,
+  DebugResumeResult,
+  DebugScopeInfo,
+  DebugSessionInfo,
+  DebugSource,
+  DebugSourceContent,
+  DebugStackTrace,
+  DebugThread,
+  DebugVariable,
+  DebugVariablesOptions,
+  DebugVariablesPage,
+  DebugWriteMemoryRequest,
+  DebugWriteMemoryResult,
+  JsonValue,
+} from '@deepseek-ai/dsh-debug'
 import { DebugEventRing } from './ring.ts'
 import type { DebugEventReplay } from './ring.ts'
 import { editorVersion, writeEditorText } from './editor-write.ts'
 import type { EditorWriteResult } from './editor-write.ts'
-import type { DebugEditorScope, DebugSessionBackend } from './types.ts'
+import type { DebugEditorScope, DebugReadMemoryWireResult, DebugSessionBackend } from './types.ts'
 
 export type { DebugEditorScope, DebugSessionBackend } from './types.ts'
 
@@ -183,6 +212,17 @@ export class DebugController extends TypertRemoteService {
   }
 
   /**
+   * Re-run one frame from its start; requires the adapter's
+   * `supportsRestartFrame`.
+   * @param sessionId - Session to control.
+   * @param frameId - The frame to restart, from `inspectStackTrace`.
+   */
+  @Remote
+  executionRestartFrame(sessionId: string, frameId: string): Promise<void> {
+    return this.withSessionBackend(sessionId, backend => backend.restartFrame(DebugFrameId(frameId)))
+  }
+
+  /**
    * Read one thread's stack while stopped.
    * @param sessionId - Session to inspect.
    * @returns The stack page.
@@ -201,6 +241,197 @@ export class DebugController extends TypertRemoteService {
   @Remote
   inspectEvaluate(sessionId: string, expression: string): Promise<DebugEvaluateResult> {
     return this.withSessionBackend(sessionId, backend => backend.evaluate(expression, 'repl'))
+  }
+
+  /**
+   * List every debuggee thread with its stop state.
+   * @param sessionId - Session to inspect.
+   * @returns Every thread of the debugged process.
+   */
+  @Remote
+  inspectThreads(sessionId: string): Promise<readonly DebugThread[]> {
+    return this.withSessionBackend(sessionId, backend => backend.threads())
+  }
+
+  /**
+   * Read one frame's scope list while stopped.
+   * @param sessionId - Session to inspect.
+   * @param frameId - The frame whose scopes to read, from `inspectStackTrace`.
+   * @returns The frame's scopes in adapter order.
+   */
+  @Remote
+  inspectScopes(sessionId: string, frameId: string): Promise<readonly DebugScopeInfo[]> {
+    return this.withSessionBackend(sessionId, backend => backend.scopes(DebugFrameId(frameId)))
+  }
+
+  /**
+   * Read one page of a variable container's children.
+   * @param sessionId - Session to inspect.
+   * @param variablesReference - The container to expand, from a scope,
+   *   variable, or evaluation result.
+   * @param options - Paging and named/indexed filtering.
+   * @returns The requested child page plus container totals.
+   */
+  @Remote
+  inspectVariables(sessionId: string, variablesReference: string, options?: DebugVariablesOptions): Promise<DebugVariablesPage> {
+    return this.withSessionBackend(sessionId, backend => backend.variables(DebugVariableReference(variablesReference), options))
+  }
+
+  /**
+   * Assign a value to one variable; requires the adapter's
+   * `supportsSetVariable`.
+   * @param sessionId - Session to control.
+   * @param reference - The container holding the variable.
+   * @param name - The variable name within the container.
+   * @param value - The assignment source text.
+   * @returns The variable as the adapter re-rendered it.
+   */
+  @Remote
+  inspectSetVariable(sessionId: string, reference: string, name: string, value: string): Promise<DebugVariable> {
+    return this.withSessionBackend(sessionId, backend => backend.setVariable(DebugVariableReference(reference), name, value))
+  }
+
+  /**
+   * Assign a value to one expression; requires the adapter's
+   * `supportsSetExpression`.
+   * @param sessionId - Session to control.
+   * @param expression - The assignable expression text.
+   * @param value - The assignment source text.
+   * @param frameId - The frame context; the stopped frame when omitted.
+   * @returns The re-evaluated expression result.
+   */
+  @Remote
+  inspectSetExpression(sessionId: string, expression: string, value: string, frameId?: string): Promise<DebugEvaluateResult> {
+    return this.withSessionBackend(sessionId, backend => backend.setExpression(expression, value, frameIdOf(frameId)))
+  }
+
+  /**
+   * Read completion candidates for a REPL line; requires the adapter's
+   * `supportsCompletionsRequest`.
+   * @param sessionId - Session to inspect.
+   * @param text - The whole REPL line up to the cursor.
+   * @param column - The zero-based cursor column within `text`.
+   * @param frameId - The frame context; the stopped frame when omitted.
+   * @returns The normalized candidates.
+   */
+  @Remote
+  inspectCompletions(sessionId: string, text: string, column: number, frameId?: string): Promise<readonly DebugCompletion[]> {
+    return this.withSessionBackend(sessionId, backend => backend.completions(text, column, frameIdOf(frameId)))
+  }
+
+  /**
+   * Read one stopped thread's exception.
+   * @param sessionId - Session to inspect.
+   * @param threadId - The thread stopped on an exception, from `inspectThreads`.
+   * @returns The adapter's exception report.
+   */
+  @Remote
+  inspectExceptionInfo(sessionId: string, threadId: string): Promise<DebugExceptionInfo> {
+    return this.withSessionBackend(sessionId, backend => backend.exceptionInfo(DebugThreadId(threadId)))
+  }
+
+  /**
+   * Read one page of loaded modules; requires the adapter's
+   * `supportsModulesRequest`.
+   * @param sessionId - Session to inspect.
+   * @param options - Module paging.
+   * @returns The requested module page plus whole-process totals.
+   */
+  @Remote
+  inspectModules(sessionId: string, options?: DebugModulesOptions): Promise<DebugModulesPage> {
+    return this.withSessionBackend(sessionId, backend => backend.modules(options))
+  }
+
+  /**
+   * List every source the adapter reports as loaded.
+   * @param sessionId - Session to inspect.
+   * @returns The loaded sources.
+   */
+  @Remote
+  inspectLoadedSources(sessionId: string): Promise<readonly DebugSource[]> {
+    return this.withSessionBackend(sessionId, backend => backend.loadedSources())
+  }
+
+  /**
+   * Fetch one dynamic source's content.
+   * @param sessionId - Session to inspect.
+   * @param sourceReference - The content reference the stack, modules, or
+   *   loaded-source list reported.
+   * @returns The source text.
+   */
+  @Remote
+  inspectSource(sessionId: string, sourceReference: string): Promise<DebugSourceContent> {
+    return this.withSessionBackend(sessionId, backend => backend.source(DebugSourceReference(sourceReference)))
+  }
+
+  /**
+   * Resolve the legal breakpoint positions of one source range.
+   * @param sessionId - Session to inspect.
+   * @param request - The source and line range to resolve.
+   * @returns The adapter-resolved positions, in adapter order.
+   */
+  @Remote
+  inspectBreakpointLocations(sessionId: string, request: DebugBreakpointLocationsRequest): Promise<readonly DebugBreakpointLocation[]> {
+    return this.withSessionBackend(sessionId, backend => backend.breakpointLocations(request))
+  }
+
+  /**
+   * Disassemble one instruction range; requires the adapter's
+   * `supportsDisassembleRequest`.
+   * @param sessionId - Session to inspect.
+   * @param request - The memory anchor, range, and symbol resolution flags.
+   * @returns The disassembled instructions.
+   */
+  @Remote
+  inspectDisassemble(sessionId: string, request: DebugDisassembleRequest): Promise<DebugDisassembly> {
+    return this.withSessionBackend(sessionId, backend => backend.disassemble(request))
+  }
+
+  /**
+   * Read debuggee memory; requires the adapter's
+   * `supportsReadMemoryRequest`. The wire result carries the bytes as
+   * base64 with the standard alphabet because the Remote boundary moves
+   * JSON only.
+   * @param sessionId - Session to inspect.
+   * @param request - The memory anchor, byte count, and optional offset.
+   * @returns The resolved address, the base64-encoded bytes read, and any
+   *   unreadable tail count.
+   */
+  @Remote
+  inspectReadMemory(sessionId: string, request: DebugReadMemoryRequest): Promise<DebugReadMemoryWireResult> {
+    return this.withSessionBackend(sessionId, async (backend) => {
+      const read = await backend.readMemory(request)
+      return {
+        ...(read.address === undefined ? {} : { address: read.address }),
+        data: Buffer.from(read.data).toString('base64'),
+        ...(read.unreadableBytes === undefined ? {} : { unreadableBytes: read.unreadableBytes }),
+      }
+    })
+  }
+
+  /**
+   * Write debuggee memory; requires the adapter's
+   * `supportsWriteMemoryRequest`. The request's `data` is base64 with the
+   * standard alphabet, matching the seam's DAP semantics.
+   * @param sessionId - Session to control.
+   * @param request - The memory anchor, base64 bytes, optional offset, and
+   *   partial-write allowance.
+   * @returns The offset and byte count the adapter reported for the write.
+   */
+  @Remote
+  inspectWriteMemory(sessionId: string, request: DebugWriteMemoryRequest): Promise<DebugWriteMemoryResult> {
+    return this.withSessionBackend(sessionId, backend => backend.writeMemory(request))
+  }
+
+  /**
+   * Read one page of the session's console output.
+   * @param sessionId - Session to inspect.
+   * @param options - Cursor paging over the console history.
+   * @returns The requested console page plus the next cursor.
+   */
+  @Remote
+  inspectConsole(sessionId: string, options?: DebugConsoleOptions): Promise<DebugConsolePage> {
+    return this.withSessionBackend(sessionId, backend => backend.console(options))
   }
 
   /**
@@ -237,11 +468,15 @@ export class DebugController extends TypertRemoteService {
   }
 
   private withSessionBackend<T>(sessionId: string, operate: (backend: DebugSessionBackend) => Promise<T>): Promise<T> {
-    const registered = this.ctx.debug.backendOf(DebugSessionId(sessionId))
-    if (registered === undefined) {
+    const backend = this.ctx.debug.backendOf(DebugSessionId(sessionId))
+    if (backend === undefined) {
       return Promise.reject(new DebugError('debug session is not active: ' + sessionId, 'DEBUG_SESSION_GONE'))
     }
-    const backend = registered as DebugSessionBackend
     return operate(backend)
   }
+}
+
+/** Re-brand a wire frame id; the stopped frame when omitted. */
+function frameIdOf(frameId: string | undefined): DebugFrameId | undefined {
+  return frameId === undefined ? undefined : DebugFrameId(frameId)
 }

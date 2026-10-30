@@ -12,6 +12,7 @@ import { defineTool } from '@deepseek-ai/dsh-tools'
 import { DebugError } from '@deepseek-ai/dsh-debug'
 import type { DebugScope } from '@deepseek-ai/dsh-debug'
 import { DEBUG_PROMPT_SECTION, DEBUG_PROMPT_TEXT } from './prompt.ts'
+import { dispatchExecutionOperation, dispatchInspectOperation } from './dispatch.ts'
 import {
   DEBUG_BREAKPOINTS_OPERATIONS,
   DEBUG_EXECUTION_OPERATIONS,
@@ -19,6 +20,7 @@ import {
   DEBUG_SESSION_OPERATIONS,
   parseDebugOperation,
   parseSessionId,
+  resolveSessionBackend,
   unavailableBackend,
 } from './tools.ts'
 
@@ -31,11 +33,21 @@ export {
   parseDebugOperation,
   parseProviderId,
   parseSessionId,
+  resolveSessionBackend,
   unavailableBackend,
 } from './tools.ts'
-export type { DebugToolName } from './tools.ts'
+export type {
+  DebugBreakpointsOperation,
+  DebugExecutionOperation,
+  DebugInspectOperation,
+  DebugOperationOf,
+  DebugSessionOperation,
+  DebugToolName,
+} from './tools.ts'
+export { dispatchExecutionOperation, dispatchInspectOperation } from './dispatch.ts'
+export type { DebugExecutionArgs, DebugInspectArgs } from './dispatch.ts'
 export { DEBUG_PROMPT_SECTION, DEBUG_PROMPT_TEXT } from './prompt.ts'
-export { renderStackTrace, renderVariables } from './render.ts'
+export { boundValue, renderSeamStackTrace, renderStackTrace, renderVariables } from './render.ts'
 export type { RenderedFrame, RenderedStackTrace, RenderedVariable, RenderedVariables } from './render.ts'
 export { createStopNotice, shouldWake } from './notices.ts'
 export type { DebugNoticeBounds, DebugStopDelivery, DebugStopFacts, DebugWakeFacts } from './notices.ts'
@@ -68,8 +80,8 @@ export const inject = ['tools', 'debug', 'systemPrompt']
 /**
  * Register the four debug tools and the fixed system-prompt section. Each
  * tool validates its closed operation union first, dispatches to the landed
- * `ctx.debug` face, and fails typed for operations whose backing session
- * face arrives with the DAP backend.
+ * `ctx.debug` faces and the session backend registry, and fails typed for
+ * operations whose backing face has not landed.
  * @param ctx - the plugin's context (must inject tools, debug, systemPrompt).
  */
 export function apply(ctx: Context): void {
@@ -128,42 +140,59 @@ export function apply(ctx: Context): void {
 
   const debugExecutionTool = defineTool({
     name: 'debug_execution',
-    description: 'Control a debug session. operation is one of continue, pause, step_over, step_in, step_out, step_back, restart, restart_frame, wait_for_stop. Most operations need the session id; continue and step wait for the next stop.',
+    description: 'Control a debug session. operation is one of continue, pause, step_over, step_in, step_out, step_back, restart, restart_frame, wait_for_stop. Most operations need the session id; continue and step wait for the next stop; threadId scopes control to one thread; restart_frame needs frameId.',
     parameters: {
       operation: { type: 'string', required: true, enum: [...DEBUG_EXECUTION_OPERATIONS], description: 'The execution operation to run.' },
       sessionId: { type: 'string', required: true, description: 'Debug session id, serialized debug-<hex> form.' },
+      threadId: { type: 'string', description: 'Thread id for pause, continue, and stepping; the stopped thread when omitted.' },
+      frameId: { type: 'string', description: 'Frame id for restart_frame.' },
     },
     output: {
       schema: { type: 'json' },
       render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }],
     },
-    execute(args) {
+    async execute(args) {
       const operation = parseDebugOperation('debug_execution', args.operation)
-      parseSessionId(args.sessionId)
-      // Every execution operation drives the DAP session face; the typed failure names the arriving backend.
-      throw unavailableBackend(operation)
+      const backend = resolveSessionBackend(ctx.debug, parseSessionId(args.sessionId), operation)
+      return dispatchExecutionOperation(backend, operation, args)
     },
   })
 
   const debugInspectTool = defineTool({
     name: 'debug_inspect',
-    description: 'Inspect a stopped debug session. operation is one of threads, stack_trace, scopes, variables, evaluate, set_variable, set_expression, completions, exception_info, modules, loaded_sources, source, disassemble, read_memory, write_memory, console. Results are bounded; variables expand one level per call.',
+    description: 'Inspect a stopped debug session. operation is one of threads, stack_trace, scopes, variables, evaluate, set_variable, set_expression, completions, exception_info, modules, loaded_sources, source, disassemble, read_memory, write_memory, breakpoint_locations, console. Results are bounded; variables expand one level per call.',
     parameters: {
       operation: { type: 'string', required: true, enum: [...DEBUG_INSPECT_OPERATIONS], description: 'The inspection operation to run.' },
       sessionId: { type: 'string', required: true, description: 'Debug session id, serialized debug-<hex> form.' },
-      threadId: { type: 'string', description: 'Thread id for stack traces and stepping.' },
-      frameId: { type: 'string', description: 'Frame id for scopes and evaluation.' },
-      variablesReference: { type: 'number', description: 'Child container reference for variables.' },
+      threadId: { type: 'string', description: 'Thread id for stack traces and exception_info.' },
+      frameId: { type: 'string', description: 'Frame id for scopes, evaluation, and set_expression.' },
+      variablesReference: { type: 'string', description: 'Child container reference for variables and set_variable.' },
       expression: { type: 'string', description: 'Expression for evaluate and set_expression.' },
+      name: { type: 'string', description: 'Variable name for set_variable.' },
+      value: { type: 'string', description: 'Assignment source text for set_variable and set_expression.' },
+      text: { type: 'string', description: 'Whole REPL line up to the cursor for completions.' },
+      column: { type: 'number', description: 'Zero-based cursor column within text for completions; one-based start column for breakpoint_locations.' },
+      memoryReference: { type: 'string', description: 'Memory anchor from variables, evaluate, or disassemble, for read_memory, write_memory, and disassemble.' },
+      count: { type: 'number', description: 'Byte count for read_memory.' },
+      offset: { type: 'number', description: 'Byte offset for read_memory and write_memory.' },
+      data: { type: 'string', description: 'Base64-encoded bytes for write_memory.' },
+      allowPartial: { type: 'boolean', description: 'Accept a prefix write for write_memory instead of failing the whole request.' },
+      sourceReference: { type: 'string', description: 'Source reference from stack traces, loaded_sources, or console entries, for source.' },
+      instructionCount: { type: 'number', description: 'Instruction count for disassemble.' },
+      instructionOffset: { type: 'number', description: 'First-instruction offset from the reference for disassemble.' },
+      file: { type: 'string', description: 'Workspace-relative or absolute source path for breakpoint_locations.' },
+      line: { type: 'number', description: 'One-based start line for breakpoint_locations.' },
+      endLine: { type: 'number', description: 'End line of the range for breakpoint_locations.' },
+      endColumn: { type: 'number', description: 'One-based end column in UTF-16 code units for breakpoint_locations.' },
     },
     output: {
       schema: { type: 'json' },
       render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }],
     },
-    execute(args) {
+    async execute(args) {
       const operation = parseDebugOperation('debug_inspect', args.operation)
-      parseSessionId(args.sessionId)
-      throw unavailableBackend(operation)
+      const backend = resolveSessionBackend(ctx.debug, parseSessionId(args.sessionId), operation)
+      return dispatchInspectOperation(backend, operation, args)
     },
   })
 

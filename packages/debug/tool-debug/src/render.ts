@@ -4,6 +4,8 @@
  * @module @deepseek-ai/dsh-tool-debug/render
  */
 
+import type { DebugStackTrace } from '@deepseek-ai/dsh-debug'
+
 /** One rendered stack frame with a workspace-relative source path. */
 export interface RenderedFrame {
   readonly id: string
@@ -24,7 +26,9 @@ export interface RenderedStackTrace {
 export interface RenderedVariable {
   readonly name: string
   readonly value: string
-  readonly variablesReference: number
+  readonly variablesReference: string
+  /** Adapter-assigned memory anchor, kept so read_memory/disassemble stay reachable. */
+  readonly memoryReference?: string
 }
 
 /** One rendered variables view. */
@@ -32,8 +36,9 @@ export interface RenderedVariables {
   readonly variables: readonly RenderedVariable[]
 }
 
-/** Strip the workspace root prefix from an absolute source path. */
+/** Strip the workspace root prefix from an absolute source path; an empty root means the path is already relative. */
 function relativize(absolute: string, workspaceRoot: string): string {
+  if (workspaceRoot === '') return absolute
   const prefix = workspaceRoot.endsWith('/') ? workspaceRoot : `${workspaceRoot}/`
   return absolute.startsWith(prefix) ? absolute.slice(prefix.length) : absolute
 }
@@ -77,6 +82,41 @@ export function renderStackTrace(
 }
 
 /**
+ * Render one seam stack-trace page. The seam reports sources already
+ * workspace-relative, so this applies the shared frame cap and totals without
+ * re-relativizing.
+ * @param trace - the seam's stack page with whole-stack totals.
+ * @param maxFrames - largest rendered frame count (default 50).
+ * @returns the bounded view with the seam's paths unchanged.
+ */
+export function renderSeamStackTrace(trace: DebugStackTrace, maxFrames = 50): RenderedStackTrace {
+  return renderStackTrace({
+    workspaceRoot: '',
+    frames: trace.frames.map(frame => ({
+      id: frame.id,
+      name: frame.name,
+      ...(frame.source !== undefined ? { source: frame.source.workspaceRelativePath } : {}),
+      ...(frame.line !== undefined ? { line: frame.line } : {}),
+      ...(frame.column !== undefined ? { column: frame.column } : {}),
+    })),
+    truncated: trace.truncated,
+    total: trace.totalFrames,
+  }, maxFrames)
+}
+
+/**
+ * Bound one value string with the shared per-value character cap.
+ * @param value - the raw value text.
+ * @param maxValueChars - largest value length before ellipsis (default 200).
+ * @returns the value, with the truncation marker and original length when capped.
+ */
+export function boundValue(value: string, maxValueChars = 200): string {
+  return value.length > maxValueChars
+    ? `${value.slice(0, maxValueChars)}… (truncated ${value.length} chars)`
+    : value
+}
+
+/**
  * Render one variables page with per-value character caps. Truncation marks
  * the value text; the child reference survives so lazy expansion keeps working.
  * @param view - the raw variables page and its value cap.
@@ -86,18 +126,21 @@ export function renderStackTrace(
  */
 export function renderVariables(
   view: {
-    readonly variables: readonly { readonly name: string; readonly value: string; readonly variablesReference: number }[]
+    readonly variables: readonly {
+      readonly name: string
+      readonly value: string
+      readonly variablesReference: string
+      readonly memoryReference?: string
+    }[]
     readonly maxValueChars?: number
   },
 ): RenderedVariables {
-  const maxValueChars = view.maxValueChars ?? 200
   return {
     variables: view.variables.map(variable => ({
       name: variable.name,
-      value: variable.value.length > maxValueChars
-        ? `${variable.value.slice(0, maxValueChars)}… (truncated ${variable.value.length} chars)`
-        : variable.value,
+      value: boundValue(variable.value, view.maxValueChars ?? 200),
       variablesReference: variable.variablesReference,
+      ...(variable.memoryReference !== undefined ? { memoryReference: variable.memoryReference } : {}),
     })),
   }
 }

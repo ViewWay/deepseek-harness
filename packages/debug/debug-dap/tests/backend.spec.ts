@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createFakeDebugAdapter } from '@deepseek-ai/dsh-fake-debug-adapter'
 import { DebugBreakpointId, DebugFrameId, DebugSessionId, DebugSourceReference, DebugThreadId, DebugVariableReference } from '@deepseek-ai/dsh-debug'
-import type { JsonValue } from '@deepseek-ai/dsh-debug'
+import type { DebugCapabilities, JsonObject, JsonValue } from '@deepseek-ai/dsh-debug'
 import { createMemoryTransport } from './memory-transport.ts'
 import { DapClient } from '../src/client.ts'
 import { decodeDapFrames, encodeDapFrame, type DapEvent, type DapRequest, type DapResponse } from '../src/frames.ts'
@@ -14,6 +14,8 @@ const HANDSHAKE_PLAN: DebugHandshakePlan = { launch: { request: 'launch' }, time
 interface Mounted {
   readonly backend: DapDebugBackend
   readonly sentCommands: readonly string[]
+  /** Requests with their decoded arguments, in send order; only `mountScripted` records them. */
+  readonly sentRequests: readonly { readonly command: string; readonly arguments?: JsonValue }[]
   readonly adapter?: ReturnType<typeof createFakeDebugAdapter>
 }
 
@@ -32,16 +34,22 @@ function mountBackend(
     consoleLimit: 4,
     ...options,
   })
-  return { backend, sentCommands: [], adapter }
+  return { backend, sentCommands: [], sentRequests: [], adapter }
 }
 
 interface ExchangeStep {
   readonly response?: JsonValue
-  readonly event?: { readonly name: string; readonly body?: { readonly [key: string]: JsonValue } }
+  /** Deliver the response with no body at all, for optional-body commands. */
+  readonly bodyless?: boolean
+  readonly event?: { readonly name: string; readonly body?: JsonValue }
 }
 
-function mountScripted(exchanges: Readonly<Record<string, readonly ExchangeStep[]>>): Mounted {
+function mountScripted(
+  exchanges: Readonly<Record<string, readonly ExchangeStep[]>>,
+  options: Partial<BackendOptions> = {},
+): Mounted {
   const sentCommands: string[] = []
+  const sentRequests: { command: string; arguments?: JsonValue }[] = []
   const waiters: { resolve: (result: IteratorResult<Uint8Array>) => void }[] = []
   const queued: IteratorResult<Uint8Array>[] = []
   let wireSeq = 100
@@ -70,13 +78,14 @@ function mountScripted(exchanges: Readonly<Record<string, readonly ExchangeStep[
         if (message.type !== 'request') continue
         const request: DapRequest = message
         sentCommands.push(request.command)
+        sentRequests.push({ command: request.command, ...(request.arguments === undefined ? {} : { arguments: request.arguments }) })
         for (const step of exchanges[request.command] ?? []) {
-          if (step.response !== undefined) {
-            deliver({ seq: wireSeq++, type: 'response', request_seq: request.seq, success: true, command: request.command, body: step.response })
+          if (step.response !== undefined || step.bodyless === true) {
+            deliver({ seq: wireSeq++, type: 'response', request_seq: request.seq, success: true, command: request.command, ...(step.bodyless === true ? {} : { body: step.response }) })
             continue
           }
           if (step.event !== undefined) {
-            deliver({ seq: wireSeq++, type: 'event', event: step.event.name, body: step.event.body ?? {} })
+            deliver({ seq: wireSeq++, type: 'event', event: step.event.name, ...(step.event.body === undefined ? {} : { body: step.event.body }) })
           }
         }
       }
@@ -89,8 +98,9 @@ function mountScripted(exchanges: Readonly<Record<string, readonly ExchangeStep[
     requestTimeoutMs: 1000,
     resumeTimeoutMs: 30,
     consoleLimit: 3,
+    ...options,
   })
-  return { backend, sentCommands }
+  return { backend, sentCommands, sentRequests }
 }
 
 describe('DapDebugBackend lifecycle', () => {
@@ -326,8 +336,8 @@ describe('DapDebugBackend lifecycle', () => {
         loadedSources: [{ response: { sources: [{ path: '/ws/b.ts', sourceReference: 5 }] } }],
         source: [{ response: { content: 'let x = 1', mimeType: 'text/x-typescript' } }],
         disassemble: [{ response: { instructions: [{ address: '0x1', instruction: 'mov', symbol: 'f', location: { path: '/ws/a.ts' }, line: 3, column: 1 }] } }],
-        readMemory: [{ response: { data: 'QUJD' } }],
-        writeMemory: [{ response: {} }],
+        readMemory: [{ response: { address: '0x10', data: 'QUJD', unreadableBytes: 2 } }],
+        writeMemory: [{ response: { offset: 4, bytesWritten: 3 } }],
         restartFrame: [{ response: {} }],
       })
       const backend = scripted.backend
@@ -352,8 +362,8 @@ describe('DapDebugBackend lifecycle', () => {
       await expect(backend.disassemble({ memoryReference: '0x1', instructionCount: 1 })).resolves.toMatchObject({
         instructions: [{ address: '0x1', instruction: 'mov', symbol: 'f', line: 3, column: 1 }],
       })
-      await expect(backend.readMemory({ memoryReference: '0x1', count: 3 })).resolves.toEqual(new TextEncoder().encode('ABC'))
-      await expect(backend.writeMemory({ memoryReference: '0x1', data: 'QUJD' })).resolves.toBeUndefined()
+      await expect(backend.readMemory({ memoryReference: '0x1', count: 3 })).resolves.toEqual({ address: '0x10', data: new TextEncoder().encode('ABC'), unreadableBytes: 2 })
+      await expect(backend.writeMemory({ memoryReference: '0x1', data: 'QUJD', allowPartial: true })).resolves.toEqual({ offset: 4, bytesWritten: 3 })
       await expect(backend.restartFrame(trace.frames[0]?.id ?? DebugFrameId('7'))).resolves.toBeUndefined()
     })
 
@@ -650,7 +660,7 @@ describe('DapDebugBackend lifecycle', () => {
         loadedSources: [{ response: { sources: [{}] } }],
         source: [{ response: { content: 'c' } }],
         disassemble: [{ response: { instructions: [{ address: '0x9', instruction: 'nop' }] } }],
-        readMemory: [{ response: {} }],
+        readMemory: [{ response: { address: '0x9' } }],
         writeMemory: [{ response: {} }],
         restartFrame: [{ response: {} }],
         stepBack: [{ response: {} }, { event: { name: 'stopped', body: { reason: 'step', threadId: 5 } } }],
@@ -684,8 +694,8 @@ describe('DapDebugBackend lifecycle', () => {
       await expect(backend.disassemble({ memoryReference: '0x9', instructionCount: 1, offset: 0, resolveSymbols: true })).resolves.toMatchObject({
         instructions: [{ address: '0x9', instruction: 'nop' }],
       })
-      await expect(backend.readMemory({ memoryReference: '0x9', count: 2, offset: 0 })).resolves.toEqual(new Uint8Array(0))
-      await expect(backend.writeMemory({ memoryReference: '0x9', data: '', offset: 0 })).resolves.toBeUndefined()
+      await expect(backend.readMemory({ memoryReference: '0x9', count: 2, offset: 0 })).resolves.toEqual({ address: '0x9', data: new Uint8Array(0) })
+      await expect(backend.writeMemory({ memoryReference: '0x9', data: '', offset: 0 })).resolves.toEqual({})
       await expect(backend.restartFrame(trace.frames[0]?.id ?? DebugFrameId('3'))).resolves.toBeUndefined()
       await expect(backend.step('back', DebugThreadId('5'), 'instruction')).resolves.toMatchObject({ kind: 'stopped', stop: { reason: 'step' } })
       await expect(backend.pause(DebugThreadId('5'))).resolves.toBeUndefined()
@@ -729,6 +739,7 @@ describe('DapDebugBackend lifecycle', () => {
     await expect(backend.step('back')).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
     await expect(backend.setDataBreakpoints({ breakpoints: [{ dataId: 'x' }] })).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
     await expect(backend.setInstructionBreakpoints({ breakpoints: [{ instructionReference: '0x1' }] })).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
+    await expect(backend.breakpointLocations({ source: { workspaceRelativePath: 'a.ts', absolutePath: '/ws/a.ts' }, line: 1 })).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
     await expect(backend.readMemory({ memoryReference: '0x1', count: 4 })).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
     await expect(backend.writeMemory({ memoryReference: '0x1', data: 'AAAA' })).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
     await expect(backend.disassemble({ memoryReference: '0x1', instructionCount: 2 })).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
@@ -741,5 +752,194 @@ describe('DapDebugBackend lifecycle', () => {
     await expect(backend.restartFrame(DebugFrameId('1000'))).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
     await expect(backend.restart()).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
     await expect(backend.terminate()).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
+  })
+})
+
+describe('DapDebugBackend operation surface completion', () => {
+  it('roundtrips breakpointLocations through the wire', async () => {
+    const scripted = mountScripted({
+      initialize: [{ response: { capabilities: { supportsBreakpointLocationsRequest: true } } }, { event: { name: 'initialized' } }],
+      launch: [{ response: {} }, { event: { name: 'terminated' } }],
+      breakpointLocations: [{ response: { breakpoints: [
+        { line: 4 },
+        { line: 5, column: 2, endLine: 5, endColumn: 8 },
+        'not-a-location',
+      ] } }],
+    })
+    await scripted.backend.start(HANDSHAKE_PLAN)
+    const locations = await scripted.backend.breakpointLocations({
+      source: { workspaceRelativePath: 'a.ts', absolutePath: '/ws/a.ts' },
+      line: 4,
+      column: 1,
+      endLine: 6,
+      endColumn: 10,
+    })
+    expect(locations).toEqual([
+      { line: 4 },
+      { line: 5, column: 2, endLine: 5, endColumn: 8 },
+    ])
+    expect(scripted.sentRequests.find(request => request.command === 'breakpointLocations')?.arguments).toEqual({
+      source: { path: '/ws/a.ts' },
+      line: 4,
+      column: 1,
+      endLine: 6,
+      endColumn: 10,
+    })
+    const minimal = await scripted.backend.breakpointLocations({
+      source: { workspaceRelativePath: 'a.ts', absolutePath: '/ws/a.ts' },
+      line: 9,
+    })
+    expect(minimal).toEqual(locations)
+    expect(scripted.sentRequests.at(-1)?.arguments).toEqual({ source: { path: '/ws/a.ts' }, line: 9 })
+  })
+
+  it('maps degenerate breakpointLocations bodies to an empty list', async () => {
+    const notObject = mountScripted({
+      initialize: [{ response: { capabilities: { supportsBreakpointLocationsRequest: true } } }, { event: { name: 'initialized' } }],
+      launch: [{ response: {} }, { event: { name: 'terminated' } }],
+      breakpointLocations: [{ response: ['not', 'an', 'object'] }],
+    })
+    await notObject.backend.start(HANDSHAKE_PLAN)
+    await expect(notObject.backend.breakpointLocations({ source: { workspaceRelativePath: 'a.ts', absolutePath: '/ws/a.ts' }, line: 1 }))
+      .resolves.toEqual([])
+
+    const noList = mountScripted({
+      initialize: [{ response: { capabilities: { supportsBreakpointLocationsRequest: true } } }, { event: { name: 'initialized' } }],
+      launch: [{ response: {} }, { event: { name: 'terminated' } }],
+      breakpointLocations: [{ response: {} }],
+    })
+    await noList.backend.start(HANDSHAKE_PLAN)
+    await expect(noList.backend.breakpointLocations({ source: { workspaceRelativePath: 'a.ts', absolutePath: '/ws/a.ts' }, line: 1 }))
+      .resolves.toEqual([])
+  })
+
+  it('rejects breakpointLocations before sending when the adapter declared no support', async () => {
+    const scripted = mountScripted({
+      initialize: [{ response: { capabilities: {} } }, { event: { name: 'initialized' } }],
+      launch: [{ response: {} }, { event: { name: 'terminated' } }],
+      breakpointLocations: [{ response: { breakpoints: [{ line: 1 }] } }],
+    })
+    await scripted.backend.start(HANDSHAKE_PLAN)
+    await expect(scripted.backend.breakpointLocations({
+      source: { workspaceRelativePath: 'a.ts', absolutePath: '/ws/a.ts' },
+      line: 1,
+    })).rejects.toMatchObject({ code: 'DEBUG_UNSUPPORTED_CAPABILITY' })
+    expect(scripted.sentCommands).not.toContain('breakpointLocations')
+  })
+
+  it('passes memoryReference through evaluations, variables, and assignments', async () => {
+    const scripted = mountScripted({
+      initialize: [{ response: { capabilities: { supportsSetVariable: true, supportsSetExpression: true } } }, { event: { name: 'initialized' } }],
+      launch: [{ response: {} }, { event: { name: 'stopped', body: { reason: 'breakpoint', threadId: 3 } } }],
+      stackTrace: [{ response: { stackFrames: [{ id: 7, name: 'f' }], totalFrames: 1 } }],
+      scopes: [{ response: { scopes: [{ name: 'Local', variablesReference: 9, expensive: false }] } }],
+      variables: [{ response: { variables: [{ name: 'buf', value: 'Uint8Array(3)', type: 'object', variablesReference: 0, memoryReference: 'var-mem' }] } }],
+      evaluate: [{ response: { result: 'r', variablesReference: 0, memoryReference: 'eval-mem' } }],
+      setVariable: [{ response: { name: 'buf', value: 'Uint8Array(4)', variablesReference: 0, memoryReference: 'set-var-mem' } }],
+      setExpression: [{ response: { result: 'r2', variablesReference: 0, memoryReference: 'set-expr-mem' } }],
+    })
+    const backend = scripted.backend
+    await backend.start(HANDSHAKE_PLAN)
+    const frame = (await backend.currentThreadStack()).frames[0]?.id ?? DebugFrameId('7')
+    await expect(backend.evaluate('buf', 'watch', frame)).resolves.toMatchObject({ memoryReference: 'eval-mem' })
+    const scopes = await backend.scopes(frame)
+    await expect(backend.variables(scopes[0]?.variablesReference ?? DebugVariableReference('9')))
+      .resolves.toMatchObject({ variables: [{ memoryReference: 'var-mem' }] })
+    await expect(backend.setVariable(DebugVariableReference('9'), 'buf', 'x')).resolves.toMatchObject({ memoryReference: 'set-var-mem' })
+    await expect(backend.setExpression('buf', 'x', frame)).resolves.toMatchObject({ memoryReference: 'set-expr-mem' })
+  })
+
+  it('serves currentThreadStack from the stopped thread and rejects it while running', async () => {
+    const scripted = mountScripted({
+      initialize: [{ response: { capabilities: {} } }, { event: { name: 'initialized' } }],
+      launch: [{ response: {} }, { event: { name: 'stopped', body: { reason: 'breakpoint', threadId: 3 } } }],
+      stackTrace: [{ response: { stackFrames: [{ id: 7, name: 'f', line: 2 }], totalFrames: 2 } }],
+      continue: [{ response: { allThreadsContinued: false } }, { event: { name: 'terminated' } }],
+    })
+    const backend = scripted.backend
+    await backend.start(HANDSHAKE_PLAN)
+    const stack = await backend.currentThreadStack()
+    expect(stack).toMatchObject({ totalFrames: 2, truncated: true })
+    expect(stack.frames[0]).toMatchObject({ id: DebugFrameId('7'), name: 'f', line: 2 })
+    expect(scripted.sentRequests.every(request => request.command !== 'stackTrace' || (request.arguments as JsonObject)['threadId'] === 3)).toBe(true)
+    await expect(backend.continue()).resolves.toMatchObject({ kind: 'terminated' })
+    await expect(backend.currentThreadStack()).rejects.toMatchObject({ code: 'DEBUG_NOT_STOPPED' })
+  })
+
+  it('emits the handshake capabilities and merges capabilitiesEvent overlays', async () => {
+    const snapshots: DebugCapabilities[] = []
+    const scripted = mountScripted({
+      initialize: [{ response: { capabilities: { supportsTerminateRequest: true } } }, { event: { name: 'initialized' } }],
+      launch: [{ response: {} }, { event: { name: 'stopped', body: { reason: 'breakpoint', threadId: 1 } } }],
+      stackTrace: [{ response: { stackFrames: [], totalFrames: 0 } }],
+      threads: [
+        { response: { threads: [{ id: 1, name: 'main' }] } },
+        { event: { name: 'capabilitiesEvent', body: { capabilities: { supportsBreakpointLocationsRequest: true } } } },
+        { event: { name: 'capabilitiesEvent', body: { capabilities: 42 } } },
+        { event: { name: 'capabilitiesEvent', body: 'garbage' } },
+      ],
+    }, {
+      onCapabilitiesChanged: (capabilities) => { snapshots.push(capabilities) },
+    })
+    await scripted.backend.start(HANDSHAKE_PLAN)
+    expect(snapshots).toHaveLength(1)
+    expect(snapshots[0]).toMatchObject({ supportsTerminateRequest: true, supportsBreakpointLocationsRequest: false })
+    await scripted.backend.threads()
+    await vi.waitFor(() => { expect(snapshots).toHaveLength(4) })
+    expect(snapshots[1]).toMatchObject({ supportsTerminateRequest: true, supportsBreakpointLocationsRequest: true })
+    expect(snapshots[2]).toEqual(snapshots[1])
+    expect(snapshots[3]).toEqual(snapshots[1])
+  })
+
+  it('maps a bodyless readMemory to empty data without an address claim', async () => {
+    const scripted = mountScripted({
+      initialize: [{ response: { capabilities: { supportsReadMemoryRequest: true, supportsWriteMemoryRequest: true } } }, { event: { name: 'initialized' } }],
+      launch: [{ response: {} }, { event: { name: 'terminated' } }],
+      readMemory: [{ bodyless: true }],
+      writeMemory: [{ bodyless: true }],
+    })
+    await scripted.backend.start(HANDSHAKE_PLAN)
+    await expect(scripted.backend.readMemory({ memoryReference: '0x1', count: 4 })).resolves.toEqual({ data: new Uint8Array(0) })
+    await expect(scripted.backend.writeMemory({ memoryReference: '0x1', data: 'QUJD' })).resolves.toEqual({})
+  })
+
+  it('rejects a readMemory body that claims no address', async () => {
+    const scripted = mountScripted({
+      initialize: [{ response: { capabilities: { supportsReadMemoryRequest: true } } }, { event: { name: 'initialized' } }],
+      launch: [{ response: {} }, { event: { name: 'terminated' } }],
+      readMemory: [{ response: { data: 'QUJD' } }],
+    })
+    await scripted.backend.start(HANDSHAKE_PLAN)
+    await expect(scripted.backend.readMemory({ memoryReference: '0x1', count: 3 })).rejects.toMatchObject({ code: 'DEBUG_MALFORMED_RESPONSE' })
+  })
+
+  it('publishes a capabilitiesEvent that races the handshake onto the all-false base', async () => {
+    const snapshots: DebugCapabilities[] = []
+    const scripted = mountScripted({
+      initialize: [
+        { response: { capabilities: {} } },
+        { event: { name: 'initialized' } },
+        { event: { name: 'capabilitiesEvent', body: { capabilities: { supportsTerminateRequest: true } } } },
+      ],
+      launch: [{ response: {} }, { event: { name: 'terminated' } }],
+    }, {
+      onCapabilitiesChanged: (capabilities) => { snapshots.push(capabilities) },
+    })
+    await scripted.backend.start(HANDSHAKE_PLAN)
+    // The racing event publishes its overlay over the all-false base; the
+    // handshake snapshot then supersedes it as the session's authority.
+    expect(snapshots).toHaveLength(2)
+    expect(snapshots[0]).toMatchObject({ supportsTerminateRequest: true, supportsBreakpointLocationsRequest: false })
+    expect(snapshots[1]).toMatchObject({ supportsTerminateRequest: false })
+  })
+
+  it('contains a throwing capabilities subscriber', async () => {
+    const scripted = mountScripted({
+      initialize: [{ response: { capabilities: {} } }, { event: { name: 'initialized' } }],
+      launch: [{ response: {} }, { event: { name: 'terminated' } }],
+    }, {
+      onCapabilitiesChanged: () => { throw new Error('subscriber failed') },
+    })
+    await expect(scripted.backend.start(HANDSHAKE_PLAN)).resolves.toBeUndefined()
   })
 })

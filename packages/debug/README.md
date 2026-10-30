@@ -33,6 +33,6 @@ The debug group gives agents and humans IDE-level debugging over one `ctx.debug`
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-None.
+The tool layer dispatches the operation face end to end: `dsh-tool-debug` resolves every `debug_execution` and `debug_inspect` call through the `ctx.debug` backend registry onto the unified `DebugSessionOperations` contract, passes `memoryReference` anchors from inspection results into the memory and disassembly operations, and resolves `breakpoint_locations` against the adapter. Capability gating differentiates per provider in practice (upstream capability declarations, 2026-10: setVariable is universal, restartFrame is vscode-js-debug only, debugpy lacks memory read/write, delve lacks completions); the [adapter seam note](../../.agents/notes/proposed/architecture/2026-10-25-debug-adapter-seam.md) records the full matrix. The `capabilities/changed` channel exists at the backend level — emitted post-handshake and on DAP capabilities events — and its wiring into the domain event waits on the session-face composition; no UI gating is live in production yet.
 
 </details>

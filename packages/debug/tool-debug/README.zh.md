@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-使用 `dsh-tool-debug` 把调试 seam 暴露给模型。插件注册四个工具——`debug_session`、`debug_execution`、`debug_inspect`、`debug_breakpoints`——各自带封闭操作 union，未知操作以 `DEBUG_UNKNOWN_OPERATION` 拒绝。已落地的服务面直接分派：会话 list/get/terminate/disconnect 与工作区作用域的文件断点替换（set_file/clear）直接运行在 `ctx.debug` 上；其余操作的会话面随后端落地前一律类型化失败 `DEBUG_UNAVAILABLE` 并指名等待中的面。固定系统提示词段定位工具用法：仅限运行态相关失败、启动前设断点、最小化求值、结束前终止会话、普通导航用文件/LSP 工具。
+使用 `dsh-tool-debug` 把调试 seam 暴露给模型。插件注册四个工具——`debug_session`、`debug_execution`、`debug_inspect`、`debug_breakpoints`——各自带封闭操作 union，未知操作以 `DEBUG_UNKNOWN_OPERATION` 拒绝。会话 list/get/terminate/disconnect 与工作区作用域的文件断点替换（set_file/clear）直接运行在 `ctx.debug` 上；execution 与 inspection 操作经 `ctx.debug` 注册表解析会话后端，并按共享的 `DebugSessionOperations` 契约分派，缺后端时类型化失败 `DEBUG_UNAVAILABLE`。launch、attach 与 `wait_for_stop` 在各自的面落地前保持类型化不可用。固定系统提示词段定位工具用法：仅限运行态相关失败、启动前设断点、最小化求值、结束前终止会话、导航用文件/LSP 工具。
 
 ## 目录
 
@@ -23,7 +23,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-在 `dsh-debug` 之后组合本插件。工具先校验操作 union，再校验会话 id 与各操作字段；领域失败以模型可读的 `DebugError` code 呈现。断点操作带显式 `workspaceId`；无 `sessionId` 时作用于持久化工作区集合并应用到全部匹配的活跃会话，带 `sessionId` 时限定单会话（会话面落地前类型化不可用）。渲染把栈源路径相对化到工作区、按上限截断值并保留子引用、每个有界视图都带 `truncated`/`total`。
+在 `dsh-debug` 之后组合本插件。工具先校验操作 union，再校验会话 id 与各操作字段；领域失败以模型可读的 `DebugError` code 呈现。execution 与 inspection 经 `ctx.debug` 后端注册表解析会话后端，因此组合方必须为每个活跃会话注册一个后端。引用参数（`threadId`、`frameId`、`variablesReference`、`sourceReference`）是 seam 的序列化字符串 id，从先前结果原样回传；`memoryReference` 锚点从 `variables`、`evaluate`、`disassemble` 的结果传入 `read_memory`、`write_memory` 与 `disassemble`。断点操作带显式 `workspaceId`；无 `sessionId` 时作用于持久化工作区集合并应用到全部匹配的活跃会话，带 `sessionId` 时限定单会话（会话面落地前类型化不可用）。渲染把栈源路径相对化到工作区、按上限截断值并保留子引用、每个有界视图都带 `truncated`/`total`。
 
 -----
 
@@ -66,7 +66,7 @@ Use the debug tools when a failure depends on runtime state that reading code an
 
 #### 模型可见内容
 
-四个工具 schema，各带封闭 `operation` 枚举，枚举值与其 union 的词汇逐字一致：`debug_session`（launch、attach、launch_compound、list、list_compounds、get、get_compound、terminate、terminate_compound、disconnect、attach_targets）、`debug_execution`（continue、pause、step_over、step_in、step_out、step_back、restart、restart_frame、wait_for_stop）、`debug_inspect`（threads、stack_trace、scopes、variables、evaluate、set_variable、set_expression、completions、exception_info、modules、loaded_sources、source、disassemble、read_memory、write_memory、console）、`debug_breakpoints`（set_file、set_function、set_exception、set_data、set_instruction、list、clear）。模型可见的生成 schema 见[调试工具 schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-debug)。
+四个工具 schema，各带封闭 `operation` 枚举，枚举值与其 union 的词汇逐字一致：`debug_session`（launch、attach、launch_compound、list、list_compounds、get、get_compound、terminate、terminate_compound、disconnect、attach_targets）、`debug_execution`（continue、pause、step_over、step_in、step_out、step_back、restart、restart_frame、wait_for_stop）、`debug_inspect`（threads、stack_trace、scopes、variables、evaluate、set_variable、set_expression、completions、exception_info、modules、loaded_sources、source、disassemble、read_memory、write_memory、breakpoint_locations、console）、`debug_breakpoints`（set_file、set_function、set_exception、set_data、set_instruction、list、clear）。模型可见的生成 schema 见[调试工具 schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-debug)。
 
 #### Token 影响
 
@@ -80,7 +80,7 @@ Use the debug tools when a failure depends on runtime state that reading code an
 
 #### 模型可见内容
 
-有界规范 JSON：会话列表与信息为纯记录；栈带工作区相对源路径与帧上限（每个有界视图都带 `truncated`/`total`）；变量带每值上限并保留子级 `variablesReference` 供懒展开。领域失败以模型可路由的 `DebugError` code 呈现（`DEBUG_UNKNOWN_OPERATION`、`DEBUG_SESSION_GONE`、`DEBUG_UNAVAILABLE`、`DEBUG_INVALID_CONFIG`、`DEBUG_BREAKPOINT_LIMIT`），无需解析 message 文本。
+有界规范 JSON：会话列表与信息为纯记录；栈带工作区相对源路径与帧上限（每个有界视图都带 `truncated`/`total`）；变量带每值上限并保留子级 `variablesReference` 供懒展开。恢复类操作返回结算——`kind` 为 stopped（带工作区相对停驻位置）、terminated 或 running。内存读取返回 base64 `data`、解析出的 `address` 与 `unreadableBytes` 尾部；内存写入在适配器报告时返回 `offset`/`bytesWritten` 报告；`breakpoint_locations` 返回按行列排序的适配器解析位置。领域失败以模型可路由的 `DebugError` code 呈现（`DEBUG_UNKNOWN_OPERATION`、`DEBUG_SESSION_GONE`、`DEBUG_UNAVAILABLE`、`DEBUG_INVALID_CONFIG`、`DEBUG_BREAKPOINT_LIMIT`），无需解析 message 文本。
 
 #### Token 影响
 
@@ -107,5 +107,7 @@ Use the debug tools when a failure depends on runtime state that reading code an
 <a id="known-limitations-and-deferred-work"></a>
 ## 已知限制与延后工作
 
-- launch 与 attach 先校验字段，随后以 `DEBUG_UNAVAILABLE` 失败，等待审批接线的编排任务落地；execution 与 inspection 操作在 DAP 会话面暴露到 live 会话之前同样类型化失败。
+- launch 与 attach 先校验字段，随后以 `DEBUG_UNAVAILABLE` 失败，等待审批接线的编排任务落地；`wait_for_stop` 在其停驻事件面随通知编排落地前同样类型化失败。
+- execution 与 inspection 在会话已注册的后端上分派；适配器缺少对应能力的操作在后端以 `DEBUG_UNSUPPORTED_CAPABILITY` 失败，因此各 provider 的覆盖随适配器不同。
+- variables、modules 与 console 的分页选项尚未暴露；这些操作读取后端的默认页。
 - 复合操作、attach 目标探测、函数/异常/数据/指令断点、持久化集合的读取面随后端服务落地。

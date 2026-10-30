@@ -25,6 +25,7 @@ export function capabilities(overrides: Partial<DebugCapabilities> = {}): DebugC
     supportsDisassembleRequest: false,
     supportsReadMemoryRequest: false,
     supportsWriteMemoryRequest: false,
+    supportsBreakpointLocationsRequest: false,
     supportsTerminateRequest: false,
     supportsRestartRequest: false,
     supportsDelayedStackTraceLoading: false,

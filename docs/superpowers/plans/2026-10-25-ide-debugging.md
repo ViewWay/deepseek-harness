@@ -3420,15 +3420,7 @@ git commit -m "docs(debug): document the debug seam workbench and CLI"
 
 - [x] **Step 1: Add adversarial security tests**
 
-Deviation: no centralized `security.ts`. Workspace-access and symlink
-confinement are enforced at their owning seams (`dsh-fs`, controller),
-so the adversarial cases live there: `debug-controller/tests/editor-write.spec.ts`
-(escape/NUL/UTF-8/over-limit/conflicting version, 8 cases),
-`tool-debug/tests/approval.spec.ts` (control authorization incl.
-`DEBUG_CONTROL_NOT_GRANTED`, 6 cases), `debug-e2e/tests/sandbox.spec.ts`,
-and `debug/tests/environment.spec.ts` (13 cases). Redaction is pinned by
-`telemetry.spec.ts` ("never paths or environment values") and the
-durable-payload assertions in `launch.spec.ts`.
+Deviation: no centralized `security.ts`. Workspace-access and symlink confinement are enforced at their owning seams (`dsh-fs`, controller), so the adversarial cases live there: `debug-controller/tests/editor-write.spec.ts` (escape/NUL/UTF-8/over-limit/conflicting version, 8 cases), `tool-debug/tests/approval.spec.ts` (control authorization incl. `DEBUG_CONTROL_NOT_GRANTED`, 6 cases), `debug-e2e/tests/sandbox.spec.ts`, and `debug/tests/environment.spec.ts` (13 cases). Redaction is pinned by `telemetry.spec.ts` ("never paths or environment values") and the durable-payload assertions in `launch.spec.ts`.
 
 Create `packages/debug/debug/tests/security.spec.ts`:
 
@@ -3453,12 +3445,7 @@ Add editor-write tests for `../escape`, final symlink escape, NUL, non-UTF-8, ov
 
 - [x] **Step 1b: Add observability and configuration audit**
 
-`telemetry.ts` + `tests/telemetry.spec.ts` landed with the allowlist
-projection exactly as specced. Deviation: no centralized `config.ts` —
-DAP limits are injected constructor params at the seams that enforce
-them, the controller ships a validated `eventRingLimit` `Config`, and
-the tool-debug `Config` home stays deferred to approval-wired
-orchestration; the audit found no hardcoded deployment tunable.
+`telemetry.ts` + `tests/telemetry.spec.ts` landed with the allowlist projection exactly as specced. Deviation: no centralized `config.ts` — DAP limits are injected constructor params at the seams that enforce them, the controller ships a validated `eventRingLimit` `Config`, and the tool-debug `Config` home stays deferred to approval-wired orchestration; the audit found no hardcoded deployment tunable.
 
 Create `telemetry.ts` and `tests/telemetry.spec.ts`:
 
@@ -3503,19 +3490,13 @@ No deployment tunable stays hardcoded; protocol constants, checksum verification
 
 - [x] **Step 2: Add bounded-performance tests**
 
-`benchmarks/debug/session-throughput.bench.ts` (committed 54ff6c86a6)
-with the bounded-surface assertions and a bilingual README pair.
+`benchmarks/debug/session-throughput.bench.ts` (committed 54ff6c86a6) with the bounded-surface assertions and a bilingual README pair.
 
 `benchmarks/debug/session-throughput.bench.ts` drives the fake adapter through repeated stop/continue cycles with 10k console lines and 10k variables. Assert that event ring, console ring, stack pages, and variable pages stay within configured byte caps and that no unbounded array is retained. Use the existing benchmark runner and add a README describing how to run it.
 
 - [x] **Step 3: Verify package hygiene**
 
-`verify-product-use`, `verify-package-dependencies`,
-`verify-node-next-types`, and `verify-no-unknown-casts` pass (fixes:
-json-narrow exported from the package root, tui-app `export {}` marker,
-`as unknown` keeper removed). `publint` fails tree-wide from the
-master-inherited `"./src/*"` exports-vs-`files` pattern (368 packages,
-reproduced from `master:` package.json verbatim) — not a debug change.
+`verify-product-use`, `verify-package-dependencies`, `verify-node-next-types`, and `verify-no-unknown-casts` pass (fixes: json-narrow exported from the package root, tui-app `export {}` marker, `as unknown` keeper removed). `publint` fails tree-wide from the master-inherited `"./src/*"` exports-vs-`files` pattern (368 packages, reproduced from `master:` package.json verbatim) — not a debug change.
 
 Run:
 
@@ -3525,21 +3506,7 @@ Expected: PASS. Fix package exports, `files`, peer dependencies, workspace proto
 
 - [x] **Step 4: Run the full relevant gates**
 
-`test:coverage`: 47,830 pass (a third clean run had 6 unrelated
-load-flake timeouts — real-network git+ssh, watcher, and darwin CPU
-tests — each green standalone; `debug-e2e/node.spec` passes standalone
-in 287 ms). `duplication`: 0 clones. `doc-sync`: every debug-owned
-check green (tsconfig paths, config catalog, export JSDoc, translation
-pairing for `benchmarks/debug`, repository references with the
-tool-generated `python/sdk/uv.lock` excluded after a wheel-size field
-collided with a commit abbreviation). Blocked upstream, with evidence:
-`typecheck`/`lint`/`build:artifacts`/`build:check` fail on the
-master-inherited `SessionStore`/`ISessions` migration (9 committed
-errors in `ui-chat`/`ui-approval`/`ui-sidebar-right`; unmasking them
-reveals ~200 more across the client tree — one in-flight migration,
-not debug-owned). `test:snapshot -t ide-debugging` cannot replay:
-the same host-compile failure skips the tsdown bundles so staged
-profiles miss `dsh-typert-registry/lib`.
+`test:coverage`: 47,830 pass (a third clean run had 6 unrelated load-flake timeouts — real-network git+ssh, watcher, and darwin CPU tests — each green standalone; `debug-e2e/node.spec` passes standalone in 287 ms). `duplication`: 0 clones. `doc-sync`: every debug-owned check green (tsconfig paths, config catalog, export JSDoc, translation pairing for `benchmarks/debug`, repository references with the tool-generated `python/sdk/uv.lock` excluded after a wheel-size field collided with a commit abbreviation). Blocked upstream, with evidence: `typecheck`/`lint`/`build:artifacts`/`build:check` fail on the master-inherited `SessionStore`/`ISessions` migration (9 committed errors in `ui-chat`/`ui-approval`/`ui-sidebar-right`; unmasking them reveals ~200 more across the client tree — one in-flight migration, not debug-owned). `test:snapshot -t ide-debugging` cannot replay: the same host-compile failure skips the tsdown bundles so staged profiles miss `dsh-typert-registry/lib`.
 
 Run:
 
@@ -3563,11 +3530,7 @@ Expected: PASS. Do not bypass a failing gate; fix the underlying issue.
 
 - [x] **Step 5: Run the smallest real-API/e2e matrix**
 
-Task 25b already executed and recorded the four-language, SSH, and
-sandbox matrix (see Task 25b notes); this pass re-ran `debug-e2e`
-standalone green. Full-suite runs of the same suites flake only on
-machine load (initialize-timeout under 14-worker saturation), never
-standalone.
+Task 25b already executed and recorded the four-language, SSH, and sandbox matrix (see Task 25b notes); this pass re-ran `debug-e2e` standalone green. Full-suite runs of the same suites flake only on machine load (initialize-timeout under 14-worker saturation), never standalone.
 
 Run the four-language local e2e suite, the SSH launch/attach suite, and the sandbox launch suite added by Task 25b. If a required toolchain is absent, record the skip and run the remaining matrix; do not mock the missing protocol path.
 

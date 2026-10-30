@@ -53,6 +53,7 @@ export interface DebugCapabilities {
   readonly supportsCompletionsRequest: boolean
   readonly supportsModulesRequest: boolean
   readonly supportsLoadedSourcesRequest: boolean
+  readonly supportsBreakpointLocationsRequest: boolean
   readonly supportsDisassembleRequest: boolean
   readonly supportsReadMemoryRequest: boolean
   readonly supportsWriteMemoryRequest: boolean
@@ -306,6 +307,8 @@ export interface DebugEvaluateResult {
   readonly type?: string
   /** Children container; the no-children value when the result is a leaf. */
   readonly variablesReference: DebugVariableReference
+  /** Adapter-assigned memory anchor for `readMemory`/`writeMemory`/`disassemble`. */
+  readonly memoryReference?: string
 }
 
 /** One completion candidate, normalized from the DAP item. */
@@ -458,12 +461,36 @@ export interface DebugReadMemoryRequest {
   readonly offset?: number
 }
 
+/**
+ * One memory read's outcome: the address the adapter resolved, the bytes it
+ * read, and the unreadable tail. `data` shorter than the requested `count`
+ * with no `unreadableBytes` marks the end of readable memory.
+ */
+export interface DebugReadMemoryResult {
+  /** Address of the first returned byte, in the adapter's notation; absent when the adapter returned no body. */
+  readonly address?: string
+  /** Decoded bytes; empty when the adapter read none. */
+  readonly data: Uint8Array
+  /** Byte count after `data` the adapter could not read. */
+  readonly unreadableBytes?: number
+}
+
 /** Request to write target-process memory; `data` is base64 (DAP semantics). */
 export interface DebugWriteMemoryRequest {
   readonly memoryReference: string
   /** Base64-encoded bytes to write. */
   readonly data: string
   readonly offset?: number
+  /** Accept a prefix write instead of an all-or-nothing failure. */
+  readonly allowPartial?: boolean
+}
+
+/** One memory write's outcome; members appear only when the adapter reported them. */
+export interface DebugWriteMemoryResult {
+  /** Offset the adapter actually wrote at, when it reports one. */
+  readonly offset?: number
+  /** Bytes written; reported for partial writes the caller allowed. */
+  readonly bytesWritten?: number
 }
 
 /** Console-output category; DAP's output-event set. */
@@ -539,6 +566,183 @@ export interface DebugVariable {
   readonly value: string
   readonly type?: string
   readonly variablesReference: DebugVariableReference
+  /** Adapter-assigned memory anchor for `readMemory`/`writeMemory`/`disassemble`. */
+  readonly memoryReference?: string
+}
+
+/**
+ * The session-scoped operation surface one registered debug backend serves:
+ * execution control, inspection, and the bounded reads the tool face and the
+ * debug controller expose. `DapDebugBackend` satisfies this structurally; the
+ * tool dispatch, the controller remotes, and tests consume it as the one
+ * shared contract instead of per-layer method subsets.
+ */
+export interface DebugSessionOperations {
+  /**
+   * Resume a stopped thread.
+   * @param threadId - the thread to resume; the stopped thread when omitted.
+   * @param options - execution options the adapter accepts.
+   * @returns the settlement: the next stop, termination, or still running.
+   */
+  continue(threadId?: DebugThreadId, options?: DebugOperationOptions): Promise<DebugResumeResult>
+  /**
+   * Step a stopped thread in one direction.
+   * @param kind - the step direction; `back` requires `supportsStepBack`.
+   * @param threadId - the thread to step; the stopped thread when omitted.
+   * @param granularity - statement or instruction stepping when supported.
+   * @returns the settlement of the step.
+   */
+  step(kind: DebugStepKind, threadId?: DebugThreadId, granularity?: DebugSteppingGranularity): Promise<DebugResumeResult>
+  /**
+   * Pause a running thread.
+   * @param threadId - the thread to pause; the current thread when omitted.
+   */
+  pause(threadId?: DebugThreadId): Promise<void>
+  /**
+   * Re-run the current frame from its start; requires `supportsRestartFrame`.
+   * @param frameId - the frame to restart; the top frame of the stopped thread.
+   */
+  restartFrame(frameId: DebugFrameId): Promise<void>
+  /** Restart the debuggee from the program start; requires `supportsRestartRequest`. */
+  restart(): Promise<void>
+  /** @returns every debuggee thread with its stop state. */
+  threads(): Promise<readonly DebugThread[]>
+  /**
+   * The stack of the currently stopped thread.
+   * @returns the top stack page of the stopped thread.
+   */
+  currentThreadStack(): Promise<DebugStackTrace>
+  /**
+   * One thread's stack page.
+   * @param threadId - the thread whose stack to read.
+   * @param options - frame paging for long stacks.
+   * @returns the requested stack page.
+   */
+  stackTrace(threadId: DebugThreadId, options?: DebugStackTraceOptions): Promise<DebugStackTrace>
+  /**
+   * The scope list of one frame.
+   * @param frameId - the frame whose scopes to read.
+   * @returns the frame's scopes in adapter order.
+   */
+  scopes(frameId: DebugFrameId): Promise<readonly DebugScopeInfo[]>
+  /**
+   * One page of a container's child variables.
+   * @param reference - the `variablesReference` to expand.
+   * @param options - paging and named/indexed filtering.
+   * @returns the requested child page plus totals.
+   */
+  variables(reference: DebugVariableReference, options?: DebugVariablesOptions): Promise<DebugVariablesPage>
+  /**
+   * Evaluate one expression in a stopped frame.
+   * @param expression - the expression text.
+   * @param context - where the evaluation runs; DAP's complete context set.
+   * @param frameId - the frame context; the stopped frame when omitted.
+   * @returns the rendered result and its child or memory anchors.
+   */
+  evaluate(expression: string, context: DebugEvaluateContext, frameId?: DebugFrameId): Promise<DebugEvaluateResult>
+  /**
+   * Assign a value to one variable; requires `supportsSetVariable`.
+   * @param reference - the container holding the variable.
+   * @param name - the variable name within the container.
+   * @param value - the assignment source text.
+   * @returns the variable as the adapter re-rendered it.
+   */
+  setVariable(reference: DebugVariableReference, name: string, value: string): Promise<DebugVariable>
+  /**
+   * Assign a value to one expression; requires `supportsSetExpression`.
+   * @param expression - the assignable expression text.
+   * @param value - the assignment source text.
+   * @param frameId - the frame context; the stopped frame when omitted.
+   * @returns the re-evaluated expression result.
+   */
+  setExpression(expression: string, value: string, frameId?: DebugFrameId): Promise<DebugEvaluateResult>
+  /**
+   * Completion candidates for a REPL line; requires `supportsCompletionsRequest`.
+   * @param text - the whole REPL line up to the cursor.
+   * @param column - the zero-based cursor column within `text`.
+   * @param frameId - the frame context; the stopped frame when omitted.
+   * @returns the normalized candidates.
+   */
+  completions(text: string, column: number, frameId?: DebugFrameId): Promise<readonly DebugCompletion[]>
+  /**
+   * The exception of a stopped thread.
+   * @param threadId - the thread stopped on an exception.
+   * @returns the adapter's exception report.
+   */
+  exceptionInfo(threadId: DebugThreadId): Promise<DebugExceptionInfo>
+  /**
+   * One page of loaded modules; requires `supportsModulesRequest`.
+   * @param options - module paging.
+   * @returns the requested module page plus totals.
+   */
+  modules(options?: DebugModulesOptions): Promise<DebugModulesPage>
+  /** @returns every source the adapter reports as loaded. */
+  loadedSources(): Promise<readonly DebugSource[]>
+  /**
+   * Fetch one dynamic source's content.
+   * @param sourceReference - the reference the stack or modules reported.
+   * @returns the source text.
+   */
+  source(sourceReference: DebugSourceReference): Promise<DebugSourceContent>
+  /**
+   * Possible breakpoint positions of one source range; requires `supportsBreakpointLocationsRequest`.
+   * @param request - the source and line range to resolve.
+   * @returns the adapter-resolved positions, in adapter order.
+   */
+  breakpointLocations(request: DebugBreakpointLocationsRequest): Promise<readonly DebugBreakpointLocation[]>
+  /**
+   * Disassemble one instruction range; requires `supportsDisassembleRequest`.
+   * @param request - the memory anchor, range, and symbol resolution flags.
+   * @returns the disassembled instructions.
+   */
+  disassemble(request: DebugDisassembleRequest): Promise<DebugDisassembly>
+  /**
+   * Read debuggee memory; requires `supportsReadMemoryRequest`.
+   * @param request - the memory anchor, byte count, and optional offset.
+   * @returns the resolved address, the bytes actually read, and any unreadable
+   * tail; a response without a body maps to empty data and no address.
+   */
+  readMemory(request: DebugReadMemoryRequest): Promise<DebugReadMemoryResult>
+  /**
+   * Write debuggee memory; requires `supportsWriteMemoryRequest`.
+   * @param request - the memory anchor, bytes, optional offset, and whether a
+   * partial write may settle instead of failing.
+   * @returns the adapter's write report; `offset` and `bytesWritten` when the
+   * adapter reported them.
+   */
+  writeMemory(request: DebugWriteMemoryRequest): Promise<DebugWriteMemoryResult>
+  /**
+   * One page of console output records.
+   * @param options - cursor paging over the console history.
+   * @returns the requested console page plus the next cursor.
+   */
+  console(options?: DebugConsoleOptions): Promise<DebugConsolePage>
+}
+
+/** One position an adapter resolves as a legal breakpoint within a source range. */
+export interface DebugBreakpointLocation {
+  /** One-based line of the position. */
+  readonly line: number
+  /** One-based column in UTF-16 code units, when the adapter resolves columns. */
+  readonly column?: number
+  /** End line of a multi-line position. */
+  readonly endLine?: number
+  /** End column in UTF-16 code units of a multi-line position. */
+  readonly endColumn?: number
+}
+
+/** Request for the legal breakpoint positions of one source range. */
+export interface DebugBreakpointLocationsRequest {
+  /** The source whose positions to resolve. */
+  readonly source: DebugSource
+  /** One-based start line of the range. */
+  readonly line: number
+  /** One-based start column in UTF-16 code units, when the range starts mid-line. */
+  readonly column?: number
+  /** End line of the range; the single `line` when omitted. */
+  readonly endLine?: number
+  /** End column in UTF-16 code units of the range's last line. */
+  readonly endColumn?: number
 }
 
 /** A breakpoint as requested, before adapter verification. */

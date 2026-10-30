@@ -8,7 +8,7 @@
  */
 
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import type { DebugEvaluateResult, DebugResumeResult, DebugStackTrace } from '@deepseek-ai/dsh-debug/types'
+import type { DebugSessionOperations } from '@deepseek-ai/dsh-debug/types'
 
 export type { EditorFileSystem, EditorWriteRequest, EditorWriteResult } from './editor-write.ts'
 export type { DebugEventRecord, DebugEventReplay } from './ring.ts'
@@ -22,11 +22,23 @@ export interface DebugEditorScope {
   readonly workspaceRoot: string
 }
 
-/** The session-backend slice this controller drives. */
-export interface DebugSessionBackend {
-  continue(): Promise<DebugResumeResult>
-  pause(): Promise<void>
-  step(kind: 'over' | 'in' | 'out' | 'back'): Promise<DebugResumeResult>
-  currentThreadStack(): Promise<DebugStackTrace>
-  evaluate(expression: string, context: string): Promise<DebugEvaluateResult>
+/**
+ * The session-backend slice this controller drives: the full session
+ * operation surface, reached over the `ctx.debug` backend registry and
+ * satisfied structurally by `DapDebugBackend`.
+ */
+export interface DebugSessionBackend extends DebugSessionOperations {}
+
+/**
+ * Wire form of one debug memory read. The Remote boundary moves JSON only,
+ * so the backend's `Uint8Array` bytes travel as base64 with the standard
+ * alphabet; `address` and `unreadableBytes` pass through unchanged.
+ */
+export interface DebugReadMemoryWireResult {
+  /** Address of the first returned byte, in the adapter's notation; absent when the adapter returned no body. */
+  readonly address?: string
+  /** Base64 (standard alphabet) of the bytes read; empty string when the adapter read none. */
+  readonly data: string
+  /** Byte count after the read bytes the adapter could not read. */
+  readonly unreadableBytes?: number
 }

@@ -25,6 +25,7 @@ import type {
   DebugProvider,
   DebugScope,
   DebugSessionInfo,
+  DebugSessionOperations,
 } from './types.ts'
 import type { DebugEventSource } from './events.ts'
 import { DebugSessionRegistry } from './registry.ts'
@@ -53,6 +54,8 @@ export type {
   DebugBreakMode,
   DebugBreakpoint,
   DebugBreakpointInput,
+  DebugBreakpointLocation,
+  DebugBreakpointLocationsRequest,
   DebugBreakpointResult,
   DebugBreakpointSetRequest,
   DebugCaller,
@@ -87,7 +90,10 @@ export type {
   DebugModulesPage,
   DebugOperationOptions,
   DebugProvider,
+  JsonObject,
+  DebugSessionOperations,
   DebugReadMemoryRequest,
+  DebugReadMemoryResult,
   DebugResumeResult,
   DebugScope,
   DebugScopeInfo,
@@ -107,6 +113,7 @@ export type {
   DebugVariablesOptions,
   DebugVariablesPage,
   DebugWriteMemoryRequest,
+  DebugWriteMemoryResult,
   JsonSchema,
   JsonValue,
   ResolvedDebugAdapter,
@@ -250,16 +257,16 @@ export class Debug extends Service {
   /** Validated, persisted, and session-applied breakpoint sets. */
   readonly breakpoints: BreakpointRegistry
 
-  private readonly sessionBackends = new Map<DebugSessionId, unknown>()
+  private readonly sessionBackends = new Map<DebugSessionId, DebugSessionOperations>()
 
   /**
-   * Register one live session's backend handle; controllers resolve it to
-   * drive execution and inspection without touching DAP.
+   * Register one live session's backend; controllers resolve it to drive
+   * execution and inspection without touching DAP.
    * @param sessionId - the session the backend serves.
-   * @param backend - the composition's backend handle.
+   * @param backend - the composition's backend serving {@link DebugSessionOperations}.
    * @returns disposer removing the registration.
    */
-  registerBackend(sessionId: DebugSessionId, backend: unknown): () => void {
+  registerBackend(sessionId: DebugSessionId, backend: DebugSessionOperations): () => void {
     this.sessionBackends.set(sessionId, backend)
     return () => {
       if (this.sessionBackends.get(sessionId) === backend) this.sessionBackends.delete(sessionId)
@@ -267,11 +274,12 @@ export class Debug extends Service {
   }
 
   /**
-   * Resolve one session's registered backend handle.
+   * Resolve one session's registered backend.
    * @param sessionId - the session to resolve.
-   * @returns the handle, or undefined when the session has none registered.
+   * @returns the backend serving the session's operations, or undefined when
+   * the session has none registered.
    */
-  backendOf(sessionId: DebugSessionId): unknown {
+  backendOf(sessionId: DebugSessionId): DebugSessionOperations | undefined {
     return this.sessionBackends.get(sessionId)
   }
 

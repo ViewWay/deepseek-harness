@@ -16,6 +16,8 @@ import { DebugError, DebugBreakpointId, DebugFrameId, DebugSessionId, DebugSourc
 import type {
   DebugBreakpoint,
   DebugBreakpointInput,
+  DebugBreakpointLocation,
+  DebugBreakpointLocationsRequest,
   DebugBreakpointResult,
   DebugBreakpointSetRequest,
   DebugCapabilities,
@@ -36,6 +38,8 @@ import type {
   DebugModulesOptions,
   DebugModulesPage,
   DebugOperationOptions,
+  DebugReadMemoryRequest,
+  DebugReadMemoryResult,
   DebugResumeResult,
   DebugScopeInfo,
   DebugSource,
@@ -51,9 +55,10 @@ import type {
   DebugVariablesOptions,
   DebugVariablesPage,
   DebugWriteMemoryRequest,
+  DebugWriteMemoryResult,
   JsonValue,
 } from '@deepseek-ai/dsh-debug'
-import { isJsonObject } from './capabilities.ts'
+import { isJsonObject, mapCapabilities, mergeCapabilities } from './capabilities.ts'
 import { initializeDebugAdapter, mapStopReason, type DebugHandshakePlan } from './handshake.ts'
 import type { DapArguments, DapEvent, DapRequest } from './frames.ts'
 import type { DapClient } from './client.ts'
@@ -80,6 +85,11 @@ export interface DapDebugBackendOptions {
   readonly consoleLimit: number
   /** Reverse-request handlers; see {@link DapReverseRequestHandlers}. */
   readonly reverseRequests?: DapReverseRequestHandlers
+  /**
+   * Receives every capability snapshot: once after the initialize handshake
+   * and again for each adapter `capabilitiesEvent`, already merged.
+   */
+  readonly onCapabilitiesChanged?: (capabilities: DebugCapabilities) => void
 }
 
 /** Default console ring capacity when the session layer configures none. */
@@ -150,6 +160,7 @@ export class DapDebugBackend {
   async start(plan: DebugHandshakePlan): Promise<void> {
     const result = await initializeDebugAdapter(this.client, plan)
     this.capabilities = result.capabilities
+    this.notifyCapabilities(result.capabilities)
     if (result.firstStop !== undefined) await this.stopSettling
   }
 
@@ -326,6 +337,15 @@ export class DapDebugBackend {
   }
 
   /**
+   * Reads the currently stopped thread's stack; requires a current suspension.
+   *
+   * @returns The top stack page of the stopped thread.
+   */
+  async currentThreadStack(): Promise<DebugStackTrace> {
+    return this.stackTrace(this.requireStopped().threadId)
+  }
+
+  /**
    * Reads one thread's stack; requires a current suspension.
    *
    * @param threadId Thread whose stack to read.
@@ -409,6 +429,7 @@ export class DapDebugBackend {
       result: wireString(record['result'], 'evaluate.result'),
       ...(typeof record['type'] === 'string' ? { type: record['type'] } : {}),
       variablesReference: DebugVariableReference(String(reference)),
+      ...(typeof record['memoryReference'] === 'string' ? { memoryReference: record['memoryReference'] } : {}),
     }
   }
 
@@ -433,6 +454,7 @@ export class DapDebugBackend {
       value: wireString(record['value'], 'setVariable.value'),
       ...(typeof record['type'] === 'string' ? { type: record['type'] } : {}),
       variablesReference: DebugVariableReference(String(child)),
+      ...(typeof record['memoryReference'] === 'string' ? { memoryReference: record['memoryReference'] } : {}),
     }
   }
 
@@ -459,6 +481,7 @@ export class DapDebugBackend {
       result: wireString(record['result'], 'setExpression.result'),
       ...(typeof record['type'] === 'string' ? { type: record['type'] } : {}),
       variablesReference: DebugVariableReference(String(reference)),
+      ...(typeof record['memoryReference'] === 'string' ? { memoryReference: record['memoryReference'] } : {}),
     }
   }
 
@@ -565,6 +588,32 @@ export class DapDebugBackend {
   }
 
   /**
+   * Lists possible breakpoint positions of one source range; requires
+   * `supportsBreakpointLocationsRequest`.
+   *
+   * @param request Source and line range to resolve.
+   * @returns The adapter-resolved positions, in adapter order.
+   */
+  async breakpointLocations(request: DebugBreakpointLocationsRequest): Promise<readonly DebugBreakpointLocation[]> {
+    this.requireCapability('supportsBreakpointLocationsRequest')
+    const body = await this.request('breakpointLocations', {
+      source: { path: request.source.absolutePath },
+      line: request.line,
+      ...(request.column === undefined ? {} : { column: request.column }),
+      ...(request.endLine === undefined ? {} : { endLine: request.endLine }),
+      ...(request.endColumn === undefined ? {} : { endColumn: request.endColumn }),
+    })
+    const record = isJsonObject(body) ? body : {}
+    const list = Array.isArray(record['breakpoints']) ? record['breakpoints'] as readonly JsonValue[] : []
+    return list.filter(isJsonObject).map(location => ({
+      line: wireNumber(location['line'], 'breakpointLocations[].line'),
+      ...(typeof location['column'] === 'number' ? { column: location['column'] } : {}),
+      ...(typeof location['endLine'] === 'number' ? { endLine: location['endLine'] } : {}),
+      ...(typeof location['endColumn'] === 'number' ? { endColumn: location['endColumn'] } : {}),
+    }))
+  }
+
+  /**
    * Disassembles an instruction range; requires `supportsDisassembleRequest`.
    *
    * @param request Range to disassemble.
@@ -599,33 +648,44 @@ export class DapDebugBackend {
    * Reads debuggee memory; requires `supportsReadMemoryRequest`.
    *
    * @param request Range to read.
-   * @returns The decoded bytes; short when the adapter reads fewer.
+   * @returns The resolved address, the decoded bytes, and any unreadable
+   *   tail; a response without a body maps to empty data and no address.
    */
-  async readMemory(request: { memoryReference: string; count: number; offset?: number }): Promise<Uint8Array> {
+  async readMemory(request: DebugReadMemoryRequest): Promise<DebugReadMemoryResult> {
     this.requireCapability('supportsReadMemoryRequest')
     const body = await this.request('readMemory', {
       memoryReference: request.memoryReference,
       count: request.count,
       ...(request.offset === undefined ? {} : { offset: request.offset }),
     })
-    const record = isJsonObject(body) ? body : {}
-    const data = record['data']
-    if (typeof data !== 'string') return new Uint8Array(0)
-    return decodeBase64(data)
+    if (!isJsonObject(body)) return { data: new Uint8Array(0) }
+    return {
+      address: wireString(body['address'], 'readMemory.address'),
+      data: typeof body['data'] === 'string' ? decodeBase64(body['data']) : new Uint8Array(0),
+      ...(typeof body['unreadableBytes'] === 'number' ? { unreadableBytes: body['unreadableBytes'] } : {}),
+    }
   }
 
   /**
    * Writes debuggee memory; requires `supportsWriteMemoryRequest`.
    *
-   * @param request Range and base64 payload to write.
+   * @param request Range, base64 payload, and partial-write allowance.
+   * @returns The adapter's write report; `offset` and `bytesWritten` when the
+   *   adapter reported them.
    */
-  async writeMemory(request: DebugWriteMemoryRequest): Promise<void> {
+  async writeMemory(request: DebugWriteMemoryRequest): Promise<DebugWriteMemoryResult> {
     this.requireCapability('supportsWriteMemoryRequest')
-    await this.request('writeMemory', {
+    const body = await this.request('writeMemory', {
       memoryReference: request.memoryReference,
       data: request.data,
       ...(request.offset === undefined ? {} : { offset: request.offset }),
+      ...(request.allowPartial === undefined ? {} : { allowPartial: request.allowPartial }),
     })
+    const record = isJsonObject(body) ? body : {}
+    return {
+      ...(typeof record['offset'] === 'number' ? { offset: record['offset'] } : {}),
+      ...(typeof record['bytesWritten'] === 'number' ? { bytesWritten: record['bytesWritten'] } : {}),
+    }
   }
 
   /**
@@ -691,10 +751,30 @@ export class DapDebugBackend {
       this.stopSnapshot = undefined
       return
     }
+    if (message.event === 'capabilitiesEvent') {
+      this.handleCapabilitiesChanged(message)
+      return
+    }
     if (message.event === 'terminated' || message.event === 'exited') {
       this.terminated = true
       this.stopSnapshot = undefined
       this.resumeWaiter?.resolve({ kind: 'terminated' })
+    }
+  }
+
+  private handleCapabilitiesChanged(message: DapEvent): void {
+    const body = isJsonObject(message.body) ? message.body : {}
+    const merged = mergeCapabilities(this.capabilities ?? mapCapabilities(undefined), body['capabilities'])
+    this.capabilities = merged
+    this.notifyCapabilities(merged)
+  }
+
+  private notifyCapabilities(capabilities: DebugCapabilities): void {
+    try {
+      this.options.onCapabilitiesChanged?.(capabilities)
+    } catch {
+      // A throwing subscriber must not fail the handshake or event delivery
+      // that publishes the change.
     }
   }
 
@@ -763,8 +843,8 @@ export class DapDebugBackend {
     throw new DebugError(`adapter did not declare ${name}`, 'DEBUG_UNSUPPORTED_CAPABILITY')
   }
 
-  private requireStopped(): void {
-    if (this.stopSnapshot !== undefined) return
+  private requireStopped(): DebugStopSnapshot {
+    if (this.stopSnapshot !== undefined) return this.stopSnapshot
     throw new DebugError('debug session is not stopped', 'DEBUG_NOT_STOPPED')
   }
 
@@ -804,6 +884,7 @@ export class DapDebugBackend {
       value: wireString(record['value'], 'variables[].value'),
       ...(typeof record['type'] === 'string' ? { type: record['type'] } : {}),
       variablesReference: DebugVariableReference(String(reference)),
+      ...(typeof record['memoryReference'] === 'string' ? { memoryReference: record['memoryReference'] } : {}),
     }
   }
 

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Use `dsh-tool-debug` to expose the debug seam to the model. The plugin registers four tools — `debug_session`, `debug_execution`, `debug_inspect`, `debug_breakpoints` — each with a closed operation union that rejects unknown operations with `DEBUG_UNKNOWN_OPERATION`. Landed service faces dispatch directly: session list/get/terminate/disconnect and workspace-scoped file breakpoint replacement (set_file/clear) run against `ctx.debug`; every operation whose backing session face arrives with the DAP backend fails typed `DEBUG_UNAVAILABLE` naming the arriving face. The fixed system-prompt section positions the tools: runtime-state failures only, breakpoints before launch, minimal evaluation, sessions terminated before finishing, and file/LSP tools for ordinary navigation.
+Use `dsh-tool-debug` to expose the debug seam to the model. The plugin registers four tools — `debug_session`, `debug_execution`, `debug_inspect`, `debug_breakpoints` — each with a closed operation union rejecting unknown operations (`DEBUG_UNKNOWN_OPERATION`). Session list/get/terminate/disconnect and workspace-scoped file breakpoint replacement (set_file/clear) run against `ctx.debug`; execution and inspection operations resolve the session's backend through the `ctx.debug` registry and dispatch onto the shared `DebugSessionOperations` contract, failing typed `DEBUG_UNAVAILABLE` without one. Launch, attach, and `wait_for_stop` stay typed-unavailable until their faces land. The fixed system-prompt section positions the tools: runtime-state failures only, breakpoints before launch, minimal evaluation, terminate before finishing, and file/LSP tools for navigation.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ Use `dsh-tool-debug` to expose the debug seam to the model. The plugin registers
 <a id="use-this-package"></a>
 ## Use this package
 
-Compose this plugin after `dsh-debug`. Tools validate the operation union first, then the session id and operation-specific fields; domain failures surface as `DebugError` codes the model can read. Breakpoint operations take an explicit `workspaceId`; without `sessionId` they act on the persisted workspace set and apply to every matching live session, with `sessionId` they scope to one session (typed-unavailable until the session face lands). Rendering relativizes stack sources to workspace paths, caps values with preserved child references, and keeps `truncated`/`total` on every bounded view.
+Compose this plugin after `dsh-debug`. Tools validate the operation union first, then the session id and operation-specific fields; domain failures surface as `DebugError` codes the model can read. Execution and inspection resolve the session's backend through the `ctx.debug` backend registry, so the composition must register one per live session. Reference arguments (`threadId`, `frameId`, `variablesReference`, `sourceReference`) are the seam's serialized string ids echoed verbatim from earlier results, and `memoryReference` anchors pass from `variables`, `evaluate`, and `disassemble` results into `read_memory`, `write_memory`, and `disassemble`. Breakpoint operations take an explicit `workspaceId`; without `sessionId` they act on the persisted workspace set and apply to every matching live session, with `sessionId` they scope to one session (typed-unavailable until the session face lands). Rendering relativizes stack sources to workspace paths, caps values with preserved child references, and keeps `truncated`/`total` on every bounded view.
 
 -----
 
@@ -66,7 +66,7 @@ Prefix-stable while the plugin scope and guidance text are unchanged; activation
 
 #### What the model sees
 
-Four tool schemas, each carrying a closed `operation` enum with the exact vocabulary of its union: `debug_session` (launch, attach, launch_compound, list, list_compounds, get, get_compound, terminate, terminate_compound, disconnect, attach_targets), `debug_execution` (continue, pause, step_over, step_in, step_out, step_back, restart, restart_frame, wait_for_stop), `debug_inspect` (threads, stack_trace, scopes, variables, evaluate, set_variable, set_expression, completions, exception_info, modules, loaded_sources, source, disassemble, read_memory, write_memory, console), `debug_breakpoints` (set_file, set_function, set_exception, set_data, set_instruction, list, clear). The model sees the generated [debug tool schemas](../../../docs/tool-catalog.md#deepseek-aidsh-tool-debug).
+Four tool schemas, each carrying a closed `operation` enum with the exact vocabulary of its union: `debug_session` (launch, attach, launch_compound, list, list_compounds, get, get_compound, terminate, terminate_compound, disconnect, attach_targets), `debug_execution` (continue, pause, step_over, step_in, step_out, step_back, restart, restart_frame, wait_for_stop), `debug_inspect` (threads, stack_trace, scopes, variables, evaluate, set_variable, set_expression, completions, exception_info, modules, loaded_sources, source, disassemble, read_memory, write_memory, breakpoint_locations, console), `debug_breakpoints` (set_file, set_function, set_exception, set_data, set_instruction, list, clear). The model sees the generated [debug tool schemas](../../../docs/tool-catalog.md#deepseek-aidsh-tool-debug).
 
 #### Token effect
 
@@ -80,7 +80,7 @@ Prefix-stable while the visible tool definitions and order are unchanged; regist
 
 #### What the model sees
 
-Bounded canonical JSON: session listings and infos as plain records, stack traces with workspace-relative sources and frame caps (`truncated`/`total` on every bounded view), variables with per-value caps that preserve child `variablesReference` for lazy expansion. Domain failures surface as `DebugError` codes (`DEBUG_UNKNOWN_OPERATION`, `DEBUG_SESSION_GONE`, `DEBUG_UNAVAILABLE`, `DEBUG_INVALID_CONFIG`, `DEBUG_BREAKPOINT_LIMIT`) the model can route on without parsing message text.
+Bounded canonical JSON: session listings and infos as plain records, stack traces with workspace-relative sources and frame caps (`truncated`/`total` on every bounded view), variables with per-value caps that preserve child `variablesReference` for lazy expansion. Resume operations return the settlement — `kind` stopped with the workspace-relative stop location, terminated, or running. Memory reads return base64 `data` with the resolved `address` and the `unreadableBytes` tail; memory writes return the adapter's `offset`/`bytesWritten` report when it reports one; `breakpoint_locations` returns the adapter-resolved positions sorted by line and column. Domain failures surface as `DebugError` codes (`DEBUG_UNKNOWN_OPERATION`, `DEBUG_SESSION_GONE`, `DEBUG_UNAVAILABLE`, `DEBUG_INVALID_CONFIG`, `DEBUG_BREAKPOINT_LIMIT`) the model can route on without parsing message text.
 
 #### Token effect
 
@@ -106,5 +106,7 @@ None; UI presentation is outside the model request.
 
 ## Known Limitations and Deferred Work
 
-- Launch and attach validate their fields, then fail `DEBUG_UNAVAILABLE` until the approval-wired orchestration lands (the approvals and audit task); execution and inspection operations fail the same way until the DAP session face is exposed on live sessions.
+- Launch and attach validate their fields, then fail `DEBUG_UNAVAILABLE` until the approval-wired orchestration lands (the approvals and audit task); `wait_for_stop` fails the same way until its stop-event face lands with the notice orchestration.
+- Execution and inspection dispatch over the session's registered backend; operations the adapter lacks the capability for fail `DEBUG_UNSUPPORTED_CAPABILITY` at the backend, so per-provider coverage varies with the adapter.
+- Variables, modules, and console paging options are not exposed; those operations read the backend's default page.
 - Compound operations, attach-target probing, function/exception/data/instruction breakpoints, and the persisted-set listing read face land with their backing services.

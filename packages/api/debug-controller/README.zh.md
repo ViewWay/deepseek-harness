@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-api-debug-controller` 经认证 Remote 向 Web 与 Desktop 消费方暴露调试能力缝。Unary 方法按设计的资源分组——会话列表、执行控制（continue/pause/step）、检查（栈、求值）与按文件断点替换；`events(sessionId, after)` 用单调 `debugEventSeq` 游标从有界环回放某会话的事件序列。落后于环保留期的游标以 `debug/event-cursor-expired` 流控码应答，客户端据此重新同步而非静默丢事件。编辑器文件写入归另一个控制器。
+`dsh-api-debug-controller` 经认证 Remote 向 Web 与 Desktop 暴露调试能力缝。Unary 方法按设计的资源分组——会话列表、执行控制（continue/pause/step/restart-frame）、检查（线程、栈、作用域、变量、set-variable/set-expression、补全、异常信息、模块、源、断点位置、反汇编）、base64 字节的内存读写、控制台分页与按文件断点替换；`events(sessionId, after)` 用单调 `debugEventSeq` 游标从有界环回放某会话的事件序列。落后于环保留期的游标以 `debug/event-cursor-expired` 应答，客户端据此重新同步而非静默丢事件。编辑器文件写入归另一个控制器。
 
 ## 目录
 

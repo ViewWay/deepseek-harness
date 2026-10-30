@@ -38,6 +38,7 @@ export function mapCapabilities(capabilities: JsonValue | undefined): DebugCapab
     supportsCompletionsRequest: flag(flags, 'supportsCompletionsRequest'),
     supportsModulesRequest: flag(flags, 'supportsModulesRequest'),
     supportsLoadedSourcesRequest: flag(flags, 'supportsLoadedSourcesRequest'),
+    supportsBreakpointLocationsRequest: flag(flags, 'supportsBreakpointLocationsRequest'),
     supportsDisassembleRequest: flag(flags, 'supportsDisassembleRequest'),
     supportsReadMemoryRequest: flag(flags, 'supportsReadMemoryRequest'),
     supportsWriteMemoryRequest: flag(flags, 'supportsWriteMemoryRequest'),
@@ -53,6 +54,24 @@ export function mapCapabilities(capabilities: JsonValue | undefined): DebugCapab
     supportsRunInTerminalRequest: flag(flags, 'supportsRunInTerminalRequest'),
     supportsStartDebuggingRequest: flag(flags, 'supportsStartDebuggingRequest'),
   }
+}
+
+/**
+ * Overlays one `capabilitiesEvent` payload onto the current projection: only
+ * flags the event declares replace their values; every other flag keeps its
+ * current value, so a partial event never resets undeclared support to false.
+ *
+ * @param current The projection the overlay starts from.
+ * @param changed The event's `capabilities` value; non-record values change nothing.
+ * @returns The overlaid projection.
+ */
+export function mergeCapabilities(current: DebugCapabilities, changed: JsonValue | undefined): DebugCapabilities {
+  if (!isJsonObject(changed)) return current
+  const overlay: { -readonly [K in keyof DebugCapabilities]?: boolean } = {}
+  for (const key of Object.keys(current) as (keyof DebugCapabilities)[]) {
+    if (key in changed) overlay[key] = changed[key] === true
+  }
+  return { ...current, ...overlay }
 }
 
 /**
