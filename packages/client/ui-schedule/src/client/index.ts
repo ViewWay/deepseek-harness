@@ -40,6 +40,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { MainPanelId } from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-api-remote-access/client'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
+import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import type {} from '@deepseek-ai/dsh-client-connection/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { ScheduleCatalogEntry, ScheduleDeliveryHistoryRequest, ScheduleId, ScheduleUpdateRequest } from '@deepseek-ai/dsh-schedule/client'
@@ -151,7 +152,7 @@ export function apply(ctx: ClientContext): void {
     }
     const loadHistory = (request: ScheduleDeliveryHistoryRequest) => ctx.remote.schedule.history(request)
     const openSession = (id: SessionId): void => {
-      if (sessionLinkState(id, ctx.sessions.list.getSnapshot(), ctx.workspaces.list.getSnapshot()) === 'available') {
+      if (sessionLinkState(id, sessionContractOf(ctx.get('sessions')).list.getSnapshot(), ctx.workspaces.list.getSnapshot()) === 'available') {
         ctx.uiWorkspace.openSession(id)
       }
     }
@@ -271,4 +272,15 @@ export function apply(ctx: ClientContext): void {
       inject: () => ({ hooks: { catalog: manager.hooks.catalog } }),
     }, SessionScheduleHover))
   })
+}
+
+/**
+ * Read the sessions service under its client contract. The client program also
+ * sees the host `SessionStore` augmentation for `sessions`, which the wire
+ * service at runtime does not implement; both faces register under one key.
+ * @param service - Runtime registry entry registered as `sessions`.
+ * @returns The remote sessions contract this browser surface calls.
+ */
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
 }

@@ -12,7 +12,7 @@
  */
 // Type-only: the carrier types, the forwarded Host-event face and the ctx.remote merge.
 import type { ModelSelection } from '@deepseek-ai/dsh-api-session-controller/types'
-import type {} from '@deepseek-ai/dsh-api-session-controller/client'
+import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { CommandUiContract, SelectOption } from '@deepseek-ai/dsh-client-ui-commands/client'
 // Type-only: pulls the ui-conversation SlotMap merge (the input.model seat).
@@ -125,7 +125,7 @@ export function apply(ctx: ClientContext): void {
   ctx.inject(['commandUi', 'modelDirectories'], (scope: ClientContext) => {
     const command = scope.get('commandUi') as CommandUiContract
     const models = scope.modelDirectories
-    const sessions = scope.sessions
+    const sessions = sessionContractOf(scope.get('sessions'))
     scope.effect(() => command.register({
       name: 'model',
       label: () => t('command.label'),
@@ -168,7 +168,7 @@ export function apply(ctx: ClientContext): void {
   // Entry 2: the composer's named model seat over the SAME directory.
   ctx.inject(['slots', 'modelDirectories'], (scope: ClientContext) => {
     const models = scope.modelDirectories
-    const sessions = scope.sessions
+    const sessions = sessionContractOf(scope.get('sessions'))
     scope.slots.inject('conversation.input.model', () => scope.slots.register({
       name: 'conversation.input.model',
       locale: NS,
@@ -191,4 +191,15 @@ export function apply(ctx: ClientContext): void {
       },
     }, ModelSelect))
   })
+}
+
+/**
+ * Read the sessions service under its client contract. The client program also
+ * sees the host `SessionStore` augmentation for `sessions`, which the wire
+ * service at runtime does not implement; both faces register under one key.
+ * @param service - Runtime registry entry registered as `sessions`.
+ * @returns The remote sessions contract this browser surface calls.
+ */
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
 }

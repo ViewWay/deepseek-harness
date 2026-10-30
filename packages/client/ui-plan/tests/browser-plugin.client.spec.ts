@@ -13,6 +13,7 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import type { ChatSnapshot } from '@deepseek-ai/dsh-client-ui-chat/client'
+import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import { EMPTY_CHAT_SNAPSHOT } from '../../ui-chat/src/client/contract/snapshot.ts'
 import { RemoteError } from '@deepseek-ai/dsh-client-test-runtime'
 import { PlanChip } from '../src/client/PlanModeControl.tsx'
@@ -36,7 +37,7 @@ function providePreview(ctx: Context) {
   const openResourceIn = vi.fn<Context['sidebarRight']['openResourceIn']>()
   const openResource = vi.fn<Context['sidebarRight']['openResource']>()
   const mounted = createSnapshotStore<SessionId | undefined>(undefined)
-  const subagentAddress = vi.fn<Context['sessions']['subagentAddress']>(() => undefined)
+  const subagentAddress = vi.fn<ISessions['subagentAddress']>(() => undefined)
   const binding = vi.fn<() => object | undefined>(() => ({}))
   ctx.provide('sessions', { subagentAddress, binding })
   ctx.provide('resources', { register: vi.fn(() => removeResources) })

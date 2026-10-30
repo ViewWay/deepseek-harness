@@ -313,7 +313,7 @@ const DEBUG_ADAPTERS = [
   { label: 'debugpy', manifest: PY_ADAPTER_MANIFEST },
   { label: 'Delve', manifest: GO_ADAPTER_MANIFEST },
   { label: 'lldb-dap', manifest: NATIVE_ADAPTER_MANIFEST },
-] as const
+]
 
 /**
  * Resolve the upstream project page of one adapter source: a GitHub release

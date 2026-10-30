@@ -4,7 +4,7 @@ import type {} from '@deepseek-ai/dsh-client-product-analytics/client'
 import type { Context } from '@deepseek-ai/cordis'
 import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
-import type { SessionBinding } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { SessionBinding, ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { GroupKey } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { createSnapshotStore, type ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
@@ -84,6 +84,7 @@ export const inject = [
  * @param ctx - Client root context.
  */
 export function apply(ctx: Context): void {
+  const sessions = sessionContractOf(ctx.get('sessions'))
   const quotaNotice = createSnapshotStore<QuotaNoticeState | null>(null)
   let quotaNoticeSeq = 0
   // Each hold is its own token, so a release can only drop the hold it was
@@ -225,7 +226,7 @@ export function apply(ctx: Context): void {
       'conversation.chat.node': { kind: 'keyed', scope: 'session', inject: CHAT_NODE_INJECT },
     },
     inject: (sessionId: SessionId): ChatFlowDataInjected => {
-      const binding = ctx.sessions.binding(sessionId)
+      const binding = sessions.binding(sessionId)
       if (binding === undefined) throw new Error(`ui-chat: unknown session "${sessionId}"`)
       return { ...nodeSources(binding), hooks: { presentation, connectionState } }
     },
@@ -244,7 +245,7 @@ export function apply(ctx: Context): void {
       },
       store: chatStore,
       inject: (sessionId: SessionId): ChatViewInjected => {
-        const binding = ctx.sessions.binding(sessionId)
+        const binding = sessions.binding(sessionId)
         if (binding === undefined) throw new Error(`ui-chat: unknown session "${sessionId}"`)
         const session = binding.session
         const chat = chatSource(binding)
@@ -269,7 +270,7 @@ export function apply(ctx: Context): void {
           // its top or at line 400, so the same tab is revealed and told where
           // to land.
           openFile: async (path, options) => {
-            const cwd = ctx.sessions.list.getSnapshot().byId[sessionId]?.cwd
+            const cwd = sessions.list.getSnapshot().byId[sessionId]?.cwd
             const current = session.projections.faceOf('workingDirectory').getSnapshot() as string | null | undefined
             const url = fileAddressFor(sessionId, cwd, resolveWorkspacePath(current ?? undefined, path))
             if (options?.line === undefined) ctx.sidebarRight.openResource(url)
@@ -299,7 +300,7 @@ export function apply(ctx: Context): void {
           forkAt: (seq) => {
             const turn = [...chat.getSnapshot().timeline.turns.values()].find(turn => turn.end?.seq === seq)
             const messageId = turn?.data.get('turn-tail')?.closing?.finalNode.messageId
-            ctx.sessions.fork({ sessionId, atSeq: seq, increaseTitle: true, onCreated: (childId) => {
+            sessions.fork({ sessionId, atSeq: seq, increaseTitle: true, onCreated: (childId) => {
               ctx.get('productAnalytics')?.track('branch_session_click', { session_id: childId, parent_session_id: sessionId, ...messageId === undefined ? {} : { parent_message_id: messageId }, click_position: 'footer' })
             } })
               .then((childId) => { ctx.uiWorkspace.openSession(childId) })
@@ -346,4 +347,15 @@ export function apply(ctx: Context): void {
   ctx.slots.inject('conversation.approval.detail', () =>
     ctx.slots.register({ name: 'conversation.approval.detail' }, ApprovalCommand))
 
+}
+
+/**
+ * Read the sessions service under its client contract. The client program also
+ * sees the host `SessionStore` augmentation for `sessions`, which the wire
+ * service at runtime does not implement; both faces register under one key.
+ * @param service - Runtime registry entry registered as `sessions`.
+ * @returns The remote sessions contract this browser surface calls.
+ */
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
 }

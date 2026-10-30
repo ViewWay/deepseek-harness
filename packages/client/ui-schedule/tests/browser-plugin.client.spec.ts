@@ -9,7 +9,7 @@ import { apply as applyLocale, inject as localeInject } from '@deepseek-ai/dsh-c
 import { apply, inject } from '../src/client/index.ts'
 import { apply as applyNode } from '../src/index.ts'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import type { SessionListState } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { ISessions, SessionListState } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type {
   ScheduleId, ScheduleCatalogEntry, ScheduleDeleteInactiveResult, ScheduleUpdateRequest, ScheduleUpdateResult,
@@ -465,9 +465,10 @@ describe('ui-schedule browser half', () => {
       expect(openSession).not.toHaveBeenCalled()
       face.onOpenSession(record.sessionId)
       expect(openSession).toHaveBeenCalledWith(record.sessionId)
-      const available = ctx.sessions.list.getSnapshot()
+      const sessionsList = sessionContractOf(ctx.get('sessions')).list
+      const available = sessionsList.getSnapshot()
       const workspace = ctx.workspaces.list.getSnapshot()
-      const sessionRead = vi.spyOn(ctx.sessions.list, 'getSnapshot')
+      const sessionRead = vi.spyOn(sessionsList, 'getSnapshot')
       const workspaceRead = vi.spyOn(ctx.workspaces.list, 'getSnapshot')
       sessionRead.mockReturnValue({ ...available, phase: 'pending' })
       face.onOpenSession(record.sessionId)
@@ -776,3 +777,14 @@ describe('ui-schedule node half', () => {
     expect(applyNode).not.toThrow()
   })
 })
+
+/**
+ * Read the sessions stub under its client contract; the client program sees the
+ * host `SessionStore` augmentation for `sessions`, which the stub does not
+ * implement.
+ * @param service - Test stub registered as `sessions`.
+ * @returns The remote sessions contract this spec reads through.
+ */
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
+}

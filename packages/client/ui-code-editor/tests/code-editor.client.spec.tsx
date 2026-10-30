@@ -96,8 +96,8 @@ describe('CodeEditor', () => {
   it('highlights the stopped frame line', () => {
     const { view } = mount({ currentLine: 2 })
     const lines = [...view.container.querySelectorAll('.cm-line')]
-    expect(lines[1].className).toContain('dsw-cm-debug-line')
-    expect(lines[0].className).not.toContain('dsw-cm-debug-line')
+    expect(lines[1]!.className).toContain('dsw-cm-debug-line')
+    expect(lines[0]!.className).not.toContain('dsw-cm-debug-line')
   })
 
   it('saves through the editor save binding', () => {

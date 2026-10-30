@@ -20,6 +20,7 @@ import type {
 import { PYTHON_OPTIONS_SCHEMA, resolvePythonAttachConfig, resolvePythonLaunchConfig } from './config.ts'
 import type { PythonAttachConfig, PythonLaunchConfig } from './config.ts'
 import type { DebugAdapterManager } from '@deepseek-ai/dsh-debug-adapter-manager'
+import type { DebugAdapterManifest } from '@deepseek-ai/dsh-debug-adapter-manager'
 
 /** Build the DAP launch request from the validated config. */
 function launchRequest(config: PythonLaunchConfig, entryPath: string): Readonly<Record<string, JsonValue>> {
@@ -50,8 +51,8 @@ function attachRequest(config: PythonAttachConfig): Readonly<Record<string, Json
 }
 
 /** Raw pypi manifest data for the managed debugpy adapter (verified upstream facts). */
-export const PY_ADAPTER_MANIFEST = {
-  providerId: 'python',
+export const PY_ADAPTER_MANIFEST: DebugAdapterManifest = {
+  providerId: DebugProviderId('python'),
   version: '1.8.22',
   license: 'MIT',
   source: { kind: 'pypi', package: 'debugpy' },

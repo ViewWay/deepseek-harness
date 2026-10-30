@@ -5,7 +5,7 @@ import { Context } from '@deepseek-ai/cordis'
 import { Session, SessionId } from '@deepseek-ai/dsh-session'
 import AgentRegistry from '@deepseek-ai/dsh-agent'
 import type { Agent, AgentCancelCause, AgentStatus, CancelOptions } from '@deepseek-ai/dsh-agent'
-import type { SessionActivity } from '@deepseek-ai/dsh-workspace'
+import type { SessionActivity } from '@deepseek-ai/dsh-workspace/types'
 
 type CancelCall = [AgentCancelCause, CancelOptions | undefined]
 
@@ -91,7 +91,15 @@ describe('Turn archive admission', () => {
 })
 
 // The registry knows only its own family; this suite merges a second one to observe ordering.
+// Both module identities are augmented: the aggregate programs load this package's
+// types once via the `/types` entry and once via the root entry, and the event
+// overloads may be answered from either record.
 declare module '@deepseek-ai/dsh-workspace/types' {
+  interface SessionActivityKindMap {
+    probe: true
+  }
+}
+declare module '@deepseek-ai/dsh-workspace' {
   interface SessionActivityKindMap {
     probe: true
   }

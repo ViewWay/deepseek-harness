@@ -4,7 +4,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
-import type { SessionBinding } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { ISessions, SessionBinding } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { ChatNodeModel } from './chat-node/model.ts'
 import { SessionLogModel } from './session-log/model.ts'
@@ -20,6 +20,7 @@ import { InspectorChatPicker } from './chat-node/picker.ts'
  * @param ctx - Client plugin context owning the tab registration and Session-bound model cache.
  */
 export function registerInspectorTab(ctx: Context): void {
+  const sessions = sessionContractOf(ctx.get('sessions'))
   let activePicker: InspectorChatPicker | undefined
   let disposed = false
   ctx.effect(() => () => { disposed = true; activePicker?.dispose() }, 'session-inspector: chat picker')
@@ -33,7 +34,7 @@ export function registerInspectorTab(ctx: Context): void {
   ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
     name: 'sidebar.right.pane.tab', key: id, locale: NS,
     inject: (sessionId: SessionId): SessionInspectorInjected => {
-      const binding = ctx.sessions.binding(sessionId)
+      const binding = sessions.binding(sessionId)
       if (binding === undefined) throw new Error(`session-inspector: unknown Session ${sessionId}`)
       let sources = models.get(binding)
       if (sources === undefined) {
@@ -77,4 +78,15 @@ export function registerInspectorTab(ctx: Context): void {
       return sources
     },
   }, SessionInspectorView))
+}
+
+/**
+ * Read the sessions service under its client contract. The client program also
+ * sees the host `SessionStore` augmentation for `sessions`, which the wire
+ * service at runtime does not implement; both faces register under one key.
+ * @param service - Runtime registry entry registered as `sessions`.
+ * @returns The remote sessions contract this browser surface calls.
+ */
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
 }

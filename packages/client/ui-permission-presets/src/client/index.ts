@@ -16,7 +16,7 @@
  * created later through the host Settings API.
  */
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
-import type { SessionFace } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { ISessions, SessionFace } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-api-remotes/client'
 import type { PermissionCatalog, PermissionSelection } from '@deepseek-ai/dsh-permission-presets/client'
 // Direct dependency: catalog settlements are fenced by the actual connection
@@ -112,7 +112,7 @@ function optionsOf(
  */
 export function apply(ctx: ClientContext): void {
   const command = ctx.get('commandUi') as CommandUiContract
-  const sessions = ctx.sessions
+  const sessions = sessionContractOf(ctx.get('sessions'))
   const accessDictionaries = {
     zh: accessZh,
     en: accessEn,
@@ -199,4 +199,15 @@ export function apply(ctx: ClientContext): void {
       onSelect: (option, session) => submit(session.sessionId, option.id).then(() => undefined),
     },
   }), 'ui-permission: /permission decoration')
+}
+
+/**
+ * Read the sessions service under its client contract. The client program also
+ * sees the host `SessionStore` augmentation for `sessions`, which the wire
+ * service at runtime does not implement; both faces register under one key.
+ * @param service - Runtime registry entry registered as `sessions`.
+ * @returns The remote sessions contract this browser surface calls.
+ */
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
 }

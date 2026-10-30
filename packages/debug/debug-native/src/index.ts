@@ -20,6 +20,7 @@ import type {
 } from '@deepseek-ai/dsh-debug'
 import { DebugError } from '@deepseek-ai/dsh-debug'
 import type { DebugAdapterManager } from '@deepseek-ai/dsh-debug-adapter-manager'
+import type { DebugAdapterManifest } from '@deepseek-ai/dsh-debug-adapter-manager'
 
 /** Per-platform LLVM archive entries (verified upstream facts, 23.1.4). */
 const LLVM_PLATFORMS = {
@@ -30,8 +31,8 @@ const LLVM_PLATFORMS = {
 } as const
 
 /** Raw manifest data for the managed lldb-dap adapter. */
-export const NATIVE_ADAPTER_MANIFEST = {
-  providerId: 'native',
+export const NATIVE_ADAPTER_MANIFEST: DebugAdapterManifest = {
+  providerId: DebugProviderId('native'),
   version: '23.1.4',
   license: 'Apache-2.0 WITH LLVM-exception',
   source: { kind: 'archive', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.4' },

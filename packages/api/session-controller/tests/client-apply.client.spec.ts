@@ -30,7 +30,11 @@ afterEach(() => {
 
 async function bench(start: () => Promise<TestClient>) {
   const client = await start()
-  return { client, sessions: client.ctx.sessions as ClientSessions }
+  return { client, sessions: sessionContractOf(client.ctx.sessions) }
+}
+
+function sessionContractOf(service: unknown): ClientSessions {
+  return service as ClientSessions
 }
 
 /** Deliver one Remote event the way the Host forwards it: an emit frame on the `$events` stream, consumed by the client. */

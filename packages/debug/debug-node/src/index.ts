@@ -22,6 +22,7 @@ import type {
 import { NODE_OPTIONS_SCHEMA, resolveNodeAttachConfig, resolveNodeLaunchConfig } from './config.ts'
 import type { NodeAttachConfig, NodeLaunchConfig } from './config.ts'
 import type { DebugAdapterManager } from '@deepseek-ai/dsh-debug-adapter-manager'
+import type { DebugAdapterManifest } from '@deepseek-ai/dsh-debug-adapter-manager'
 
 /** The js-debug DAP-server archive, identical on every platform. */
 const JS_DEBUG_PLATFORM_ENTRY = {
@@ -32,8 +33,8 @@ const JS_DEBUG_PLATFORM_ENTRY = {
 }
 
 /** Raw manifest data for the managed js-debug adapter (verified upstream facts). */
-export const NODE_ADAPTER_MANIFEST = {
-  providerId: 'node',
+export const NODE_ADAPTER_MANIFEST: DebugAdapterManifest = {
+  providerId: DebugProviderId('node'),
   version: '1.140.0',
   license: 'MIT',
   source: { kind: 'archive', url: 'https://github.com/microsoft/vscode-js-debug/releases/download/v1.140.0/js-debug-dap-v1.140.0.tar.gz' },

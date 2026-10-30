@@ -15,7 +15,7 @@
 import type {} from '@deepseek-ai/dsh-client-product-analytics/client'
 import { Service } from '@deepseek-ai/cordis'
 import type { Context } from '@deepseek-ai/cordis'
-import type { SessionBinding } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { ISessions, SessionBinding } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { WeakMapWithValues } from '@deepseek-ai/dsh-util-values'
 import { ModelCatalogDirectory } from './catalog.ts'
@@ -65,7 +65,7 @@ export class ModelDirectoryResolver extends Service {
    */
   directoryFor(sessionId: SessionId): ModelDirectory {
     const { live } = this
-    const sessions = this.ctx.sessions
+    const sessions = sessionContractOf(this.ctx.get('sessions'))
     const actx = sessions.scope(sessionId)
     if (actx === undefined) throw new Error(`ui-model-selection: session "${String(sessionId)}" resolved no scope`)
     const binding = sessions.binding(sessionId)
@@ -88,4 +88,15 @@ export class ModelDirectoryResolver extends Service {
     }, 'ui-model-selection: session directory')
     return directory
   }
+}
+
+/**
+ * Read the sessions service under its client contract. The client program also
+ * sees the host `SessionStore` augmentation for `sessions`, which the wire
+ * service at runtime does not implement; both faces register under one key.
+ * @param service - Runtime registry entry registered as `sessions`.
+ * @returns The remote sessions contract this resolver reads through.
+ */
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
 }

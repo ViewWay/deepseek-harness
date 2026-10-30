@@ -7,7 +7,7 @@ import { unsupportedModel, unsupportedInbox } from '@deepseek-ai/dsh-agent-loop-
 import SessionStore, { SessionId } from '@deepseek-ai/dsh-session'
 import type { Session } from '@deepseek-ai/dsh-session'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
-import type { SessionActivity } from '@deepseek-ai/dsh-workspace'
+import type { SessionActivity } from '@deepseek-ai/dsh-workspace/types'
 import SubagentRuntime, { SUBAGENT_DESCRIPTOR_VERSION } from '../src/index.ts'
 import { TestSessionQuery } from './test-session-query.ts'
 
@@ -179,7 +179,15 @@ describe('Subagent archive admission: lifetime', () => {
 })
 
 // The runtime knows only its own family; this suite merges a trailing one to observe ordering.
+// Both module identities are augmented: the aggregate programs load this package's
+// types once via the `/types` entry and once via the root entry, and the event
+// overloads may be answered from either record.
 declare module '@deepseek-ai/dsh-workspace/types' {
+  interface SessionActivityKindMap {
+    probe: true
+  }
+}
+declare module '@deepseek-ai/dsh-workspace' {
   interface SessionActivityKindMap {
     probe: true
   }

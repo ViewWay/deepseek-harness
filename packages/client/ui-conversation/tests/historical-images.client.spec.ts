@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
 import { AttachmentId } from '@deepseek-ai/dsh-attachment'
-import type { SessionFace } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { ISessions, SessionFace } from '@deepseek-ai/dsh-api-session-controller/client'
 import { RemoteError, SlotTestRuntime } from '@deepseek-ai/dsh-client-test-runtime'
 import { HistoricalImageCache } from '../src/client/conversation/historical-images.ts'
 
@@ -15,7 +15,7 @@ describe('HistoricalImageCache', () => {
     })
     const reference = runtime.sessions.retain(sessionId)
     await reference.ready
-    const cache = new HistoricalImageCache(runtime.ctx, runtime.ctx.sessions)
+    const cache = new HistoricalImageCache(runtime.ctx, sessionContractOf(runtime.ctx.sessions))
     const attachment = {
       attachmentId: AttachmentId('image-1'), mediaType: 'image/png', bytes: 1, width: 1, height: 1,
     } as const
@@ -40,7 +40,7 @@ describe('HistoricalImageCache', () => {
       const sessionId = await runtime.sessions.add({ id: 's1', session: { readAttachment: () => read.promise } })
       const reference = runtime.sessions.retain(sessionId)
       await reference.ready
-      const cache = new HistoricalImageCache(runtime.ctx, runtime.ctx.sessions)
+      const cache = new HistoricalImageCache(runtime.ctx, sessionContractOf(runtime.ctx.sessions))
       const attachment = {
         attachmentId: AttachmentId('image-seeded'), mediaType: 'image/png', bytes: 1, width: 1, height: 1,
       } as const
@@ -79,7 +79,7 @@ describe('HistoricalImageCache', () => {
       })
       const reference = runtime.sessions.retain(sessionId)
       await reference.ready
-      const cache = new HistoricalImageCache(runtime.ctx, runtime.ctx.sessions)
+      const cache = new HistoricalImageCache(runtime.ctx, sessionContractOf(runtime.ctx.sessions))
       const attachment = {
         attachmentId: AttachmentId('image-missing'), mediaType: 'image/png', bytes: 1, width: 1, height: 1,
       } as const
@@ -97,7 +97,7 @@ describe('HistoricalImageCache', () => {
 
   it('refuses to seed for an unknown session', async () => {
     const runtime = await SlotTestRuntime.create()
-    const cache = new HistoricalImageCache(runtime.ctx, runtime.ctx.sessions)
+    const cache = new HistoricalImageCache(runtime.ctx, sessionContractOf(runtime.ctx.sessions))
     const attachment = {
       attachmentId: AttachmentId('image-unknown'), mediaType: 'image/png', bytes: 1, width: 1, height: 1,
     } as const
@@ -105,3 +105,7 @@ describe('HistoricalImageCache', () => {
     await runtime.dispose()
   })
 })
+
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
+}

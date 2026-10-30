@@ -17,6 +17,7 @@ import type {
   JsonValue,
 } from '@deepseek-ai/dsh-debug'
 import type { DebugAdapterManager } from '@deepseek-ai/dsh-debug-adapter-manager'
+import type { DebugAdapterManifest } from '@deepseek-ai/dsh-debug-adapter-manager'
 import { GO_OPTIONS_SCHEMA, resolveGoAttachConfig, resolveGoLaunchConfig } from './config.ts'
 import type { GoAttachConfig, GoLaunchConfig } from './config.ts'
 
@@ -30,8 +31,8 @@ const DELVE_PLATFORMS = {
 } as const
 
 /** Raw manifest data for the managed delve adapter. */
-export const GO_ADAPTER_MANIFEST = {
-  providerId: 'go',
+export const GO_ADAPTER_MANIFEST: DebugAdapterManifest = {
+  providerId: DebugProviderId('go'),
   version: '1.27.2',
   license: 'MIT',
   source: { kind: 'archive', url: 'https://github.com/go-delve/delve/releases/download/v1.27.2' },

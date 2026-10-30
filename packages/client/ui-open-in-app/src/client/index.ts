@@ -17,6 +17,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-files/client'
 import type {} from '@deepseek-ai/dsh-api-gateway/client'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
+import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import type {} from '@deepseek-ai/dsh-api-session-controller/remote'
 import { OPEN_IN_APP_ICON_PREFIX_ROUTE } from '@deepseek-ai/dsh-host-open-in-app/shared'
 import { OpenInAppController } from './controller.ts'
@@ -48,6 +49,7 @@ export const inject = ['sessions', 'slots', 'locale', 'remote', 'remote.session'
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
+  const sessions = sessionContractOf(ctx.get('sessions'))
   const controller = new OpenInAppController()
   void controller.load()
   const paths = new OpenInAppPathController(ctx.remote)
@@ -55,7 +57,7 @@ export function apply(ctx: ClientContext): void {
   const t = ctx.locale.bind(NS)
   const target = () => {
     if (ctx.layout.panelInfo.getSnapshot().activePanelId !== null) return undefined
-    const session = Object.values(ctx.sessions.list.getSnapshot().byId)
+    const session = Object.values(sessions.list.getSnapshot().byId)
       .find(row => (row.retainedBy.mainView ?? 0) > 0)
     const appId = controller.currentApp()
     return session?.cwd && appId !== undefined ? { appId, path: session.cwd } : undefined
@@ -132,4 +134,15 @@ export function apply(ctx: ClientContext): void {
   ctx.slots.inject('deliverables.review.file.actions', () => ctx.slots.register({
     name: 'deliverables.review.file.actions', id: 'open-in-app', locale: NS,
   }, FileRouteAction))
+}
+
+/**
+ * Read the sessions service under its client contract. The client program also
+ * sees the host `SessionStore` augmentation for `sessions`, which the wire
+ * service at runtime does not implement; both faces register under one key.
+ * @param service - Runtime registry entry registered as `sessions`.
+ * @returns The remote sessions contract this browser surface calls.
+ */
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
 }

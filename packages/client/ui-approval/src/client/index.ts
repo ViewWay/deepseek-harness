@@ -1,7 +1,7 @@
 /** Browser approval consumer over the existing scoped Remote Event waterfall. */
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
-import type {} from '@deepseek-ai/dsh-api-session-controller/client'
+import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { ComposerChainProps } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type { PendingInteractionPublisher } from '@deepseek-ai/dsh-client-ui-session/client'
@@ -42,7 +42,8 @@ async function answerApproval(
   next: ClientApprovalNext,
   registerPendingInteraction: PendingInteractionPublisher<PendingApproval>,
 ): Promise<ClientApprovalOutcome> {
-  const sessionId = ctx.sessions.scopeOf(owner)
+  const sessions = sessionContractOf(ctx.get('sessions'))
+  const sessionId = sessions.scopeOf(owner)
   if (sessionId === undefined) return next()
   const pending = new PendingApproval(sessionId, {
     toolName: request.toolName,
@@ -107,4 +108,15 @@ export function apply(ctx: ClientContext): void {
   ctx.remote.$on('approval/request', function (request, next) {
     return answerApproval(ctx, this, request, next, registerPendingInteraction)
   })
+}
+
+/**
+ * Read the sessions service under its client contract; both the host
+ * `SessionStore` and this remote adapter register under one `sessions` key and
+ * the client program sees the host augmentation.
+ * @param service - Runtime registry entry registered as `sessions`.
+ * @returns The remote sessions contract `scopeOf` resolves against.
+ */
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
 }

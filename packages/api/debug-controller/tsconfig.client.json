@@ -7,10 +7,14 @@
   },
   "include": [
     "src/client/**/*.ts",
-    "src/types.ts"
+    "src/types.ts",
+    "src/editor-write.ts",
+    "src/ring.ts"
   ],
   "references": [
     { "path": "../../../vendor/cordis" },
+    { "path": "../../core/session" },
+    { "path": "../../debug/debug" },
     { "path": "../../typert/protocol" }
   ]
 }

@@ -16,11 +16,11 @@ const SESSION = SessionId('editor-face-spec')
  * the code once, here, instead of at every comparison.
  */
 const failure = (code: string): RemoteFailure =>
-  new RemoteError(code as RemoteErrorCode, code + ' message', {})
+  new RemoteError(code as RemoteErrorCode, code + ' message', {}) as RemoteFailure
 
-const encode = (text: string): Uint8Array => new TextEncoder().encode(text)
+const encode = (text: string): Uint8Array<ArrayBuffer> => new TextEncoder().encode(text)
 
-const bytes = (data: Uint8Array, version = 'v1'): WorkspaceFileBytes => ({
+const bytes = (data: Uint8Array<ArrayBuffer>, version = 'v1'): WorkspaceFileBytes<Uint8Array<ArrayBuffer>> => ({
   absolutePath: '/work/src/a.ts', version, bytes: data.byteLength, offset: 0, data, eof: true,
 })
 
@@ -60,7 +60,10 @@ describe('openEditorFile', () => {
 
   it('falls back to the read window when the size is unreported', async () => {
     const remote = remoteWith({
-      readBytes: vi.fn(async () => ok({ ...bytes(encode('x'.repeat(4))), bytes: undefined })),
+      readBytes: vi.fn(async () => {
+        const { bytes: _bytes, ...unreported } = bytes(encode('x'.repeat(4)))
+        return ok(unreported)
+      }),
     })
     await expect(openEditorFile(remote, SESSION, 'quiet.bin', { maxBytes: 2 }))
       .resolves.toEqual({ outcome: 'too-large', bytes: 4 })

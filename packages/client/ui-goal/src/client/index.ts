@@ -14,7 +14,7 @@ import type { HostObservable } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the generated Remote API and ctx.remote merge through the Client assembly boundary.
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 // Type-only: pulls the Session Controller service used for projected goal state.
-import type {} from '@deepseek-ai/dsh-api-session-controller/client'
+import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 // Type-only: pulls the Chat node slot and its keyed data map.
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 // Type-only: pulls the Conversation service and input-dock slot.
@@ -84,7 +84,7 @@ export function apply(ctx: ClientContext): void {
     locale: NS,
   }, GoalCommandInputView))
 
-  const sessions = ctx.sessions
+  const sessions = sessionContractOf(ctx.get('sessions'))
 
   /** The session's current projected CAS ref, read at verb call time (no staleness fence: the RPC's CAS is the guard). */
   const refOf = (sessionId: SessionId): GoalRef | undefined => {
@@ -152,4 +152,15 @@ export function apply(ctx: ClientContext): void {
       }
     },
   }, GoalDock))
+}
+
+/**
+ * Read the sessions service under its client contract. The client program also
+ * sees the host `SessionStore` augmentation for `sessions`, which the wire
+ * service at runtime does not implement; both faces register under one key.
+ * @param service - Runtime registry entry registered as `sessions`.
+ * @returns The remote sessions contract this browser surface calls.
+ */
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
 }

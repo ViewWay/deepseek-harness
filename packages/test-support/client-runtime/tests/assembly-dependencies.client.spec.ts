@@ -1,6 +1,7 @@
 /** Real bundle dependency closures activate their requested client plugins without extra roster rows. */
 import { FiberState } from '@deepseek-ai/cordis'
 import { describe, expect, vi } from 'vitest'
+import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import { createClientTest, webApp } from '../src/assembly/index.ts'
 
 const HMR = '@deepseek-ai/dsh-client-hmr'
@@ -29,9 +30,13 @@ describe('bundle dependency closures', () => {
     expect(entry?.fiber?.state).toBe(FiberState.ACTIVE)
     expect(client.ctx.get('fileUpload')).toBeDefined()
     await vi.waitFor(() => {
-      expect(client.ctx.sessions.list.getSnapshot().phase).toBe('ready')
+      expect(sessionContractOf(client.ctx.sessions).list.getSnapshot().phase).toBe('ready')
       expect(mock.log.calls('session/list')).toHaveLength(1)
       expect(mock.log.streams('session/control')).toHaveLength(1)
     })
   }, 60_000)
 })
+
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
+}

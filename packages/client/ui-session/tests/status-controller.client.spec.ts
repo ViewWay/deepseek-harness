@@ -4,6 +4,7 @@ import { ok } from '@deepseek-ai/dsh-remote-mock'
 import { createClientTest, webApp } from '@deepseek-ai/dsh-client-test-runtime/src/assembly/index.ts'
 import { SESSION_FORMAT_VERSION, type SessionId } from '@deepseek-ai/dsh-session/types'
 import type { SessionFollowFrame } from '@deepseek-ai/dsh-api-session-controller/types'
+import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 
 const it = createClientTest({ roster: webApp.closure(['@deepseek-ai/dsh-client-ui-session']) })
 const parentId = 'status-parent' as SessionId
@@ -28,7 +29,7 @@ it('preserves unlisted child status through metadata updates and main view ackno
     } satisfies SessionFollowFrame)
   })
   const client = await start()
-  const sessions = client.ctx.sessions
+  const sessions = sessionContractOf(client.ctx.sessions)
   const ui = client.ctx.uiSession
   await sessions.refresh()
   await sessions.refreshProjections(parentId)
@@ -63,3 +64,7 @@ it('preserves unlisted child status through metadata updates and main view ackno
   await client.flush()
   expect(ui.sessionStatus.getSnapshot().get(childId)?.completionUnread).toBe(false)
 })
+
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
+}

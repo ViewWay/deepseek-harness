@@ -20,6 +20,7 @@ import WorkspaceRegistry, {
   WorkspaceOrderInvalidError,
 } from '../src/index.ts'
 import type { WorkspaceDomainState, WorkspaceRecord } from '../src/index.ts'
+import type { SessionActivity } from '../src/types.ts'
 import { defaultWorkspaceTitle, fullyQualifiedWorkspacePath } from '../src/paths.ts'
 import * as workspacePaths from '../src/paths.ts'
 
@@ -1107,7 +1108,7 @@ describe('registry-global session archive', () => {
     const dir = await makeDir('archive-active')
     const result = await harness({ sessions: [header('busy', dir, 100), header('quiet', dir, 200)] })
     const asked: SessionId[] = []
-    result.ctx.on('workspace/session-activity', async ({ sessionId }, next) => {
+    result.ctx.on('workspace/session-activity', async ({ sessionId }, next): Promise<readonly SessionActivity[]> => {
       asked.push(sessionId)
       const rest = await next()
       return sessionId === 'busy'
@@ -1137,7 +1138,7 @@ describe('registry-global session archive', () => {
     const dir = await makeDir('archive-stop')
     const result = await harness({ sessions: [header('busy', dir, 100)] })
     const order: string[] = []
-    result.ctx.on('workspace/session-activity', async ({ sessionId }, next) => {
+    result.ctx.on('workspace/session-activity', async ({ sessionId }, next): Promise<readonly SessionActivity[]> => {
       order.push(`activity:${sessionId}`)
       return [{ kind: 'probe' }, ...(await next())]
     })
@@ -1539,7 +1540,16 @@ describe('first-use Workspace preparation', () => {
 })
 
 // The registry knows no family: the providers merge theirs, and this suite merges its own.
+// Both module identities are augmented: the aggregate programs load this package's
+// types once via the `/types` entry and once via the root entry, and the event
+// overloads may be answered from either record.
 declare module '@deepseek-ai/dsh-workspace/types' {
+  interface SessionActivityKindMap {
+    probe: true
+    'probe-items': true
+  }
+}
+declare module '@deepseek-ai/dsh-workspace' {
   interface SessionActivityKindMap {
     probe: true
     'probe-items': true

@@ -30,6 +30,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type { ILayout } from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type { ISessions } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type {} from './contract/slots.ts'
 import { GuideBody, type GuideInjected } from './tabs/guide/GuideBody.tsx'
@@ -110,7 +111,7 @@ export function apply(ctx: ClientContext): void {
   // its own apply top level for the same reason.
   const t = ctx.locale.bind(NS)
   const tabs = new SidebarRightTabRegistry(ctx)
-  const views = new SidebarSessionViews(ctx.sessions)
+  const views = new SidebarSessionViews(sessionContractOf(ctx.get('sessions')))
   ctx.effect(() => {
     const current = ctx.uiSession.adapter.current
     const sync = (): void => { views.select(current.getSnapshot().key as SessionId | undefined) }
@@ -287,4 +288,15 @@ export function apply(ctx: ClientContext): void {
       adoptions.clear()
     }
   }, 'ui-sidebar-right: seats and shipped tab type')
+}
+
+/**
+ * Read the sessions service under its client contract; both the host
+ * `SessionStore` and this remote adapter register under one `sessions` key and
+ * the client program sees the host augmentation.
+ * @param service - Runtime registry entry registered as `sessions`.
+ * @returns The remote sessions contract the view selector retains against.
+ */
+function sessionContractOf(service: unknown): ISessions {
+  return service as ISessions
 }
