@@ -1897,7 +1897,7 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
 
 ### `debug_execution`
 
-控制调试会话。operation 可取 continue、pause、step_over、step_in、step_out、step_back、restart、restart_frame、wait_for_stop。大多数操作需要会话 id；continue 和各 step 操作会等待下一次停止。
+控制调试会话。operation 可取 continue、pause、step_over、step_in、step_out、step_back、restart、restart_frame、wait_for_stop。大多数操作需要会话 id；continue 和各 step 操作会等待下一次停止；threadId 把控制限定到单线程；restart_frame 需要 frameId。
 
 ```json
 {
@@ -1921,6 +1921,14 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
     "sessionId": {
       "type": "string",
       "description": "Debug session id, serialized debug-<hex> form."
+    },
+    "threadId": {
+      "type": "string",
+      "description": "Thread id for pause, continue, and stepping; the stopped thread when omitted."
+    },
+    "frameId": {
+      "type": "string",
+      "description": "Frame id for restart_frame."
     }
   },
   "required": [
@@ -1934,7 +1942,7 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
 
 ### `debug_inspect`
 
-检查处于停止状态的调试会话。operation 可取 threads、stack_trace、scopes、variables、evaluate、set_variable、set_expression、completions、exception_info、modules、loaded_sources、source、disassemble、read_memory、write_memory、console。结果有界；variables 每次调用展开一层。
+检查处于停止状态的调试会话。operation 可取 threads、stack_trace、scopes、variables、evaluate、set_variable、set_expression、completions、exception_info、modules、loaded_sources、source、disassemble、read_memory、write_memory、breakpoint_locations、console。结果有界；variables 每次调用展开一层；write_memory 需要用户审批。
 
 ```json
 {
@@ -1959,6 +1967,7 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
         "disassemble",
         "read_memory",
         "write_memory",
+        "breakpoint_locations",
         "console"
       ]
     },
@@ -1968,19 +1977,83 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
     },
     "threadId": {
       "type": "string",
-      "description": "Thread id for stack traces and stepping."
+      "description": "Thread id for stack traces and exception_info."
     },
     "frameId": {
       "type": "string",
-      "description": "Frame id for scopes and evaluation."
+      "description": "Frame id for scopes, evaluation, and set_expression."
     },
     "variablesReference": {
-      "type": "number",
-      "description": "Child container reference for variables."
+      "type": "string",
+      "description": "Child container reference for variables and set_variable."
     },
     "expression": {
       "type": "string",
       "description": "Expression for evaluate and set_expression."
+    },
+    "name": {
+      "type": "string",
+      "description": "Variable name for set_variable."
+    },
+    "value": {
+      "type": "string",
+      "description": "Assignment source text for set_variable and set_expression."
+    },
+    "text": {
+      "type": "string",
+      "description": "Whole REPL line up to the cursor for completions."
+    },
+    "column": {
+      "type": "number",
+      "description": "Zero-based cursor column within text for completions; one-based start column for breakpoint_locations."
+    },
+    "memoryReference": {
+      "type": "string",
+      "description": "Memory anchor from variables, evaluate, or disassemble, for read_memory, write_memory, and disassemble."
+    },
+    "count": {
+      "type": "number",
+      "description": "Byte count for read_memory."
+    },
+    "offset": {
+      "type": "number",
+      "description": "Byte offset for read_memory and write_memory."
+    },
+    "data": {
+      "type": "string",
+      "description": "Base64-encoded bytes for write_memory."
+    },
+    "allowPartial": {
+      "type": "boolean",
+      "description": "Accept a prefix write for write_memory instead of failing the whole request."
+    },
+    "sourceReference": {
+      "type": "string",
+      "description": "Source reference from stack traces, loaded_sources, or console entries, for source."
+    },
+    "instructionCount": {
+      "type": "number",
+      "description": "Instruction count for disassemble."
+    },
+    "instructionOffset": {
+      "type": "number",
+      "description": "First-instruction offset from the reference for disassemble."
+    },
+    "file": {
+      "type": "string",
+      "description": "Workspace-relative or absolute source path for breakpoint_locations."
+    },
+    "line": {
+      "type": "number",
+      "description": "One-based start line for breakpoint_locations."
+    },
+    "endLine": {
+      "type": "number",
+      "description": "End line of the range for breakpoint_locations."
+    },
+    "endColumn": {
+      "type": "number",
+      "description": "One-based end column in UTF-16 code units for breakpoint_locations."
     }
   },
   "required": [
@@ -1994,7 +2067,7 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
 
 ### `debug_session`
 
-管理调试会话。operation 可取 launch、attach、launch_compound、list、list_compounds、get、get_compound、terminate、terminate_compound、disconnect、attach_targets。launch 和 attach 需要提供方和工作区根目录；调试会话归调用方 Session 所有。
+管理调试会话。operation 可取 launch、attach、launch_compound、list、list_compounds、get、get_compound、terminate、terminate_compound、disconnect、attach_targets。launch 与 attach 需要 providerId、workspaceId、workspaceRoot 与 cwd（launch）；Agent 调用需要用户审批，调试会话归调用方 Session 所有。
 
 ```json
 {
@@ -2023,11 +2096,15 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
     },
     "workspaceId": {
       "type": "string",
-      "description": "Workspace scope for list."
+      "description": "Workspace scope for list; the workspace a launch or attach debugs in."
     },
     "providerId": {
       "type": "string",
       "description": "Provider id for launch and attach, e.g. node, python, go, native."
+    },
+    "workspaceRoot": {
+      "type": "string",
+      "description": "Absolute workspace root for launch and attach."
     },
     "program": {
       "type": "string",
@@ -2039,7 +2116,23 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
     },
     "cwd": {
       "type": "string",
-      "description": "Working directory for the debug session."
+      "description": "Working directory for launch."
+    },
+    "args": {
+      "type": "array",
+      "description": "Target command-line arguments for launch.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "env": {
+      "type": "object",
+      "description": "Environment variables for the launched target.",
+      "additionalProperties": true
+    },
+    "stopOnEntry": {
+      "type": "boolean",
+      "description": "Stop immediately after launch."
     },
     "processId": {
       "type": "number",
@@ -2048,6 +2141,15 @@ lsp 工具将提供方选择和语言服务器子进程置于 ctx.lsp 之后，�
     "port": {
       "type": "number",
       "description": "Inspector or debug port for attach."
+    },
+    "url": {
+      "type": "string",
+      "description": "Attach URL for browser or server targets."
+    },
+    "providerOptions": {
+      "type": "object",
+      "description": "Provider-specific launch and attach options.",
+      "additionalProperties": true
     }
   },
   "required": [

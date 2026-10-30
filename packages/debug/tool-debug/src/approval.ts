@@ -87,10 +87,10 @@ export interface DebugControlFacts {
 
 /**
  * Decide whether the caller may control the debug session, and through which
- * grant source. An agent controlling its own session is granted without
- * approval (`owned`); a session-grant switch authorizes cross-owner control
- * (`session-grant`); otherwise a single-use approval decides
- * (`single-approval`).
+ * grant source. The caller controlling its own session — agent or user — is
+ * granted without approval (`owned`); a session-grant switch authorizes
+ * cross-owner control (`session-grant`); otherwise a single-use approval
+ * decides (`single-approval`).
  * @param approval - the approval service face.
  * @param facts - owner, caller, session switch, and approval routing.
  * @returns the grant with its source.
@@ -102,7 +102,7 @@ export async function grantControl(
   approval: DebugApprovalFace,
   facts: DebugControlFacts,
 ): Promise<DebugControlGrant> {
-  if (facts.owner === 'agent' && facts.caller === 'agent') {
+  if (facts.owner === facts.caller) {
     return { source: 'owned' }
   }
   if (facts.sessionGrant === true) {

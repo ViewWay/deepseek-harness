@@ -165,6 +165,12 @@ export interface DebugViewStore {
   /** The current immutable view state. */
   get state(): DebugViewState
   /**
+   * Subscribe to state changes.
+   * @param listener - notified after every applied transition.
+   * @returns the disposer removing this listener.
+   */
+  subscribe(listener: () => void): () => void
+  /**
    * Fold one live debug event into the state.
    * @param event - the committed debug fact to fold.
    */
@@ -207,8 +213,10 @@ export interface DebugViewStore {
  */
 export function createDebugViewStore(): DebugViewStore {
   let current: DebugViewState = EMPTY_STATE
+  const listeners = new Set<() => void>()
   const set = (next: DebugViewState): void => {
     current = next
+    for (const listener of [...listeners]) listener()
   }
   const clearStopSelection = (state: DebugViewState): DebugViewState => ({
     ...state,
@@ -220,6 +228,10 @@ export function createDebugViewStore(): DebugViewStore {
   const store: DebugViewStore = {
     get state(): DebugViewState {
       return current
+    },
+    subscribe(listener: () => void): () => void {
+      listeners.add(listener)
+      return () => { listeners.delete(listener) }
     },
     apply(event: DebugViewEvent): void {
       const state = current

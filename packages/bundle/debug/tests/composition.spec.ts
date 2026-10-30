@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest'
 import type { EntryOptions } from '@deepseek-ai/cordis-plugin-loader'
 import { loadOverlayPatches } from '@deepseek-ai/dsh-app-boot'
 import { DebugController } from '@deepseek-ai/dsh-api-debug-controller'
-import compositionPlugin from '../src/index.ts'
+import { DebugHost } from '@deepseek-ai/dsh-debug-bundle/debug-host'
+import compositionPlugin, { debugHost } from '../src/index.ts'
 
 const bundleDir = resolve(fileURLToPath(import.meta.url), '../..')
 
@@ -20,10 +21,15 @@ describe('debug bundle composition', () => {
     expect(compositionPlugin).toBe(DebugController)
   })
 
-  it('stacks the model side, the controller, and the workbench rows', () => {
+  it('exposes the launch host as the debug-host plugin', () => {
+    expect(debugHost).toBe(DebugHost)
+  })
+
+  it('stacks the model side, the launch host, the controller, and the workbench rows', () => {
     expect(rows().map(row => [row.id, row.name])).toEqual([
       ['debug', '@deepseek-ai/dsh-debug'],
       ['debug-adapters', '@deepseek-ai/dsh-debug-adapter-manager'],
+      ['debug-host', '@deepseek-ai/dsh-debug-bundle/debug-host'],
       ['debug-provider-node', '@deepseek-ai/dsh-debug-node'],
       ['debug-provider-python', '@deepseek-ai/dsh-debug-python'],
       ['debug-provider-go', '@deepseek-ai/dsh-debug-go'],

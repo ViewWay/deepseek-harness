@@ -16,6 +16,13 @@
     },
     {
       "path": "../../api/debug-controller/tsconfig.host.json"
-    }
+    },
+    { "path": "../../core/session" },
+    { "path": "../../debug/debug" },
+    { "path": "../../debug/debug-adapter-manager" },
+    { "path": "../../debug/debug-dap" },
+    { "path": "../../fs/fs" },
+    { "path": "../../sandbox/sandbox-policy" },
+    { "path": "../../subprocess/subprocess" }
   ]
 }

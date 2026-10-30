@@ -3490,7 +3490,7 @@ No deployment tunable stays hardcoded; protocol constants, checksum verification
 
 - [x] **Step 2: Add bounded-performance tests**
 
-`benchmarks/debug/session-throughput.bench.ts` (committed 54ff6c86a6) with the bounded-surface assertions and a bilingual README pair.
+`benchmarks/debug/session-throughput.bench.ts` (already committed on this branch) with the bounded-surface assertions and a bilingual README pair.
 
 `benchmarks/debug/session-throughput.bench.ts` drives the fake adapter through repeated stop/continue cycles with 10k console lines and 10k variables. Assert that event ring, console ring, stack pages, and variable pages stay within configured byte caps and that no unbounded array is retained. Use the existing benchmark runner and add a README describing how to run it.
 

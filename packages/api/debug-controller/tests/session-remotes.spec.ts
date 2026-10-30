@@ -79,6 +79,21 @@ describe('debug controller session-operation remotes', () => {
     expect(restartFrame).toHaveBeenCalledWith(DebugFrameId('frame-7'))
   })
 
+  it('restarts, terminates, and disconnects the session backend', async () => {
+    const { controller, debug } = await mount()
+    const id = fixtureDebugSessionId(20)
+    const restart = vi.fn(async () => {})
+    const terminate = vi.fn(async () => {})
+    const disconnect = vi.fn(async () => {})
+    debug.registerBackend(id, fakeBackend({ restart, terminate, disconnect }))
+    await controller.executionRestart(String(id))
+    await controller.executionTerminate(String(id))
+    await controller.executionDisconnect(String(id))
+    expect(restart).toHaveBeenCalledTimes(1)
+    expect(terminate).toHaveBeenCalledTimes(1)
+    expect(disconnect).toHaveBeenCalledTimes(1)
+  })
+
   it('reads threads, scopes, and one variable page', async () => {
     const { controller, debug } = await mount()
     const id = fixtureDebugSessionId(22)
@@ -216,6 +231,9 @@ describe('debug controller session-operation remotes', () => {
     const calls = [
       () => controller.executionContinue(missing),
       () => controller.executionRestartFrame(missing, 'frame-7'),
+      () => controller.executionRestart(missing),
+      () => controller.executionTerminate(missing),
+      () => controller.executionDisconnect(missing),
       () => controller.inspectThreads(missing),
       () => controller.inspectScopes(missing, 'frame-7'),
       () => controller.inspectVariables(missing, 'vars-scopes'),

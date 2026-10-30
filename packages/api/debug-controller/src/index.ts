@@ -19,6 +19,7 @@ import type {} from '@deepseek-ai/dsh-sandbox-policy'
 import { DebugError, DebugFrameId, DebugSessionId, DebugSourceReference, DebugThreadId, DebugVariableReference } from '@deepseek-ai/dsh-debug'
 import type {
   BreakpointSessionApplication,
+  DebugBreakpoint,
   DebugBreakpointInput,
   DebugBreakpointLocation,
   DebugBreakpointLocationsRequest,
@@ -28,6 +29,7 @@ import type {
   DebugDisassembleRequest,
   DebugDisassembly,
   DebugEvaluateResult,
+  DebugEvent,
   DebugExceptionInfo,
   DebugModulesOptions,
   DebugModulesPage,
@@ -35,6 +37,7 @@ import type {
   DebugResumeResult,
   DebugScopeInfo,
   DebugSessionInfo,
+  DebugSessionOperations,
   DebugSource,
   DebugSourceContent,
   DebugStackTrace,
@@ -104,6 +107,14 @@ export class DebugController extends TypertRemoteService {
     super(ctx, 'debugController', { namespace: 'debug' })
     const resolved = config as Required<Config>
     this.ring = new DebugEventRing(resolved.eventRingLimit)
+    ctx.effect(() => {
+      const unsubscribe = ctx.debug.events.subscribe({}, (event) => {
+        this.recordEvent(String(event.sessionId), wireEventOf(event))
+      })
+      return () => {
+        unsubscribe()
+      }
+    }, 'debugController.recordDebugEvents')
     ctx.inject(['sessions', 'typert', 'sandboxPolicy'], (scope) => {
       scope.typert.lookups.register('debugEditorScope', {
         parameter: 'debugEditorScope',
@@ -220,6 +231,35 @@ export class DebugController extends TypertRemoteService {
   @Remote
   executionRestartFrame(sessionId: string, frameId: string): Promise<void> {
     return this.withSessionBackend(sessionId, backend => backend.restartFrame(DebugFrameId(frameId)))
+  }
+
+  /**
+   * Restart the debuggee from the program start; requires the adapter's
+   * `supportsRestartRequest`.
+   * @param sessionId - Session to control.
+   */
+  @Remote
+  executionRestart(sessionId: string): Promise<void> {
+    return this.withSessionBackend(sessionId, backend => backend.restart())
+  }
+
+  /**
+   * Terminate the debuggee; requires the adapter's `supportsTerminateRequest`.
+   * @param sessionId - Session to control.
+   */
+  @Remote
+  executionTerminate(sessionId: string): Promise<void> {
+    return this.withLifecycleBackend(sessionId, backend => backend.terminate())
+  }
+
+  /**
+   * Disconnect from the adapter, ending the session without touching the
+   * debuggee.
+   * @param sessionId - Session to control.
+   */
+  @Remote
+  executionDisconnect(sessionId: string): Promise<void> {
+    return this.withLifecycleBackend(sessionId, backend => backend.disconnect())
   }
 
   /**
@@ -467,13 +507,61 @@ export class DebugController extends TypertRemoteService {
     return replay
   }
 
-  private withSessionBackend<T>(sessionId: string, operate: (backend: DebugSessionBackend) => Promise<T>): Promise<T> {
+  private withSessionBackend<T>(sessionId: string, operate: (backend: DebugSessionOperations) => Promise<T>): Promise<T> {
     const backend = this.ctx.debug.backendOf(DebugSessionId(sessionId))
     if (backend === undefined) {
       return Promise.reject(new DebugError('debug session is not active: ' + sessionId, 'DEBUG_SESSION_GONE'))
     }
     return operate(backend)
   }
+
+  /**
+   * Drive one lifecycle control (terminate, disconnect) on the registered
+   * backend. The production registrant is `DapDebugBackend`, which satisfies
+   * {@link DebugSessionBackend} structurally; the registry's wider declared
+   * face is narrowed here.
+   * @param sessionId - Session to control.
+   * @param operate - The lifecycle control to run.
+   * @returns the settled control.
+   */
+  private withLifecycleBackend(sessionId: string, operate: (backend: DebugSessionBackend) => Promise<void>): Promise<void> {
+    return this.withSessionBackend(sessionId, registered => operate(registered as DebugSessionBackend))
+  }
+}
+
+/**
+ * Render one live debug event as the ring's wire-safe JSON payload.
+ * @param event - the committed live event.
+ * @returns the same fact with interface-typed members spread into plain JSON objects.
+ */
+function wireEventOf(event: DebugEvent): JsonValue {
+  switch (event.kind) {
+    case 'breakpoint/changed':
+      return {
+        ...event,
+        result: {
+          applied: event.result.applied.map(wireBreakpointOf),
+          rejected: event.result.rejected.map(wireBreakpointOf),
+        },
+      }
+    case 'capabilities/changed':
+      return { ...event, capabilities: { ...event.capabilities } }
+    case 'session/owner-changed':
+      return { ...event, from: { ...event.from }, to: { ...event.to } }
+    case 'session/starting':
+    case 'session/running':
+    case 'session/stopped':
+    case 'session/terminated':
+    case 'session/failed':
+    case 'console/output':
+    case 'adapter/output':
+      return { ...event }
+  }
+}
+
+/** Spread one breakpoint and its source into plain JSON objects. */
+function wireBreakpointOf(breakpoint: DebugBreakpoint): JsonValue {
+  return { ...breakpoint, source: { ...breakpoint.source } }
 }
 
 /** Re-brand a wire frame id; the stopped frame when omitted. */

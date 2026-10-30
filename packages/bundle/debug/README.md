@@ -34,12 +34,13 @@ Adapter binaries are never installed with the bundle. The adapter manager resolv
 
 ### Patch surface over base
 
-One `insert` block stacks eleven rows over the profile: `debug` (the seam), `debug-adapters`, the four `debug-provider-*` rows, `tool-debug`, `debug-controller` (the bundle re-exports the controller as a default plugin because the controller package exports only named classes), and the three workbench rows `ui-code-editor`, `ui-debug`, and `ui-workbench`. The workbench rows carry a profile guard that disables them outside `web` and `desktop`, so headless, SDK, and ACP deployments load only the model side.
+One `insert` block stacks twelve rows over the profile: `debug` (the seam), `debug-adapters`, `debug-host` (the launch host that turns `ctx.debug.launch`/`attach` into real sessions through the probed environment, install-on-miss adapter resolution, and the stdio DAP backend), the four `debug-provider-*` rows, `tool-debug`, `debug-controller` (the bundle re-exports the controller as a default plugin because the controller package exports only named classes), and the three workbench rows `ui-code-editor`, `ui-debug`, and `ui-workbench`. The workbench rows carry a profile guard that disables them outside `web` and `desktop`, so headless, SDK, and ACP deployments load only the model side.
 
 ### Source map
 
 - `cordis.patch.yml` — the rows above.
 - `src/debug-controller.ts` — the default-plugin re-export of `DebugController`.
+- `src/debug-host.ts` — the `DebugHost` launch-orchestrator plugin the `debug-host` row mounts.
 - `locale/*.json` — the plugin-manager display metadata for the eight shipped languages.
 - `icon.svg` — the plugin-manager glyph.
 
@@ -51,7 +52,7 @@ One `insert` block stacks eleven rows over the profile: `debug` (the seam), `deb
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The bundle owns composition only: no debug behavior lives here. The service face, DAP client, adapter manager, providers, tools, controller, and client plugins each own their READMEs.
+The bundle owns composition plus the launch host: `src/debug-host.ts` is the production orchestrator behind `ctx.debug.launch`/`attach`, composing the seam's launch orchestration with the adapter manager, the DAP backend, and the caller session's durable `debug/*` events. The service face, DAP client, adapter manager, providers, tools, controller, and client plugins each own their READMEs.
 
 </details>
 

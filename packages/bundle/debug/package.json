@@ -23,6 +23,10 @@
       "types": "./lib/types/debug-controller.d.ts",
       "default": "./lib/types/debug-controller.js"
     },
+    "./debug-host": {
+      "types": "./lib/types/debug-host.d.ts",
+      "default": "./lib/types/debug-host.js"
+    },
     "./locale/*.json": "./locale/*.json",
     "./src/*": "./src/*",
     "./package.json": "./package.json"
@@ -53,12 +57,18 @@
     "@deepseek-ai/dsh-debug-native": "workspace:*",
     "@deepseek-ai/dsh-debug-node": "workspace:*",
     "@deepseek-ai/dsh-debug-python": "workspace:*",
-    "@deepseek-ai/dsh-tool-debug": "workspace:*"
+    "@deepseek-ai/dsh-fs": "workspace:*",
+    "@deepseek-ai/dsh-sandbox-policy": "workspace:*",
+    "@deepseek-ai/dsh-session": "workspace:*",
+    "@deepseek-ai/dsh-subprocess": "workspace:*",
+    "@deepseek-ai/dsh-tool-debug": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:~"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-fs-local": "workspace:*"
   }
 }

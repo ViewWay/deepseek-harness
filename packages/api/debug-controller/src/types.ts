@@ -24,10 +24,16 @@ export interface DebugEditorScope {
 
 /**
  * The session-backend slice this controller drives: the full session
- * operation surface, reached over the `ctx.debug` backend registry and
- * satisfied structurally by `DapDebugBackend`.
+ * operation surface plus the lifecycle controls the toolbar wires, reached
+ * over the `ctx.debug` backend registry and satisfied structurally by
+ * `DapDebugBackend`.
  */
-export interface DebugSessionBackend extends DebugSessionOperations {}
+export interface DebugSessionBackend extends DebugSessionOperations {
+  /** Terminates the debuggee; requires the adapter's `supportsTerminateRequest`. */
+  terminate(): Promise<void>
+  /** Disconnects from the adapter, ending the session without touching the debuggee. */
+  disconnect(): Promise<void>
+}
 
 /**
  * Wire form of one debug memory read. The Remote boundary moves JSON only,

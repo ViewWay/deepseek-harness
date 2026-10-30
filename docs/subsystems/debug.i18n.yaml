@@ -6,8 +6,8 @@
   en: fba492aaf56b9203
   zh: 4c4adfac923bfa85
 /ide-debug-sessions/capability-seam:
-  en: f8e58c54a078da96
-  zh: f2cd686b8504228f
+  en: 2a5a92f53ed0d523
+  zh: fada111214bff639
 /ide-debug-sessions/session-state-machine:
   en: a251972fbadc2a75
   zh: 6caf63a38fc9a4f7
@@ -18,17 +18,17 @@
   en: 1a35be030bf4ec07
   zh: 47d16b54146833e0
 /ide-debug-sessions/ownership-and-workspace-isolation:
-  en: 4eb714c05827cf17
-  zh: c1f4dd92e536a56c
+  en: 0c8bcb7984aca18b
+  zh: 2a7da227c53b19cd
 /ide-debug-sessions/durable-events-and-projection:
   en: 95b006a3fe428f8d
   zh: e35281d724fe6e19
 /ide-debug-sessions/bounds:
-  en: cf8f5fba47be5938
-  zh: b4f64a27bc7c8c3a
+  en: f491af3178d0a5a9
+  zh: e078b71332d6a94d
 /ide-debug-sessions/surfaces:
   en: c593395810d56de4
   zh: ec5009fee8c2288d
 /ide-debug-sessions/explicit-limitations:
-  en: 399cafcf2ead6046
-  zh: 4841e4efec381ec4
+  en: 71cb799f68025328
+  zh: fae1075d1e0a11a2

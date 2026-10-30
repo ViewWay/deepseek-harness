@@ -25,7 +25,9 @@ Harness 没有面向用户程序的调试器。`packages/experimental/inspector`
 
 **所有权按 Session，清理才有主人。** 每个 `launch`/`attach` 都带发起方 Session——Agent 自己的 Session，或工作台当前对话的 Session。工作区归档 admission 以 Session 为键（`workspace/session-activity` 报告、`workspace/session-stop` 终止，与现有 `turn`、`job`、`subagent`、`schedule` 家族并列）；没有 Session 归属的调试会话没有报告入口，会存活到 Host 关闭，所以 seam 直接拒绝它。
 
-**控制授权按会话授予，不按工作区默认全开。** 被否决的备选是「一次 launch 批准后，Agent 可控制该工作区内所有会话」。控制他人创建的会话必须显式授权：工作台的按会话开关，或对该次调用的单独审批。因此被诱导的 Agent 无法对人正在调试的进程触达 `evaluate`、`setVariable`、`setExpression` 与 `writeMemory`，且每次控制都写入带授权来源的 `debug/control`。列出与读取会话状态仍按工作区开放，执行权限不开放。
+**控制授权按会话授予，不按工作区默认全开。** 被否决的备选是「一次 launch 批准后，Agent 可控制该工作区内所有会话」。控制他人创建的会话必须显式授权：工作台的按会话开关，或对该次调用的单独审批。因此被诱导的 Agent 无法对人正在调试的进程触达 `evaluate`、`setVariable`、`setExpression` 与 `writeMemory`，且每次控制都写入 `debug/control`。列出与读取会话状态仍按工作区开放，执行权限不开放。
+
+**工具面经编排器缝 launch，带审批门。** `dsh-tool-debug` 持有这道门：先校验 launch/attach 字段（无效请求绝不发起审批），Agent 调用 fail-closed 地经过 `ctx.approval`——`DEBUG_APPROVAL_DENIED`，detail 区分主动拒绝与缺少回答者——授权调用方即将拥有的会话的控制权（调用方拥有自己创建的会话即 `owned`，Agent 与人同理；另有 `session-grant`、`single-approval`），随后委派给 `ctx.debug.launch`/`attach`，并在调用会话的日志上追加 `debug/control` 审计。耐久载荷保持固定的五字段 `DebugControlEvent` 契约（会话、actor、操作、线程/帧；见 `docs/persistence-changes/2026-10-25-debug-events.zh.md`），因此授权来源随工具结果返回而不是写入事件。Agent 的内存写入每次都请求审批；UI 发起的 launch 在 UI 内确认，不进入 Agent 审批缝。停驻通知与其 Config home 一起落在工具包上（`debugStopDelivery`、`debugMaxConsecutiveWakes`、`maxNoticeBytes`——刻意不复用 job 包的同名字段），并抑制由接收会话自己未结算的 resume 结算的停驻，因为该 resume 的结果已经送达了它。
 
 **模型可见事实保持可重建。** 四个耐久事件（`debug/session-started`、`debug/stopped`、`debug/session-ended`、`debug/control`）携带 id、provider、模式、相对路径、行列、原因、结局与 actor。变量值、内存、环境变量值、原始 DAP 帧和 console 文本不进入模型可见范围，因此也不进日志。每个事件标记 `ignorable: true`，这正是未加载插件的 reader 能安全跳过、从而不必提升 `SESSION_FORMAT_VERSION` 的依据。瞬时句柄（`frameId`、`variablesReference`、适配器断点 id）在日志里只作审计值，重放时一律无效；DAP 的数字 id 只在 `dsh-debug-dap` 边界转换成品牌值，别处不转。
 

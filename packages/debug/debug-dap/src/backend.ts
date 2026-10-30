@@ -474,6 +474,9 @@ export class DapDebugBackend {
       value,
       ...(frameId === undefined ? {} : { frameId: wireId(frameId) }),
     })
+    /* jscpd:ignore-start -- the rendered-result mapping is deliberately
+       member-symmetric with evaluate's; the two commands share DAP's
+       result/type/variablesReference/memoryReference response shape. */
     const record = isJsonObject(body) ? body : {}
     const reference = wireNumber(record['variablesReference'] === undefined ? 0 : record['variablesReference'], 'setExpression.variablesReference')
     this.variableGenerations.set(reference, this.generation)
@@ -483,6 +486,7 @@ export class DapDebugBackend {
       variablesReference: DebugVariableReference(String(reference)),
       ...(typeof record['memoryReference'] === 'string' ? { memoryReference: record['memoryReference'] } : {}),
     }
+    /* jscpd:ignore-end */
   }
 
   /**

@@ -3,12 +3,14 @@
  * delivery per session owner, and suppression of the stop the agent's own
  * unsettled resume request caused.
  *
- * Delivery policy and wake caps are this package's designated Config home
- * (`debugStopDelivery`, `debugMaxConsecutiveWakes` — deliberately not the
- * job package's same-named fields); they land together with the
- * approval-wired orchestration that first consumes these helpers.
+ * Delivery policy and wake caps are this package's Config home
+ * (`debugStopDelivery`, `debugMaxConsecutiveWakes`, `maxNoticeBytes` —
+ * deliberately not the job package's same-named fields).
  * @module @deepseek-ai/dsh-tool-debug/notices
  */
+
+import { createUserMessage } from '@deepseek-ai/dsh-llm'
+import type { UserMessage } from '@deepseek-ai/dsh-llm'
 
 /** The facts one stop notice carries; never variable values or source excerpts. */
 export interface DebugStopFacts {
@@ -85,4 +87,64 @@ export function shouldWake(facts: DebugWakeFacts): boolean {
     return false
   }
   return true
+}
+
+/** The agent face one stop notice delivers through. */
+export interface DebugNoticeTarget {
+  /** Whether the receiving agent currently holds an open turn. */
+  readonly idle: boolean
+  /** Queue context for the next step without waking the driver. */
+  inject(message: UserMessage): void
+  /** Queue a follow-up turn and wake the driver. */
+  followup(message: UserMessage): void
+}
+
+/** Wake facts plus the remaining wake budget. */
+export interface DebugNoticeFacts extends DebugWakeFacts {
+  /**
+   * Turns this notice may still open before delivery degrades to injection;
+   * unbounded when omitted. The caller owns the spent-wake counter.
+   */
+  readonly remainingWakes?: number
+}
+
+/** How one stop notice was delivered. */
+export type DebugNoticeDeliveryOutcome = 'woken' | 'injected' | 'suppressed'
+
+/**
+ * Deliver one stop to the session that logged it: build the bounded notice,
+ * decide the delivery mode, and hand the built message to the receiving
+ * agent. A wake needs `wakeup` delivery, an agent-owned session, no
+ * unsettled resume from the receiving session, an idle receiver, and wake
+ * budget; every other stop is injected for the next step. The stop that
+ * settles the receiving session's own unsettled resume is suppressed — that
+ * resume's result already delivers it.
+ * @param stop - the stop facts.
+ * @param facts - owner, delivery mode, resume state, idleness, and budget.
+ * @param bounds - the notice byte cap.
+ * @param target - the receiving agent face.
+ * @returns how the notice was delivered.
+ */
+export function deliverStopNotice(
+  stop: DebugStopFacts,
+  facts: DebugNoticeFacts,
+  bounds: DebugNoticeBounds,
+  target: DebugNoticeTarget,
+): DebugNoticeDeliveryOutcome {
+  const wake = shouldWake(facts)
+  if (!wake
+    && facts.pendingResumeBy !== undefined
+    && facts.pendingResumeBy === facts.caller) {
+    return 'suppressed'
+  }
+  const message = createUserMessage({
+    content: [{ type: 'text', text: createStopNotice(stop, bounds) }],
+    source: { kind: 'debug', sessionId: stop.sessionId, reason: stop.reason },
+  })
+  if (wake && target.idle && (facts.remainingWakes === undefined || facts.remainingWakes > 0)) {
+    target.followup(message)
+    return 'woken'
+  }
+  target.inject(message)
+  return 'injected'
 }

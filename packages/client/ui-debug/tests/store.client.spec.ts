@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createDebugViewStore, visibleDebugActions } from '../src/client/store.ts'
 import { capabilities } from './capabilities.client.ts'
 
@@ -87,5 +87,18 @@ describe('debug view store', () => {
     store.selectSession('debug-2')
     expect(store.state.selectedThreadId).toBeUndefined()
     expect(store.state.selectedFrameId).toBeUndefined()
+  })
+
+  it('notifies subscribers on every transition and stops on dispose', () => {
+    const store = createDebugViewStore()
+    const listener = vi.fn()
+    const dispose = store.subscribe(listener)
+    store.apply({ kind: 'session/state', sessionId: 'debug-1', state: 'running' })
+    expect(listener).toHaveBeenCalledTimes(1)
+    store.apply({ kind: 'console/output', sessionId: 'debug-1', seq: 1, text: 'out', truncated: false })
+    expect(listener).toHaveBeenCalledTimes(2)
+    dispose()
+    store.apply({ kind: 'session/state', sessionId: 'debug-1', state: 'stopped' })
+    expect(listener).toHaveBeenCalledTimes(2)
   })
 })

@@ -16,6 +16,12 @@
     - id: debug-adapters
       name: '@deepseek-ai/dsh-debug-adapter-manager'
 
+    # The production launch host: composes the probed environment, managed
+    # adapters (install-on-miss), the stdio DAP backend, and the caller
+    # session's durable debug events behind ctx.debug.launch/attach.
+    - id: debug-host
+      name: '@deepseek-ai/dsh-debug-bundle/debug-host'
+
     - id: debug-provider-node
       name: '@deepseek-ai/dsh-debug-node'
 

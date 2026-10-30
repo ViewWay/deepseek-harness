@@ -34,12 +34,13 @@ kind: "package-bundle"
 
 ### base 之上的补丁面
 
-一个 `insert` 块在 profile 之上堆叠十一行：`debug`（能力缝）、`debug-adapters`、四行 `debug-provider-*`、`tool-debug`、`debug-controller`（控制器包只导出具名类，bundle 把它再导出为默认插件），以及三行工作台 `ui-code-editor`、`ui-debug`、`ui-workbench`。工作台行带有 profile 守卫，在 `web` 与 `desktop` 之外禁用，因此 headless、SDK 与 ACP 部署只加载模型侧。
+一个 `insert` 块在 profile 之上堆叠十二行：`debug`（能力缝）、`debug-adapters`、`debug-host`（把 `ctx.debug.launch`/`attach` 变成真实会话的启动宿主：环境探测、未安装即安装的适配器解析、stdio DAP 后端），四行 `debug-provider-*`、`tool-debug`、`debug-controller`（控制器包只导出具名类，bundle 把它再导出为默认插件），以及三行工作台 `ui-code-editor`、`ui-debug`、`ui-workbench`。工作台行带有 profile 守卫，在 `web` 与 `desktop` 之外禁用，因此 headless、SDK 与 ACP 部署只加载模型侧。
 
 ### 源码地图
 
 - `cordis.patch.yml` — 上述各行的补丁。
 - `src/debug-controller.ts` — `DebugController` 的默认插件再导出。
+- `src/debug-host.ts` — `debug-host` 行挂载的 `DebugHost` 启动编排插件。
 - `locale/*.json` — 八个发布语言的 plugin manager 显示元数据。
 - `icon.svg` — plugin manager 图标。
 
@@ -48,7 +49,7 @@ kind: "package-bundle"
 <a id="model-experience"></a>
 ## 开发备注
 
-bundle 只负责组合：这里没有任何调试行为。服务面、DAP 客户端、适配器管理器、provider、工具、控制器与客户端插件各自拥有自己的 README。
+bundle 负责组合与启动宿主：`src/debug-host.ts` 是 `ctx.debug.launch`/`attach` 背后的生产编排器，把能力缝的启动编排与适配器管理器、DAP 后端以及调用方会话的持久 `debug/*` 事件组装在一起。服务面、DAP 客户端、适配器管理器、provider、工具、控制器与客户端插件各自拥有自己的 README。
 
 ## Model Experience
 

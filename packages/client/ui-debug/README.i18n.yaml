@@ -9,8 +9,8 @@
   en: 09d64302f2861927
   zh: e2e1bc7884669b6e
 /deepseek-ai-dsh-client-ui-debug/summary:
-  en: b8a9697b1a184927
-  zh: f0dca0c296f079f3
+  en: fc60b3a6c44f83af
+  zh: 3bf1df075572206a
 /deepseek-ai-dsh-client-ui-debug/table-of-contents:
   en: b44cbe4dbf91dd8d
   zh: 6c3a3f090c8a3bc6
@@ -18,8 +18,11 @@
   en: bbff250eba0f1b89
   zh: 0a618f05cc88ee2b
 /deepseek-ai-dsh-client-ui-debug/use-this-package/folding-live-events:
-  en: 7e449793c3e759f1
-  zh: 71d679bf68742c18
+  en: dbdfcc4ec047a5cf
+  zh: a6a293dc5d94e2f8
+/deepseek-ai-dsh-client-ui-debug/use-this-package/driving-the-controller:
+  en: a9766d3786329c6e
+  zh: e326820d1f76b9e6
 /deepseek-ai-dsh-client-ui-debug/use-this-package/rendering-the-toolbar:
   en: 4f2379543c28cdae
   zh: 51160cbac58df63f
@@ -30,8 +33,8 @@
   en: 9cf5fa269743b2d7
   zh: 2ab58c9c03ad496d
 /deepseek-ai-dsh-client-ui-debug/understand-the-implementation:
-  en: f789e4202f579854
-  zh: 7790054fb34c0252
+  en: 001424db0406753a
+  zh: 10da824dbb205d57
 /deepseek-ai-dsh-client-ui-debug/dev-note:
   en: 5de1d6304e00c58f
   zh: a8fae449670a2564
@@ -42,5 +45,5 @@
   en: f1df2785e2fbc668
   zh: b94288283e100a3c
 /deepseek-ai-dsh-client-ui-debug/known-limitations-and-deferred-work:
-  en: 941e399752af7a94
-  zh: 5be4c4481f7ea4df
+  en: 451e47450d664652
+  zh: b072b0a549bbd37b

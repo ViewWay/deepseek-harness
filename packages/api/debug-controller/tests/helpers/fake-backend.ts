@@ -11,19 +11,24 @@ async function refuse(): Promise<never> {
   throw new Error('fake backend member is not wired for this spec')
 }
 
+/** The double's full face: the operation surface plus the lifecycle controls. */
+type FakeBackendFace = DebugSessionOperations & { terminate(): Promise<void>; disconnect(): Promise<void> }
+
 /**
  * Assemble one session-backend double from refusing defaults plus the
  * members one spec wires.
  * @param overrides - The members the spec exercises.
  * @returns The double, satisfying the full session operation surface.
  */
-export function fakeBackend(overrides: Partial<DebugSessionOperations> = {}): DebugSessionOperations {
-  const refusing: DebugSessionOperations = {
+export function fakeBackend(overrides: Partial<FakeBackendFace> = {}): FakeBackendFace {
+  const refusing: FakeBackendFace = {
     continue: refuse,
     step: refuse,
     pause: refuse,
     restartFrame: refuse,
     restart: refuse,
+    terminate: refuse,
+    disconnect: refuse,
     threads: refuse,
     currentThreadStack: refuse,
     stackTrace: refuse,

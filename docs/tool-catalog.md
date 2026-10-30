@@ -1891,7 +1891,7 @@ Source: [`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/
 
 ### `debug_execution`
 
-Control a debug session. operation is one of continue, pause, step_over, step_in, step_out, step_back, restart, restart_frame, wait_for_stop. Most operations need the session id; continue and step wait for the next stop.
+Control a debug session. operation is one of continue, pause, step_over, step_in, step_out, step_back, restart, restart_frame, wait_for_stop. Most operations need the session id; continue and step wait for the next stop; threadId scopes control to one thread; restart_frame needs frameId.
 
 ```json
 {
@@ -1915,6 +1915,14 @@ Control a debug session. operation is one of continue, pause, step_over, step_in
     "sessionId": {
       "type": "string",
       "description": "Debug session id, serialized debug-<hex> form."
+    },
+    "threadId": {
+      "type": "string",
+      "description": "Thread id for pause, continue, and stepping; the stopped thread when omitted."
+    },
+    "frameId": {
+      "type": "string",
+      "description": "Frame id for restart_frame."
     }
   },
   "required": [
@@ -1928,7 +1936,7 @@ Source: [`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/
 
 ### `debug_inspect`
 
-Inspect a stopped debug session. operation is one of threads, stack_trace, scopes, variables, evaluate, set_variable, set_expression, completions, exception_info, modules, loaded_sources, source, disassemble, read_memory, write_memory, console. Results are bounded; variables expand one level per call.
+Inspect a stopped debug session. operation is one of threads, stack_trace, scopes, variables, evaluate, set_variable, set_expression, completions, exception_info, modules, loaded_sources, source, disassemble, read_memory, write_memory, breakpoint_locations, console. Results are bounded; variables expand one level per call; write_memory needs user approval.
 
 ```json
 {
@@ -1953,6 +1961,7 @@ Inspect a stopped debug session. operation is one of threads, stack_trace, scope
         "disassemble",
         "read_memory",
         "write_memory",
+        "breakpoint_locations",
         "console"
       ]
     },
@@ -1962,19 +1971,83 @@ Inspect a stopped debug session. operation is one of threads, stack_trace, scope
     },
     "threadId": {
       "type": "string",
-      "description": "Thread id for stack traces and stepping."
+      "description": "Thread id for stack traces and exception_info."
     },
     "frameId": {
       "type": "string",
-      "description": "Frame id for scopes and evaluation."
+      "description": "Frame id for scopes, evaluation, and set_expression."
     },
     "variablesReference": {
-      "type": "number",
-      "description": "Child container reference for variables."
+      "type": "string",
+      "description": "Child container reference for variables and set_variable."
     },
     "expression": {
       "type": "string",
       "description": "Expression for evaluate and set_expression."
+    },
+    "name": {
+      "type": "string",
+      "description": "Variable name for set_variable."
+    },
+    "value": {
+      "type": "string",
+      "description": "Assignment source text for set_variable and set_expression."
+    },
+    "text": {
+      "type": "string",
+      "description": "Whole REPL line up to the cursor for completions."
+    },
+    "column": {
+      "type": "number",
+      "description": "Zero-based cursor column within text for completions; one-based start column for breakpoint_locations."
+    },
+    "memoryReference": {
+      "type": "string",
+      "description": "Memory anchor from variables, evaluate, or disassemble, for read_memory, write_memory, and disassemble."
+    },
+    "count": {
+      "type": "number",
+      "description": "Byte count for read_memory."
+    },
+    "offset": {
+      "type": "number",
+      "description": "Byte offset for read_memory and write_memory."
+    },
+    "data": {
+      "type": "string",
+      "description": "Base64-encoded bytes for write_memory."
+    },
+    "allowPartial": {
+      "type": "boolean",
+      "description": "Accept a prefix write for write_memory instead of failing the whole request."
+    },
+    "sourceReference": {
+      "type": "string",
+      "description": "Source reference from stack traces, loaded_sources, or console entries, for source."
+    },
+    "instructionCount": {
+      "type": "number",
+      "description": "Instruction count for disassemble."
+    },
+    "instructionOffset": {
+      "type": "number",
+      "description": "First-instruction offset from the reference for disassemble."
+    },
+    "file": {
+      "type": "string",
+      "description": "Workspace-relative or absolute source path for breakpoint_locations."
+    },
+    "line": {
+      "type": "number",
+      "description": "One-based start line for breakpoint_locations."
+    },
+    "endLine": {
+      "type": "number",
+      "description": "End line of the range for breakpoint_locations."
+    },
+    "endColumn": {
+      "type": "number",
+      "description": "One-based end column in UTF-16 code units for breakpoint_locations."
     }
   },
   "required": [
@@ -1988,7 +2061,7 @@ Source: [`packages/debug/tool-debug/src/index.ts`](../packages/debug/tool-debug/
 
 ### `debug_session`
 
-Manage debug sessions. operation is one of launch, attach, launch_compound, list, list_compounds, get, get_compound, terminate, terminate_compound, disconnect, attach_targets. Launch and attach require a provider and a workspace root; the calling session owns the debug session.
+Manage debug sessions. operation is one of launch, attach, launch_compound, list, list_compounds, get, get_compound, terminate, terminate_compound, disconnect, attach_targets. Launch and attach need providerId, workspaceId, workspaceRoot, and cwd (launch); agent calls require user approval, and the calling session owns the debug session.
 
 ```json
 {
@@ -2017,11 +2090,15 @@ Manage debug sessions. operation is one of launch, attach, launch_compound, list
     },
     "workspaceId": {
       "type": "string",
-      "description": "Workspace scope for list."
+      "description": "Workspace scope for list; the workspace a launch or attach debugs in."
     },
     "providerId": {
       "type": "string",
       "description": "Provider id for launch and attach, e.g. node, python, go, native."
+    },
+    "workspaceRoot": {
+      "type": "string",
+      "description": "Absolute workspace root for launch and attach."
     },
     "program": {
       "type": "string",
@@ -2033,7 +2110,23 @@ Manage debug sessions. operation is one of launch, attach, launch_compound, list
     },
     "cwd": {
       "type": "string",
-      "description": "Working directory for the debug session."
+      "description": "Working directory for launch."
+    },
+    "args": {
+      "type": "array",
+      "description": "Target command-line arguments for launch.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "env": {
+      "type": "object",
+      "description": "Environment variables for the launched target.",
+      "additionalProperties": true
+    },
+    "stopOnEntry": {
+      "type": "boolean",
+      "description": "Stop immediately after launch."
     },
     "processId": {
       "type": "number",
@@ -2042,6 +2135,15 @@ Manage debug sessions. operation is one of launch, attach, launch_compound, list
     "port": {
       "type": "number",
       "description": "Inspector or debug port for attach."
+    },
+    "url": {
+      "type": "string",
+      "description": "Attach URL for browser or server targets."
+    },
+    "providerOptions": {
+      "type": "object",
+      "description": "Provider-specific launch and attach options.",
+      "additionalProperties": true
     }
   },
   "required": [

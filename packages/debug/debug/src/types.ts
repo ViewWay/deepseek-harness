@@ -198,6 +198,27 @@ export interface DebugAttachRequest {
   readonly caller: DebugCaller
 }
 
+/**
+ * The composition-level orchestration seam for launch and attach: resolves a
+ * provider plan, spawns the adapter, performs the DAP handshake, and commits
+ * the session into the registry. The domain stays DAP-free; a host plugin
+ * installs the implementation, which returns the registered session id.
+ */
+export interface DebugLaunchOrchestrator {
+  /**
+   * Launch a debug session for the request's provider.
+   * @param request - the validated launch request.
+   * @returns the registered session's id.
+   */
+  launch(request: DebugLaunchRequest): Promise<DebugSessionId>
+  /**
+   * Attach to a running target for the request's provider.
+   * @param request - the validated attach request.
+   * @returns the registered session's id.
+   */
+  attach(request: DebugAttachRequest): Promise<DebugSessionId>
+}
+
 /** The adapter command lines shared by launch and attach plans. */
 export interface DebugAdapterCommand {
   readonly command: readonly string[]

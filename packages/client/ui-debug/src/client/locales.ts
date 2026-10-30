@@ -78,6 +78,14 @@ export const zh = {
   'tool.execution.title': '调试执行',
   'tool.inspect.title': '调试检查',
   'tool.breakpoints.title': '调试断点',
+  'view.label': '调试视图',
+  'view.empty': '暂无调试会话。',
+  'view.stop': '停在 {location}',
+  'view.state.starting': '启动中',
+  'view.state.running': '运行中',
+  'view.state.stopped': '已停住',
+  'view.state.terminated': '已终止',
+  'view.state.failed': '已失败',
 } satisfies Record<string, string>
 
 /** Debug dictionary key union. */
@@ -142,6 +150,14 @@ export const en = {
   'tool.execution.title': 'Debug execution',
   'tool.inspect.title': 'Debug inspect',
   'tool.breakpoints.title': 'Debug breakpoints',
+  'view.label': 'Debug view',
+  'view.empty': 'No debug sessions.',
+  'view.stop': 'Stopped at {location}',
+  'view.state.starting': 'Starting',
+  'view.state.running': 'Running',
+  'view.state.stopped': 'Stopped',
+  'view.state.terminated': 'Terminated',
+  'view.state.failed': 'Failed',
 } satisfies Record<DebugKey, string>
 
 /** Japanese dictionary, checked against the English keys. */
@@ -203,6 +219,14 @@ export const ja = {
   'tool.execution.title': 'デバッグ実行',
   'tool.inspect.title': 'デバッグ検査',
   'tool.breakpoints.title': 'デバッグブレークポイント',
+  'view.label': 'デバッグビュー',
+  'view.empty': 'デバッグセッションはありません。',
+  'view.stop': '停止位置 {location}',
+  'view.state.starting': '起動中',
+  'view.state.running': '実行中',
+  'view.state.stopped': '停止済み',
+  'view.state.terminated': '終了済み',
+  'view.state.failed': '失敗',
 } satisfies Record<DebugKey, string>
 
 /** Spanish dictionary, checked against the English keys. */
@@ -264,6 +288,14 @@ export const es = {
   'tool.execution.title': 'Ejecución de depuración',
   'tool.inspect.title': 'Inspección de depuración',
   'tool.breakpoints.title': 'Puntos de interrupción de depuración',
+  'view.label': 'Vista de depuración',
+  'view.empty': 'No hay sesiones de depuración.',
+  'view.stop': 'Detenido en {location}',
+  'view.state.starting': 'Iniciando',
+  'view.state.running': 'En ejecución',
+  'view.state.stopped': 'Detenido',
+  'view.state.terminated': 'Terminado',
+  'view.state.failed': 'Fallido',
 } satisfies Record<DebugKey, string>
 
 /** French dictionary, checked against the English keys. */
@@ -325,6 +357,14 @@ export const fr = {
   'tool.execution.title': 'Exécution de débogage',
   'tool.inspect.title': 'Inspection de débogage',
   'tool.breakpoints.title': "Points d'arrêt de débogage",
+  'view.label': 'Vue de débogage',
+  'view.empty': 'Aucune session de débogage.',
+  'view.stop': 'Arrêté à {location}',
+  'view.state.starting': 'Démarrage',
+  'view.state.running': 'En exécution',
+  'view.state.stopped': 'Arrêté',
+  'view.state.terminated': 'Terminé',
+  'view.state.failed': 'Échec',
 } satisfies Record<DebugKey, string>
 
 /** German dictionary, checked against the English keys. */
@@ -386,6 +426,14 @@ export const de = {
   'tool.execution.title': 'Debug-Ausführung',
   'tool.inspect.title': 'Debug-Inspektion',
   'tool.breakpoints.title': 'Debug-Haltepunkte',
+  'view.label': 'Debug-Ansicht',
+  'view.empty': 'Keine Debug-Sessions.',
+  'view.stop': 'Angehalten bei {location}',
+  'view.state.starting': 'Wird gestartet',
+  'view.state.running': 'Läuft',
+  'view.state.stopped': 'Angehalten',
+  'view.state.terminated': 'Beendet',
+  'view.state.failed': 'Fehlgeschlagen',
 } satisfies Record<DebugKey, string>
 
 /** Russian dictionary, checked against the English keys. */
@@ -447,6 +495,14 @@ export const ru = {
   'tool.execution.title': 'Отладочное выполнение',
   'tool.inspect.title': 'Отладочная проверка',
   'tool.breakpoints.title': 'Точки останова отладки',
+  'view.label': 'Представление отладки',
+  'view.empty': 'Нет сеансов отладки.',
+  'view.stop': 'Остановлено в {location}',
+  'view.state.starting': 'Запуск',
+  'view.state.running': 'Выполняется',
+  'view.state.stopped': 'Остановлено',
+  'view.state.terminated': 'Завершено',
+  'view.state.failed': 'Сбой',
 } satisfies Record<DebugKey, string>
 
 /** Portuguese dictionary, checked against the English keys. */
@@ -508,4 +564,12 @@ export const pt = {
   'tool.execution.title': 'Execução de depuração',
   'tool.inspect.title': 'Inspeção de depuração',
   'tool.breakpoints.title': 'Pontos de interrupção de depuração',
+  'view.label': 'Vista de depuração',
+  'view.empty': 'Nenhuma sessão de depuração.',
+  'view.stop': 'Parado em {location}',
+  'view.state.starting': 'Iniciando',
+  'view.state.running': 'Em execução',
+  'view.state.stopped': 'Parado',
+  'view.state.terminated': 'Encerrado',
+  'view.state.failed': 'Falhou',
 } satisfies Record<DebugKey, string>

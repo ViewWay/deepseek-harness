@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-使用 `dsh-tool-debug` 把调试 seam 暴露给模型。插件注册四个工具——`debug_session`、`debug_execution`、`debug_inspect`、`debug_breakpoints`——各自带封闭操作 union，未知操作以 `DEBUG_UNKNOWN_OPERATION` 拒绝。会话 list/get/terminate/disconnect 与工作区作用域的文件断点替换（set_file/clear）直接运行在 `ctx.debug` 上；execution 与 inspection 操作经 `ctx.debug` 注册表解析会话后端，并按共享的 `DebugSessionOperations` 契约分派，缺后端时类型化失败 `DEBUG_UNAVAILABLE`。launch、attach 与 `wait_for_stop` 在各自的面落地前保持类型化不可用。固定系统提示词段定位工具用法：仅限运行态相关失败、启动前设断点、最小化求值、结束前终止会话、导航用文件/LSP 工具。
+使用 `dsh-tool-debug` 把调试 seam 暴露给模型。插件注册四个工具——`debug_session`、`debug_execution`、`debug_inspect`、`debug_breakpoints`——各自带封闭操作 union，未知操作以 `DEBUG_UNKNOWN_OPERATION` 拒绝。会话 list/get/terminate/disconnect 与工作区作用域的文件断点替换直接运行在 `ctx.debug` 上；execution 与 inspection 分派到会话已注册的后端，缺后端时类型化失败 `DEBUG_UNAVAILABLE`。launch 与 attach 经审批门后委派给编排器缝；内存写入每次请求审批；停驻通知按 Config 到达所属会话。系统提示词段定位其用法：仅限运行态相关失败、启动前设断点、最小化求值、结束前终止会话、导航用文件/LSP 工具。
 
 ## 目录
 
@@ -23,7 +23,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-在 `dsh-debug` 之后组合本插件。工具先校验操作 union，再校验会话 id 与各操作字段；领域失败以模型可读的 `DebugError` code 呈现。execution 与 inspection 经 `ctx.debug` 后端注册表解析会话后端，因此组合方必须为每个活跃会话注册一个后端。引用参数（`threadId`、`frameId`、`variablesReference`、`sourceReference`）是 seam 的序列化字符串 id，从先前结果原样回传；`memoryReference` 锚点从 `variables`、`evaluate`、`disassemble` 的结果传入 `read_memory`、`write_memory` 与 `disassemble`。断点操作带显式 `workspaceId`；无 `sessionId` 时作用于持久化工作区集合并应用到全部匹配的活跃会话，带 `sessionId` 时限定单会话（会话面落地前类型化不可用）。渲染把栈源路径相对化到工作区、按上限截断值并保留子引用、每个有界视图都带 `truncated`/`total`。
+在 `dsh-debug` 之后组合本插件。工具先校验操作 union，再校验会话 id 与各操作字段；领域失败以模型可读的 `DebugError` code 呈现。launch 与 attach 需要 `providerId`、`workspaceId`、`workspaceRoot` 与 `cwd`（launch）：Agent 调用 fail-closed 地经过 `ctx.approval`，调用会话拥有新调试会话，耐久 `debug/control` 审计落在该会话的日志上；UI 发起的 launch 在 UI 内确认，绕过 Agent 审批缝。execution 与 inspection 经 `ctx.debug` 后端注册表解析会话后端，因此组合方必须为每个活跃会话注册一个后端。引用参数（`threadId`、`frameId`、`variablesReference`、`sourceReference`）是 seam 的序列化字符串 id，从先前结果原样回传；`memoryReference` 锚点从 `variables`、`evaluate`、`disassemble` 的结果传入 `read_memory`、`write_memory` 与 `disassemble`。断点操作带显式 `workspaceId`；无 `sessionId` 时作用于持久化工作区集合并应用到全部匹配的活跃会话，带 `sessionId` 时限定单会话（会话面落地前类型化不可用）。渲染把栈源路径相对化到工作区、按上限截断值并保留子引用、每个有界视图都带 `truncated`/`total`。停驻通知按插件 Config 流动：`debugStopDelivery`（唤醒或安静）、`debugMaxConsecutiveWakes` 与 `maxNoticeBytes`。
 
 -----
 
@@ -80,7 +80,7 @@ Use the debug tools when a failure depends on runtime state that reading code an
 
 #### 模型可见内容
 
-有界规范 JSON：会话列表与信息为纯记录；栈带工作区相对源路径与帧上限（每个有界视图都带 `truncated`/`total`）；变量带每值上限并保留子级 `variablesReference` 供懒展开。恢复类操作返回结算——`kind` 为 stopped（带工作区相对停驻位置）、terminated 或 running。内存读取返回 base64 `data`、解析出的 `address` 与 `unreadableBytes` 尾部；内存写入在适配器报告时返回 `offset`/`bytesWritten` 报告；`breakpoint_locations` 返回按行列排序的适配器解析位置。领域失败以模型可路由的 `DebugError` code 呈现（`DEBUG_UNKNOWN_OPERATION`、`DEBUG_SESSION_GONE`、`DEBUG_UNAVAILABLE`、`DEBUG_INVALID_CONFIG`、`DEBUG_BREAKPOINT_LIMIT`），无需解析 message 文本。
+有界规范 JSON：会话列表与信息为纯记录；栈带工作区相对源路径与帧上限（每个有界视图都带 `truncated`/`total`）；变量带每值上限并保留子级 `variablesReference` 供懒展开。恢复类操作返回结算——`kind` 为 stopped（带工作区相对停驻位置）、terminated 或 running。launch 与 attach 返回会话记录并带控制授权来源（`grantedBy`）。内存读取返回 base64 `data`、解析出的 `address` 与 `unreadableBytes` 尾部；内存写入在适配器报告时返回 `offset`/`bytesWritten` 报告；`breakpoint_locations` 返回按行列排序的适配器解析位置。领域失败以模型可路由的 `DebugError` code 呈现（`DEBUG_UNKNOWN_OPERATION`、`DEBUG_SESSION_GONE`、`DEBUG_UNAVAILABLE`、`DEBUG_INVALID_CONFIG`、`DEBUG_APPROVAL_DENIED`、`DEBUG_CONTROL_NOT_GRANTED`、`DEBUG_BREAKPOINT_LIMIT`），无需解析 message 文本。
 
 #### Token 影响
 
@@ -107,7 +107,7 @@ Use the debug tools when a failure depends on runtime state that reading code an
 <a id="known-limitations-and-deferred-work"></a>
 ## 已知限制与延后工作
 
-- launch 与 attach 先校验字段，随后以 `DEBUG_UNAVAILABLE` 失败，等待审批接线的编排任务落地；`wait_for_stop` 在其停驻事件面随通知编排落地前同样类型化失败。
+- launch 与 attach 经审批门后委派给已安装的编排器；未安装编排器的组合按 `DEBUG_UNAVAILABLE` fail-closed，且 Agent 调用额外需要审批回答者。`wait_for_stop` 在其停驻事件面落地前同样类型化失败。
 - execution 与 inspection 在会话已注册的后端上分派；适配器缺少对应能力的操作在后端以 `DEBUG_UNSUPPORTED_CAPABILITY` 失败，因此各 provider 的覆盖随适配器不同。
 - variables、modules 与 console 的分页选项尚未暴露；这些操作读取后端的默认页。
 - 复合操作、attach 目标探测、函数/异常/数据/指令断点、持久化集合的读取面随后端服务落地。

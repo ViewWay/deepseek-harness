@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import { DebugToolbar } from '../src/client/DebugToolbar.tsx'
+import { createDebugViewStore, visibleDebugActions } from '../src/client/store.ts'
 import { en } from '../src/client/locales.ts'
 import type { DebugAction, DebugViewState } from '../src/client/store.ts'
 import { capabilities } from './capabilities.client.ts'
@@ -82,6 +83,18 @@ describe('DebugToolbar', () => {
     expect(routed).toContain('restartFrame')
     expect(routed).toContain('stop')
     expect(routed).toContain('disconnect')
+  })
+
+  it('gates the controls from a folded capabilities/changed event', () => {
+    const store = createDebugViewStore()
+    store.apply({ kind: 'session/state', sessionId: 'debug-1', state: 'stopped' })
+    store.apply({ kind: 'capabilities/changed', sessionId: 'debug-1', capabilities: capabilities({ supportsStepBack: true }) })
+    const { view } = mount(store.state)
+    const gated = [...view.container.querySelectorAll('[data-debug-action]')]
+      .map(button => button.getAttribute('data-debug-action'))
+    expect(gated).toEqual([...visibleDebugActions(capabilities({ supportsStepBack: true }))])
+    expect(gated).toContain('stepBack')
+    expect(gated).not.toContain('restartFrame')
   })
 
   it('omits capability-gated actions when the adapter does not declare them', () => {

@@ -6,7 +6,7 @@ import { Context } from '@deepseek-ai/cordis'
 import { cleanup, render } from '@testing-library/react'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type { ComposedProps } from '@deepseek-ai/dsh-client-ui-slots'
-import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
+import { makeTranslate, TestRemote } from '@deepseek-ai/dsh-client-test-runtime'
 import { apply, inject } from '../src/client/index.ts'
 import { DEBUG_TOOL_NAMES, DebugToolRow, debugToolCard } from '../src/client/debug-tool-cards.tsx'
 // Type-only: pulls the keyed tool.call.toolview entry into this program's SlotMap face.
@@ -108,13 +108,21 @@ describe('DebugToolRow', () => {
 
 describe('registration', () => {
   it('declares only the services it uses', () => {
-    expect(inject).toEqual(['locale', 'slots'])
+    expect(inject).toEqual(['locale', 'slots', 'remote', 'remote.debug'])
     expect(DEBUG_TOOL_NAMES).toEqual(['debug_session', 'debug_breakpoints', 'debug_execution', 'debug_inspect'])
   })
 
   it('registers all four tool cards and dictionaries; disposal frees them', async () => {
     const ctx = new Context()
     onTestFinished(async () => { await ctx.fiber.dispose() })
+    // The debug view service polls `remote.debug` from apply; an empty
+    // namespace double keeps this spec about the tool cards.
+    new TestRemote(ctx, {
+      debug: {
+        sessionList: () => Promise.resolve({ ok: true as const, value: [] }),
+        events: () => Promise.resolve({ ok: true as const, value: { records: [], expired: false, latestSeq: 0 } }),
+      },
+    })
     const dictionaries: unknown[] = []
     ctx.provide('locale', {
       register: (_namespace: string, dictionary: unknown) => {

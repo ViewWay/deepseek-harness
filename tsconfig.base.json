@@ -401,6 +401,7 @@
       // controller subpath is the loader's explicit mount target.
       "@deepseek-ai/dsh-debug-bundle": ["./packages/bundle/debug/src"],
       "@deepseek-ai/dsh-debug-bundle/debug-controller": ["./packages/bundle/debug/src/debug-controller.ts"],
+      "@deepseek-ai/dsh-debug-bundle/debug-host": ["./packages/bundle/debug/src/debug-host.ts"],
       // BEGIN generated package aliases — pnpm run gen-tsconfig-paths
       "@deepseek-ai/dsh-acp": ["./packages/acp/acp/src"],
       "@deepseek-ai/dsh-acp-app": ["./packages/bundle/acp-app/src"],

@@ -33,6 +33,6 @@ debug 组通过唯一的 `ctx.debug` 能力缝为 agent（智能体）与人提�
 <details>
 <summary>维护者的工作上下文——点击展开</summary>
 
-工具层对操作面做端到端分派：`dsh-tool-debug` 经 `ctx.debug` 后端注册表把每个 `debug_execution` 与 `debug_inspect` 调用解析到统一的 `DebugSessionOperations` 契约上，把 `memoryReference` 锚点从 inspection 结果传入内存与反汇编操作，并把 `breakpoint_locations` 交给适配器解析。能力门控在实践中按 provider 拉开差距（上游能力声明，2026-10：setVariable 全员支持，restartFrame 仅 vscode-js-debug，debugpy 缺内存读写，delve 缺 completions）；完整矩阵见[适配器能力缝记录](../../.agents/notes/proposed/architecture/2026-10-25-debug-adapter-seam.zh.md)。`capabilities/changed` 通道已存在于后端层——握手后与 DAP capabilities 事件时发出——其接入领域事件等待会话面组合（下一波）；UI 门控尚未在生产可用。
+工具层对操作面做端到端分派：`dsh-tool-debug` 经 `ctx.debug` 后端注册表把每个 `debug_execution` 与 `debug_inspect` 调用解析到统一的 `DebugSessionOperations` 契约上，把 `memoryReference` 锚点从 inspection 结果传入内存与反汇编操作，并把 `breakpoint_locations` 交给适配器解析。launch 与 attach 经编排器缝可用：Agent 调用 fail-closed 地经过 `ctx.approval` 审批门，控制授权以 `owned`/`session-grant`/`single-approval` 来源随工具结果返回，耐久 `debug/control` 审计落在调用会话的日志上；未安装编排器的组合按 `DEBUG_UNAVAILABLE` fail-closed。能力门控在实践中按 provider 拉开差距（上游能力声明，2026-10：setVariable 全员支持，restartFrame 仅 vscode-js-debug，debugpy 缺内存读写，delve 缺 completions）；完整矩阵见[适配器能力缝记录](../../.agents/notes/proposed/architecture/2026-10-25-debug-adapter-seam.zh.md)。`capabilities/changed` 通道已存在于后端层——握手后与 DAP capabilities 事件时发出——其接入领域事件等待会话面组合（下一波）；UI 门控尚未在生产可用。
 
 </details>

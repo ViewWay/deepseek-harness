@@ -8,7 +8,7 @@
 
 `debug` 包定义了[服务定义](../../packages/debug/debug/README.zh.md)：以 `debug` 为服务键的 `ctx.debug` 服务，持有语言 provider 注册表、会话注册表、断点注册表与复合配置注册表。provider 注册以一个生命周期控制器原子地保留品牌化 provider id 与一组排他的文件扩展名，两个 provider 不可能同时认领 `.py`。每个失败都是类型化的 [`DebugError`](../../packages/debug/debug/src/error.ts)，带 [`types.ts`](../../packages/debug/debug/src/types.ts) 中封闭 union 的稳定 `DebugErrorCode`；调用方按 `code` 路由，从不解析 `message`。
 
-服务面的 launch 与 attach 目前为类型化不可用——在审批接线编排落地前都拒绝 `DEBUG_UNAVAILABLE`（`packages/debug/debug/src/index.ts:312`）。[`launch.ts`](../../packages/debug/debug/src/launch.ts) 中的纯编排（`launchDebugSession`/`attachDebugSession`）与 DAP 后端已落地并由真实适配器 e2e 矩阵验证；剩余的只有服务级组合接线。
+launch 与 attach 经组合级 `DebugLaunchOrchestrator` 缝可用：宿主插件安装编排（环境、适配器解析、后端工厂），`ctx.debug.launch`/`attach` 委派给它。[dsh-tool-debug](../../packages/debug/tool-debug/README.zh.md) 的工具面校验字段，把 Agent 的 launch/attach 与内存写入送入 fail-closed 的 `ctx.approval`，授权调用方即将拥有的会话的控制权，并在调用会话的日志上追加耐久 `debug/control` 审计；UI 发起的 launch 在 UI 内确认，不进入 Agent 审批缝。没有安装编排器的组合按 `DEBUG_UNAVAILABLE` fail-closed——这是对无后端组合的诚实回答，不是缺陷。[launch.ts](../../packages/debug/debug/src/launch.ts) 中的纯编排（`launchDebugSession`/`attachDebugSession`）与 DAP 后端已落地并由真实适配器 e2e 矩阵验证。
 
 ## 会话状态机
 
@@ -24,7 +24,7 @@
 
 ## 所有权与工作区隔离
 
-每次 launch/attach 都携带调用会话身份：Agent 的调试会话属于该 Agent 的会话，人的属于工作台对话。会话按工作区划分——一个工作区的调用方看不到、也控制不了另一个工作区的会话（`DEBUG_WORKSPACE_MISMATCH`）。Agent 控制人创建的会话（或反向）需要该会话的控制授权或一次单独审批，每次控制决策都落入带授权来源的耐久 `debug/control` 事件。launch、attach 与内存写入走 `ctx.approval` fail-closed：没有组合回答者即以 `DEBUG_APPROVAL_DENIED` 拒绝，detail 区分主动拒绝与缺少回答者。
+每次 launch/attach 都携带调用会话身份：Agent 的调试会话属于该 Agent 的会话，人的属于工作台对话。会话按工作区划分——一个工作区的调用方看不到、也控制不了另一个工作区的会话（`DEBUG_WORKSPACE_MISMATCH`）。Agent 控制人创建的会话（或反向）需要该会话的控制授权或一次单独审批，每次控制决策都落入耐久 `debug/control` 事件；授权来源（`owned` / `session-grant` / `single-approval`）随工具结果返回，因为固定的耐久载荷只携带会话、actor、操作与线程/帧。launch、attach 与内存写入走 `ctx.approval` fail-closed：没有组合回答者即以 `DEBUG_APPROVAL_DENIED` 拒绝，detail 区分主动拒绝与缺少回答者。
 
 ## 耐久事件与投影
 
@@ -32,7 +32,7 @@
 
 ## 上限
 
-输出上限是可部署调整的 `Config` 字段，不是硬编码常量：投影的 `maxProjectedSessions`/`maxProjectedStops`、`ctx.debug` 的 `maxBreakpointsPerFile`、控制器的事件环（`DEFAULT_DEBUG_EVENT_RING_LIMIT` = 500）、DAP 后端的 console 上限、编排的 30 秒默认握手超时。栈、变量与工具结果分页有界并带截断元数据；变量懒加载，整棵树绝不递归展开。协议常量、校验和验证与沙箱不绕过是固定不变量，不是配置。
+输出上限是可部署调整的 `Config` 字段，不是硬编码常量：投影的 `maxProjectedSessions`/`maxProjectedStops`、`ctx.debug` 的 `maxBreakpointsPerFile`、控制器的事件环（`DEFAULT_DEBUG_EVENT_RING_LIMIT` = 500）、DAP 后端的 console 上限、编排的 30 秒默认握手超时，以及 `dsh-tool-debug` 的停驻通知投递（`debugStopDelivery`、`debugMaxConsecutiveWakes`、`maxNoticeBytes`——刻意不复用 job 包的同名字段）。栈、变量与工具结果分页有界并带截断元数据；变量懒加载，整棵树绝不递归展开。协议常量、校验和验证与沙箱不绕过是固定不变量，不是配置。
 
 ## 三端
 
@@ -40,9 +40,9 @@
 
 ## 明确限制
 
-- **服务级 launch 面待落地** — 在审批接线编排组合落地前，`ctx.debug.launch`/`attach` 按类型拒绝；工具与控制器对此报告 `DEBUG_UNAVAILABLE`/`DEBUG_SESSION_GONE`。
+- **launch 与 attach 需要编排器组合** — `ctx.debug.launch`/`attach` 委派给已安装的 `DebugLaunchOrchestrator`；未安装时按 `DEBUG_UNAVAILABLE` fail-closed，且 Agent 调用额外需要审批回答者。
 - **适配器按需安装** — 每个语言的首次会话会下载并校验适配器；离线部署必须先提供覆盖。
-- **需要审批回答者** — 没有回答者的部署无法 launch/attach；这是 fail-closed 设计，不是缺陷。
+- **Agent 的 launch、attach 与内存写入需要审批回答者** — 没有回答者的部署以 `DEBUG_APPROVAL_DENIED` fail-closed；这是 fail-closed 设计，不是缺陷。
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -60,20 +60,30 @@ Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnp
 
 ```ts cordis-catalog
 /**
- * Register one live session's backend handle; controllers resolve it to
- * drive execution and inspection without touching DAP.
- * @param sessionId - the session the backend serves.
- * @param backend - the composition's backend handle.
- * @returns disposer removing the registration.
+ * Install the composition-level launch orchestrator that launch and attach
+ * delegate to. The domain stays DAP-free; a host plugin provides the
+ * environment, adapter resolution, backend factory, and approval wiring.
+ * @param orchestrator - the orchestration to install.
+ * @returns disposer removing the orchestrator.
  */
-registerBackend(sessionId: DebugSessionId, backend: unknown): () => void
+installLaunchOrchestrator(orchestrator: DebugLaunchOrchestrator): () => void
 
 /**
- * Resolve one session's registered backend handle.
- * @param sessionId - the session to resolve.
- * @returns the handle, or undefined when the session has none registered.
+ * Register one live session's backend; controllers resolve it to drive
+ * execution and inspection without touching DAP.
+ * @param sessionId - the session the backend serves.
+ * @param backend - the composition's backend serving {@link DebugSessionOperations}.
+ * @returns disposer removing the registration.
  */
-backendOf(sessionId: DebugSessionId): unknown
+registerBackend(sessionId: DebugSessionId, backend: DebugSessionOperations): () => void
+
+/**
+ * Resolve one session's registered backend.
+ * @param sessionId - the session to resolve.
+ * @returns the backend serving the session's operations, or undefined when
+ * the session has none registered.
+ */
+backendOf(sessionId: DebugSessionId): DebugSessionOperations | undefined
 
 /**
  * List debug sessions as read-facing infos.
@@ -90,20 +100,22 @@ list(scope?: DebugScope): readonly DebugSessionInfo[]
 get(id: DebugSessionId): DebugLiveSession | undefined
 
 /**
- * Launch a debug session.
- * @param _request - the launch request; consumed once the DAP backend lands.
- * @returns a promise for the live session; rejects until the backend lands.
- * @throws {@link DebugError} `DEBUG_UNAVAILABLE` until the backend lands.
+ * Launch a debug session through the installed orchestrator.
+ * @param request - the launch request carrying provider, target, and caller.
+ * @returns a promise for the live session.
+ * @throws {@link DebugError} `DEBUG_UNAVAILABLE` until a composition
+ * installs an orchestrator; the orchestrator's own failures propagate.
  */
-launch(_request: DebugLaunchRequest): Promise<DebugLiveSession>
+launch(request: DebugLaunchRequest): Promise<DebugLiveSession>
 
 /**
- * Attach to a running target.
- * @param _request - the attach request; consumed once the DAP backend lands.
- * @returns a promise for the live session; rejects until the backend lands.
- * @throws {@link DebugError} `DEBUG_UNAVAILABLE` until the backend lands.
+ * Attach to a running target through the installed orchestrator.
+ * @param request - the attach request carrying provider, target, and caller.
+ * @returns a promise for the live session.
+ * @throws {@link DebugError} `DEBUG_UNAVAILABLE` until a composition
+ * installs an orchestrator; the orchestrator's own failures propagate.
  */
-attach(_request: DebugAttachRequest): Promise<DebugLiveSession>
+attach(request: DebugAttachRequest): Promise<DebugLiveSession>
 
 /**
  * Register one language provider after validating it completely.
@@ -187,4 +199,32 @@ async resolve(providerId: DebugProviderIdValue, call: DebugAdapterResolveCall): 
 ```
 
 Source: [`packages/debug/debug-adapter-manager/src/manager.ts`](../../packages/debug/debug-adapter-manager/src/manager.ts)
+
+<a id="ctxdebughost--debughost"></a>
+
+### `ctx.debugHost` — `DebugHost`
+
+`ctx.debugHost`: the launch orchestrator this bundle installs. The domain stays DAP-free; this plugin owns the environment probe, managed-adapter resolution with install-on-miss, the stdio DAP backend, capability publication onto the live event bus, and the caller session's durable `debug/*` events.
+
+```ts cordis-catalog
+/**
+ * Launch one debug session for the request's provider.
+ * @param request - the validated launch request; the caller session must be live.
+ * @returns the registered session's id.
+ * @throws {@link DebugError} `DEBUG_ADAPTER_NOT_FOUND` for an unregistered
+ * provider or an unresolvable adapter; `DEBUG_SESSION_GONE` when the caller
+ * session is not live; launch failures propagate from the orchestration.
+ */
+async launch(request: DebugLaunchRequest): Promise<DebugSessionId>
+
+/**
+ * Attach to a running target for the request's provider.
+ * @param request - the validated attach request; the caller session must be live.
+ * @returns the registered session's id.
+ * @throws the same typed failures as {@link launch}.
+ */
+async attach(request: DebugAttachRequest): Promise<DebugSessionId>
+```
+
+Source: [`packages/bundle/debug/src/debug-host.ts`](../../packages/bundle/debug/src/debug-host.ts)
 <!-- END GENERATED cordis-surface -->

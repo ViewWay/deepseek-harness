@@ -75,4 +75,12 @@ describe('debug approval', () => {
     })).resolves.toMatchObject({ source: 'session-grant' })
     expect(approval.request).not.toHaveBeenCalled()
   })
+
+  it('grants a user control of their own session without approval', async () => {
+    const approval = approvalDouble('allowed-once')
+    await expect(grantControl(approval, {
+      owner: 'user', caller: 'user', toolName: 'debug_session', reason: 'launch',
+    })).resolves.toMatchObject({ source: 'owned' })
+    expect(approval.request).not.toHaveBeenCalled()
+  })
 })

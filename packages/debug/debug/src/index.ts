@@ -21,6 +21,7 @@ import type { DebugSessionsProjectionConfig } from './projection.ts'
 import { DEFAULT_MAX_PROJECTED_SESSIONS, DEFAULT_MAX_PROJECTED_STOPS } from './projection.ts'
 import type {
   DebugAttachRequest,
+  DebugLaunchOrchestrator,
   DebugLaunchRequest,
   DebugProvider,
   DebugScope,
@@ -62,6 +63,7 @@ export type {
   DebugCapabilities,
   DebugCompletion,
   DebugCompoundInfo,
+  DebugLaunchOrchestrator,
   DebugConsoleCategory,
   DebugConsoleEntry,
   DebugConsoleOptions,
@@ -258,6 +260,21 @@ export class Debug extends Service {
   readonly breakpoints: BreakpointRegistry
 
   private readonly sessionBackends = new Map<DebugSessionId, DebugSessionOperations>()
+  private launchHost: DebugLaunchOrchestrator | undefined
+
+  /**
+   * Install the composition-level launch orchestrator that launch and attach
+   * delegate to. The domain stays DAP-free; a host plugin provides the
+   * environment, adapter resolution, backend factory, and approval wiring.
+   * @param orchestrator - the orchestration to install.
+   * @returns disposer removing the orchestrator.
+   */
+  installLaunchOrchestrator(orchestrator: DebugLaunchOrchestrator): () => void {
+    this.launchHost = orchestrator
+    return () => {
+      if (this.launchHost === orchestrator) this.launchHost = undefined
+    }
+  }
 
   /**
    * Register one live session's backend; controllers resolve it to drive
@@ -332,23 +349,42 @@ export class Debug extends Service {
   }
 
   /**
-   * Launch a debug session.
-   * @param _request - the launch request; consumed once the DAP backend lands.
-   * @returns a promise for the live session; rejects until the backend lands.
-   * @throws {@link DebugError} `DEBUG_UNAVAILABLE` until the backend lands.
+   * Launch a debug session through the installed orchestrator.
+   * @param request - the launch request carrying provider, target, and caller.
+   * @returns a promise for the live session.
+   * @throws {@link DebugError} `DEBUG_UNAVAILABLE` until a composition
+   * installs an orchestrator; the orchestrator's own failures propagate.
    */
-  launch(_request: DebugLaunchRequest): Promise<DebugLiveSession> {
-    return Promise.reject(new DebugError('debug launch is unavailable until the DAP backend lands', 'DEBUG_UNAVAILABLE'))
+  launch(request: DebugLaunchRequest): Promise<DebugLiveSession> {
+    const orchestrator = this.launchHost
+    if (orchestrator === undefined) {
+      return Promise.reject(new DebugError('debug launch requires a backend composition; none is installed', 'DEBUG_UNAVAILABLE'))
+    }
+    return orchestrator.launch(request).then(id => this.liveSessionOf(id, 'launch'))
   }
 
   /**
-   * Attach to a running target.
-   * @param _request - the attach request; consumed once the DAP backend lands.
-   * @returns a promise for the live session; rejects until the backend lands.
-   * @throws {@link DebugError} `DEBUG_UNAVAILABLE` until the backend lands.
+   * Attach to a running target through the installed orchestrator.
+   * @param request - the attach request carrying provider, target, and caller.
+   * @returns a promise for the live session.
+   * @throws {@link DebugError} `DEBUG_UNAVAILABLE` until a composition
+   * installs an orchestrator; the orchestrator's own failures propagate.
    */
-  attach(_request: DebugAttachRequest): Promise<DebugLiveSession> {
-    return Promise.reject(new DebugError('debug attach is unavailable until the DAP backend lands', 'DEBUG_UNAVAILABLE'))
+  attach(request: DebugAttachRequest): Promise<DebugLiveSession> {
+    const orchestrator = this.launchHost
+    if (orchestrator === undefined) {
+      return Promise.reject(new DebugError('debug attach requires a backend composition; none is installed', 'DEBUG_UNAVAILABLE'))
+    }
+    return orchestrator.attach(request).then(id => this.liveSessionOf(id, 'attach'))
+  }
+
+  /** Resolve a just-registered session id to its live object or fail loudly. */
+  private liveSessionOf(id: DebugSessionId, origin: string): DebugLiveSession {
+    const session = this.get(id)
+    if (session === undefined) {
+      throw new DebugError(`debug ${origin} registered ${id} but the session is not resolvable`, 'DEBUG_SESSION_GONE')
+    }
+    return session
   }
 
   /**
